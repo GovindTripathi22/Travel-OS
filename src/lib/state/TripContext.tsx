@@ -26,6 +26,7 @@ import { calculateNetBalances, minimizeDebts } from '../algorithms/debtMinimizer
 import { detectTripConflicts } from '../algorithms/conflictDetector';
 import { resolveQuadraticPoll, resolveBordaCountPoll } from '../algorithms/mechanismVoting';
 import { processJarvisVoiceCommand, JarvisContext } from '../agents/jarvisBrain';
+import { useAuth } from '../auth/AuthContext';
 
 interface TripContextType {
   currentUser: User;
@@ -71,6 +72,7 @@ interface TripContextType {
 const TripContext = createContext<TripContextType | undefined>(undefined);
 
 export function TripProvider({ children }: { children: React.ReactNode }) {
+  const { switchQuickCompanion } = useAuth();
   const [users, setUsers] = useState<User[]>(INITIAL_USERS);
   const [currentUser, setCurrentUser] = useState<User>(INITIAL_USERS[0]); // Rohan by default
   const [itinerary, setItinerary] = useState<ItineraryItem[]>(INITIAL_ITINERARY);
@@ -399,7 +401,12 @@ export function TripProvider({ children }: { children: React.ReactNode }) {
       }
     } else if (res.actionExecuted === 'CHANGE_ACTIVE_USER' && res.cardData?.userId) {
       const target = users.find((u) => u.id === res.cardData.userId);
-      if (target) setCurrentUser(target);
+      if (target) {
+        setCurrentUser(target);
+        try {
+          switchQuickCompanion(target.id);
+        } catch {}
+      }
     } else if (res.actionExecuted === 'RESOLVE_CONFLICT_ITEM' && res.cardData?.conflictId) {
       resolveConflict(res.cardData.conflictId);
     } else if (res.actionExecuted === 'DISPLAY_OFFLINE_SOS') {

@@ -407,16 +407,24 @@ export function processJarvisVoiceCommand(
   // 9. PERSPECTIVE / USER SWITCHING
   if (
     lower.includes('switch') ||
+    lower.includes('change') ||
     lower.includes('login') ||
     lower.includes('dadaji') ||
     lower.includes('kabir') ||
     lower.includes('priya') ||
     lower.includes('rohan') ||
     lower.includes('elderly') ||
+    lower.includes('senior') ||
+    lower.includes('grandfather') ||
     lower.includes('kid')
   ) {
     let targetUser = ctx.currentUser;
-    if (lower.includes('dadaji') || lower.includes('elderly')) {
+    if (
+      lower.includes('dadaji') ||
+      lower.includes('elderly') ||
+      lower.includes('senior') ||
+      lower.includes('grandfather')
+    ) {
       targetUser = ctx.users.find((u) => u.id === 'dadaji') || targetUser;
     } else if (lower.includes('kabir') || lower.includes('kid')) {
       targetUser = ctx.users.find((u) => u.id === 'kabir') || targetUser;

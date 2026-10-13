@@ -39,10 +39,14 @@ export default function Header() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Sync active profile from Auth into TripContext
+  // Sync active profile from Auth into TripContext only when activeProfile genuinely changes
+  const prevActiveProfileIdRef = useRef(activeProfile?.id);
   useEffect(() => {
-    if (activeProfile && activeProfile.id !== currentUser.id) {
-      setCurrentUser(activeProfile);
+    if (activeProfile && activeProfile.id !== prevActiveProfileIdRef.current) {
+      prevActiveProfileIdRef.current = activeProfile.id;
+      if (activeProfile.id !== currentUser.id) {
+        setCurrentUser(activeProfile);
+      }
     }
   }, [activeProfile, currentUser.id, setCurrentUser]);
 
