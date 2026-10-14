@@ -16,6 +16,12 @@ import {
   CloudRain,
   Sun,
   Coins,
+  Mic,
+  MicOff,
+  Square,
+  Wand2,
+  Bot,
+  Cpu,
 } from 'lucide-react';
 
 export default function Header() {
@@ -32,6 +38,12 @@ export default function Header() {
     toggleWeather,
     currency,
     setCurrency,
+    isSpeaking,
+    isJarvisSpeaking,
+    stopSpeaking,
+    stopJarvisVoiceNow,
+    executeJarvisCommand,
+    executeAutonomousJarvis,
   } = useTrip();
 
   const {
@@ -45,6 +57,65 @@ export default function Header() {
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [quickCmd, setQuickCmd] = useState('');
+  const [listening, setListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
+
+  const handleVoiceInput = () => {
+    if (stopJarvisVoiceNow) stopJarvisVoiceNow();
+    else if (stopSpeaking) stopSpeaking();
+
+    if (listening && recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+      } catch {}
+      setListening(false);
+      return;
+    }
+
+    if (typeof window === 'undefined') return;
+
+    const SpeechRec = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRec) {
+      setListening(true);
+      setTimeout(() => {
+        setListening(false);
+        const demoCmd = 'Jarvis, fix all schedule conflicts';
+        setQuickCmd(demoCmd);
+        if (executeAutonomousJarvis) executeAutonomousJarvis(demoCmd);
+        else executeJarvisCommand(demoCmd);
+      }, 1000);
+      return;
+    }
+
+    try {
+      const rec = new SpeechRec();
+      recognitionRef.current = rec;
+      rec.lang = 'en-US';
+      rec.continuous = false; // Single-shot prevents browser hanging
+      rec.interimResults = false;
+      setListening(true);
+
+      rec.onresult = (e: any) => {
+        const transcript = e.results?.[0]?.[0]?.transcript || '';
+        setListening(false);
+        if (transcript.trim()) {
+          setQuickCmd(transcript);
+          if (executeAutonomousJarvis) executeAutonomousJarvis(transcript);
+          else executeJarvisCommand(transcript);
+        }
+      };
+      rec.onerror = () => {
+        setListening(false);
+      };
+      rec.onend = () => {
+        setListening(false);
+      };
+      rec.start();
+    } catch {
+      setListening(false);
+    }
+  };
 
   // Sync active profile from Auth into TripContext only when activeProfile genuinely changes
   const prevActiveProfileIdRef = useRef(activeProfile?.id);
@@ -267,6 +338,21 @@ export default function Header() {
               )}
             </button>
 
+            {/* Instant Stop Voice Button */}
+            {(isSpeaking || isJarvisSpeaking) && (
+              <button
+                onClick={() => {
+                  if (stopJarvisVoiceNow) stopJarvisVoiceNow();
+                  else if (stopSpeaking) stopSpeaking();
+                }}
+                className="px-3 py-1.5 rounded-full bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm animate-pulse transition"
+                title="Stop Jarvis speech immediately"
+              >
+                <Square className="w-3.5 h-3.5 fill-white" />
+                <span>Stop Voice</span>
+              </button>
+            )}
+
             {/* JARVIS Voice Button */}
             <button
               onClick={() => triggerJarvisVoice()}
@@ -285,6 +371,74 @@ export default function Header() {
               <Sparkles className="w-3.5 h-3.5" />
               <span>Ask AI</span>
             </button>
+          </div>
+        </div>
+
+        {/* Autonomous JARVIS Command Bar with Quick Action Chips */}
+        <div className="pt-2 pb-2.5 border-t border-[#EBE7DF]/80 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+          <div className="flex-1 flex items-center gap-2 bg-white border border-[#EBE7DF] focus-within:border-[#D97746] rounded-xl px-3 py-1.5 shadow-2xs transition">
+            <Bot className="w-4 h-4 text-[#D97746] shrink-0" />
+            <input
+              type="text"
+              value={quickCmd}
+              onChange={(e) => setQuickCmd(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && quickCmd.trim()) {
+                  if (executeAutonomousJarvis) executeAutonomousJarvis(quickCmd);
+                  else executeJarvisCommand(quickCmd);
+                  setQuickCmd('');
+                }
+              }}
+              placeholder='Command JARVIS: "fix schedule conflicts", "switch to Dadaji", "it is raining", "Priya paid ₹1200 for taxi"...'
+              className="w-full bg-transparent text-xs text-[#1C1917] placeholder-[#A8A29E] focus:outline-none"
+            />
+            <button
+              onClick={handleVoiceInput}
+              title={listening ? 'Stop listening' : 'Speak voice command to JARVIS'}
+              className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 shrink-0 transition ${
+                listening
+                  ? 'bg-rose-500 text-white animate-pulse'
+                  : 'bg-[#F4F1EA] text-[#1C1917] hover:bg-[#EBE7DF]'
+              }`}
+            >
+              {listening ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
+              <span>{listening ? 'Listening...' : 'Voice'}</span>
+            </button>
+            <button
+              onClick={() => {
+                if (quickCmd.trim()) {
+                  if (executeAutonomousJarvis) executeAutonomousJarvis(quickCmd);
+                  else executeJarvisCommand(quickCmd);
+                  setQuickCmd('');
+                }
+              }}
+              className="px-3 py-1 rounded-lg bg-[#1C1917] hover:bg-[#2C2724] text-white font-bold text-xs flex items-center gap-1 shrink-0 transition"
+            >
+              <Wand2 className="w-3.5 h-3.5" />
+              <span>Execute</span>
+            </button>
+          </div>
+
+          <div className="flex items-center gap-1.5 overflow-x-auto text-[11px] shrink-0 pb-1 sm:pb-0">
+            {[
+              { label: '⚡ Fix Overlaps', cmd: 'Jarvis, fix all schedule conflicts' },
+              { label: '🕒 Move Amber Fort → 10:00', cmd: 'Jarvis, move Amber Fort to 10:00' },
+              { label: '🌧️ Rain Swap', cmd: 'Jarvis, it is raining, swap outdoor stops to indoor' },
+              { label: '👴 Switch to Dadaji', cmd: 'Jarvis, switch to Dadaji' },
+              { label: '💴 Currency → JPY', cmd: 'Jarvis, change currency to JPY' },
+              { label: '🗳️ Lock Poll Winner', cmd: 'Jarvis, commit poll winner to itinerary' },
+            ].map((chip, i) => (
+              <button
+                key={i}
+                onClick={() => {
+                  if (executeAutonomousJarvis) executeAutonomousJarvis(chip.cmd);
+                  else executeJarvisCommand(chip.cmd);
+                }}
+                className="px-2.5 py-1 rounded-lg bg-white hover:bg-[#FAF9F6] border border-[#EBE7DF] hover:border-[#D6D0C5] text-[#44403C] hover:text-[#1C1917] shrink-0 transition shadow-2xs font-medium"
+              >
+                {chip.label}
+              </button>
+            ))}
           </div>
         </div>
       </div>

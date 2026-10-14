@@ -29,6 +29,12 @@ import { detectTripConflicts, detectWeatherAndTemporalConflicts, toMinutes, from
 import { resolveQuadraticPoll, resolveBordaCountPoll } from '../algorithms/mechanismVoting';
 import { processJarvisVoiceCommand, JarvisContext } from '../agents/jarvisBrain';
 import { runEdgeSlmNlu } from '../slm/edgeSlmEngine';
+import {
+  speakWithJarvisVoice,
+  stopJarvisSpeech,
+  onJarvisSpeechStateChange,
+  playJarvisSound,
+} from '../audio/jarvisAudio';
 import { useAuth } from '../auth/AuthContext';
 
 interface TripContextType {
@@ -49,14 +55,17 @@ interface TripContextType {
   isAssistantOpen: boolean;
   setIsAssistantOpen: (open: boolean) => void;
   isSpeaking: boolean;
+  isJarvisSpeaking: boolean;
   speakText: (text: string) => void;
   stopSpeaking: () => void;
+  stopJarvisVoiceNow: () => void;
   isJarvisOpen: boolean;
   setIsJarvisOpen: (open: boolean) => void;
   isSosModalOpen: boolean;
   setIsSosModalOpen: (open: boolean) => void;
   lastJarvisResult: JarvisActionResult | null;
   executeJarvisCommand: (command: string) => JarvisActionResult;
+  executeAutonomousJarvis: (command: string) => JarvisActionResult;
   resolveConflict: (conflictId: string) => void;
   submitQuadraticVote: (pollId: string, optionId: string, delta: number) => boolean;
   finalizePoll: (pollId: string) => void;
@@ -192,6 +201,16 @@ export function TripProvider({ children }: { children: React.ReactNode }) {
     if (fresh) setCurrentUser(fresh);
   }, [users]);
 
+  // Connect speech state listener
+  useEffect(() => {
+    onJarvisSpeechStateChange((speaking) => {
+      setIsSpeaking(speaking);
+    });
+    return () => {
+      stopJarvisSpeech();
+    };
+  }, []);
+
   // Compute Conflicts (User constraints + Weather / Temporal overlaps)
   const rawConflicts = useMemo(() => {
     const userAlerts = detectTripConflicts(itinerary, users);
@@ -219,55 +238,13 @@ export function TripProvider({ children }: { children: React.ReactNode }) {
     return recommendNextPayer(netBalances, users);
   }, [netBalances, users]);
 
-  // Speech synthesis for voice briefing with Chrome keep-alive heartbeat
+  // Speech synthesis using natural British J.A.R.V.I.S. neural voice cadence
   const speakText = (text: string) => {
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = currentUser.personaType === 'elderly' ? 0.9 : 1.0;
-      utterance.pitch = 1.0;
-
-      const voices = window.speechSynthesis.getVoices();
-      const preferred = voices.find(
-        (v) =>
-          v.lang.startsWith('en') &&
-          (v.name.includes('Natural') ||
-            v.name.includes('Google') ||
-            v.name.includes('Samantha') ||
-            v.name.includes('India') ||
-            v.name.includes('UK'))
-      ) || voices[0];
-      if (preferred) utterance.voice = preferred;
-
-      let keepAliveInterval: any;
-      utterance.onstart = () => {
-        setIsSpeaking(true);
-        keepAliveInterval = setInterval(() => {
-          if (window.speechSynthesis.speaking) {
-            window.speechSynthesis.pause();
-            window.speechSynthesis.resume();
-          }
-        }, 8000);
-      };
-
-      const cleanup = () => {
-        clearInterval(keepAliveInterval);
-        setIsSpeaking(false);
-      };
-
-      utterance.onend = cleanup;
-      utterance.onerror = cleanup;
-      window.speechSynthesis.speak(utterance);
-    } else {
-      setIsSpeaking(true);
-      setTimeout(() => setIsSpeaking(false), 2500);
-    }
+    speakWithJarvisVoice(text, 'en-GB', true);
   };
 
   const stopSpeaking = () => {
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-    }
+    stopJarvisSpeech();
     setIsSpeaking(false);
   };
 
@@ -520,29 +497,380 @@ export function TripProvider({ children }: { children: React.ReactNode }) {
       updateTravelStatus(currentUser.id, res.cardData.step, res.cardData.text);
     }
 
-    // Run Local Edge SLM analysis to check for chained multi-intent or entity extractions
+    // Run Local Edge SLM analysis to execute deterministic 26-tool actions
     const slmAnalysis = runEdgeSlmNlu(command, { currentUser, users });
+    let shouldSpeak = true;
+
     for (const intent of slmAnalysis.intents) {
-      if (intent.type === 'WEATHER_SWAP') {
-        adaptWeatherIndoor(intent.params?.day);
-      } else if (intent.type === 'HEAL_CONFLICTS') {
-        autoHealSchedule(intent.params?.day);
-      } else if (intent.type === 'ADD_PACKING' && intent.params?.item) {
-        setPackingList((prev) => [
-          ...prev,
-          { id: `pk-${Date.now()}`, text: intent.params.item, tag: 'User Added', done: false },
-        ]);
-      } else if (intent.type === 'ADD_EXPENSE' && intent.params?.amount) {
-        addExpense({
-          title: intent.params.title || 'Group Expense',
-          amount: intent.params.amount,
-          currency: 'INR',
-          paidByUserId: intent.params.payerId || currentUser.id,
-          splitWithUserIds: users.map((u) => u.id),
-          category: intent.params.category || 'misc',
-          date: 'Today',
-          verified: true,
-        });
+      switch (intent.type) {
+        case 'STOP_SPEECH': {
+          stopJarvisSpeech();
+          setIsSpeaking(false);
+          shouldSpeak = false;
+          break;
+        }
+        case 'SET_CURRENCY': {
+          if (intent.params?.currency) {
+            setCurrency(intent.params.currency);
+          }
+          break;
+        }
+        case 'SWITCH_DAY': {
+          if (intent.params?.day) {
+            setActiveTab('timeline');
+          }
+          break;
+        }
+        case 'GENERATE_DAY_PLAN': {
+          const d = intent.params?.day || 3;
+          const city = intent.params?.city || 'Jaipur';
+          const newStops: ItineraryItem[] = [
+            {
+              id: `gen-d${d}-1-${Date.now()}`,
+              day: d,
+              date: `Day ${d}`,
+              time: '09:30',
+              endTime: '11:30',
+              title: `${city} City Palace & Private Royal Quarters`,
+              description: `Guided tour of the Chandra Mahal & courtyard collections with elevator and ramp accessibility.`,
+              category: 'activity',
+              location: `Old City, ${city}`,
+              walkingDistanceMeters: 250,
+              stairsCount: 0,
+              cost: 500,
+              costPerPerson: 500,
+              isOutdoor: false,
+              wheelchairAccessible: true,
+              elderNote: 'Elevator access confirmed for Dadaji.',
+              kidQuest: 'Find the 4 peacock doors representing the 4 seasons! (+150 XP)',
+              kidQuestCompleted: false,
+              indoorFallback: 'City Palace Museum (Indoor Galleries)',
+              status: 'confirmed',
+            },
+            {
+              id: `gen-d${d}-2-${Date.now()}`,
+              day: d,
+              date: `Day ${d}`,
+              time: '12:30',
+              endTime: '14:00',
+              title: `Royal Rajasthani Heritage Thali & Puppet Show`,
+              description: 'Authentic pure vegetarian multi-course thali lunch with low-sodium options.',
+              category: 'dining',
+              location: `MI Road, ${city}`,
+              walkingDistanceMeters: 50,
+              stairsCount: 0,
+              cost: 650,
+              costPerPerson: 650,
+              isOutdoor: false,
+              wheelchairAccessible: true,
+              elderNote: 'Ground floor dining with cushioned seating.',
+              kidQuest: 'Watch the Kathputli puppet dance and collect an artisan souvenir! (+150 XP)',
+              kidQuestCompleted: false,
+              indoorFallback: 'Air-conditioned Private Dining Room',
+              status: 'confirmed',
+            },
+            {
+              id: `gen-d${d}-3-${Date.now()}`,
+              day: d,
+              date: `Day ${d}`,
+              time: '15:30',
+              endTime: '17:30',
+              title: `Albert Hall Museum & Heritage Indo-Saracenic Gallery`,
+              description: 'Historical museum housing rare carpets, miniature paintings, and Egyptian mummy artifact.',
+              category: 'activity',
+              location: `Ram Niwas Garden, ${city}`,
+              walkingDistanceMeters: 180,
+              stairsCount: 0,
+              cost: 300,
+              costPerPerson: 300,
+              isOutdoor: false,
+              wheelchairAccessible: true,
+              elderNote: 'Wheelchair ramps and frequent resting benches.',
+              kidQuest: 'Locate the ancient Egyptian mummy in the basement hall! (+200 XP)',
+              kidQuestCompleted: false,
+              indoorFallback: 'Albert Hall Museum Galleries',
+              status: 'confirmed',
+            },
+          ];
+          setItinerary((prev) => [...prev.filter((i) => i.day !== d), ...newStops]);
+          setActiveTab('timeline');
+          playJarvisSound('heal', true);
+          break;
+        }
+        case 'SET_WEATHER': {
+          if (intent.params?.weather) {
+            setWeather(intent.params.weather);
+          }
+          break;
+        }
+        case 'WEATHER_SWAP': {
+          adaptWeatherIndoor(intent.params?.day);
+          break;
+        }
+        case 'HEAL_CONFLICTS': {
+          autoHealSchedule(intent.params?.day);
+          playJarvisSound('heal', true);
+          break;
+        }
+        case 'SET_PERSONA': {
+          const p = intent.params?.persona;
+          let target = users[0];
+          if (p === 'elderly' || intent.params?.userId === 'dadaji') {
+            target =
+              users.find(
+                (u) =>
+                  u.id === 'dadaji' ||
+                  u.personaType === 'elderly' ||
+                  u.name.toLowerCase().includes('dadaji')
+              ) || users[1];
+          } else if (p === 'kid' || intent.params?.userId === 'kabir') {
+            target =
+              users.find(
+                (u) =>
+                  u.id === 'kabir' ||
+                  u.personaType === 'kid' ||
+                  u.name.toLowerCase().includes('kabir')
+              ) || users[2];
+          } else {
+            target =
+              users.find(
+                (u) =>
+                  u.id === 'rohan' ||
+                  u.role === 'planner' ||
+                  u.name.toLowerCase().includes('rohan')
+              ) || users[0];
+          }
+          if (target) {
+            setCurrentUser(target);
+            try {
+              switchQuickCompanion(target.id);
+            } catch {}
+          }
+          break;
+        }
+        case 'SWITCH_USER': {
+          const targetId = intent.params?.memberId || intent.params?.userId;
+          const target =
+            users.find(
+              (u) =>
+                u.id === targetId ||
+                u.name.toLowerCase().includes(String(targetId || '').toLowerCase())
+            ) || users[0];
+          if (target) {
+            setCurrentUser(target);
+            try {
+              switchQuickCompanion(target.id);
+            } catch {}
+          }
+          break;
+        }
+        case 'COMPLETE_KID_QUEST': {
+          const q = (intent.params?.query || '').toLowerCase();
+          setItinerary((prev) =>
+            prev.map((item) => {
+              const words = item.title.toLowerCase().split(/\s+/);
+              if (q.includes('all') || words.some((w) => w.length > 3 && q.includes(w))) {
+                return { ...item, kidQuestCompleted: true };
+              }
+              return item;
+            })
+          );
+          playJarvisSound('xp', true);
+          break;
+        }
+        case 'VOTE_POLL': {
+          const activePoll = polls.find((p) => p.status === 'active') || polls[0];
+          if (activePoll && activePoll.options.length > 0) {
+            submitQuadraticVote(activePoll.id, activePoll.options[0].id, 4);
+          }
+          break;
+        }
+        case 'COMMIT_POLL': {
+          const activePoll = polls.find((p) => p.status === 'active') || polls[0];
+          if (activePoll) finalizePoll(activePoll.id);
+          break;
+        }
+        case 'CREATE_POLL': {
+          const newPoll: MechanismPoll = {
+            id: `poll-${Date.now()}`,
+            title: `Day 2 Evening Cultural Consensus Choice`,
+            description: 'Group decision mechanism with quadratic voice credits.',
+            mechanismType: 'quadratic',
+            status: 'active',
+            deadline: '20:00',
+            options: [
+              {
+                id: `opt-${Date.now()}-1`,
+                title: 'Private Chokhi Dhani Folk Village Tour',
+                description: 'Rajasthani dance, puppet show, and royal dining.',
+                location: 'Chokhi Dhani Resort',
+                category: 'dining',
+                costEstimate: '₹1,200',
+                estimatedCost: 1200,
+                votes: 8,
+              },
+              {
+                id: `opt-${Date.now()}-2`,
+                title: 'Nahargarh Fort Sunset Viewpoint',
+                description: 'Panoramic dusk views over the pink city.',
+                location: 'Nahargarh Hills',
+                category: 'activity',
+                costEstimate: '₹350',
+                estimatedCost: 350,
+                votes: 5,
+              },
+            ],
+            userVotes: {},
+          };
+          setPolls((prev) => [newPoll, ...prev]);
+          setActiveTab('decisions');
+          break;
+        }
+        case 'ADD_PACKING': {
+          const itemText = intent.params?.text || intent.params?.item;
+          if (itemText) {
+            setPackingList((prev) => [
+              { id: `pk-${Date.now()}`, text: itemText, tag: 'Jarvis Added', done: false },
+              ...prev,
+            ]);
+            setActiveTab('vault');
+          }
+          break;
+        }
+        case 'TOGGLE_PACKING': {
+          const q = (intent.params?.query || '').toLowerCase();
+          setPackingList((prev) =>
+            prev.map((item) => {
+              if (
+                q.includes('all') ||
+                item.text.toLowerCase().split(/\s+/).some((w) => w.length > 3 && q.includes(w))
+              ) {
+                return { ...item, done: true };
+              }
+              return item;
+            })
+          );
+          setActiveTab('vault');
+          break;
+        }
+        case 'REMOVE_PACKING': {
+          const q = (intent.params?.query || '').toLowerCase();
+          setPackingList((prev) =>
+            prev.filter(
+              (item) =>
+                !item.text.toLowerCase().split(/\s+/).some((w) => w.length > 3 && q.includes(w))
+            )
+          );
+          setActiveTab('vault');
+          break;
+        }
+        case 'SPEAK_PHRASE': {
+          const phrase = LOCAL_PHRASES[0]?.hi || 'Namaste';
+          speakWithJarvisVoice(phrase, 'hi-IN', true);
+          break;
+        }
+        case 'OPEN_SOS': {
+          setIsSosModalOpen(true);
+          playJarvisSound('sos', true);
+          break;
+        }
+        case 'IMPORT_VAULT_DOC': {
+          setActiveTab('vault');
+          setVaultSubTab('passes');
+          break;
+        }
+        case 'ADD_EXPENSE': {
+          if (intent.params?.amount) {
+            addExpense({
+              title: intent.params.title || 'Jaipur City Transit',
+              amount: intent.params.amount,
+              currency: 'INR',
+              paidByUserId: intent.params.payerId || currentUser.id,
+              splitWithUserIds: users.map((u) => u.id),
+              category: (intent.params.category as Expense['category']) || 'transit',
+              date: 'Today',
+              verified: true,
+            });
+            setActiveTab('expenses');
+          }
+          break;
+        }
+        case 'REMOVE_EXPENSE': {
+          setExpenses((prev) => (prev.length > 0 ? prev.slice(1) : prev));
+          setActiveTab('expenses');
+          break;
+        }
+        case 'SETTLE_DEBTS': {
+          setActiveTab('expenses');
+          break;
+        }
+        case 'UPDATE_STOP': {
+          const { query, newTime, newCost, newDay } = intent.params || {};
+          if (query) {
+            setItinerary((prev) =>
+              prev.map((item) => {
+                if (item.title.toLowerCase().includes(query.toLowerCase())) {
+                  return {
+                    ...item,
+                    time: newTime || item.time,
+                    cost: newCost !== null && newCost !== undefined ? newCost : item.cost,
+                    costPerPerson: newCost !== null && newCost !== undefined ? newCost : item.costPerPerson,
+                    day: newDay || item.day,
+                  };
+                }
+                return item;
+              })
+            );
+            setActiveTab('timeline');
+          }
+          break;
+        }
+        case 'REMOVE_STOP': {
+          const q = (intent.params?.query || '').toLowerCase();
+          setItinerary((prev) =>
+            prev.filter(
+              (item) =>
+                !item.title.toLowerCase().split(/\s+/).some((w) => w.length > 3 && q.includes(w))
+            )
+          );
+          setActiveTab('timeline');
+          break;
+        }
+        case 'OPTIMIZE_BUDGET': {
+          setItinerary((prev) =>
+            prev.map((i) => (i.cost && i.cost > 500 ? { ...i, cost: Math.round(i.cost * 0.7), costPerPerson: Math.round(i.cost * 0.7) } : i))
+          );
+          setActiveTab('expenses');
+          break;
+        }
+        case 'ADD_STOP': {
+          if (intent.params) {
+            const addedItem: ItineraryItem = {
+              id: `itin-${Date.now()}`,
+              day: intent.params.day || 1,
+              date: `Day ${intent.params.day || 1}`,
+              time: intent.params.startTime || '14:00',
+              endTime: intent.params.endTime || '16:00',
+              title: intent.params.title || 'Jaipur Heritage Stop',
+              description: intent.params.description || 'Added via Autonomous JARVIS voice control.',
+              category: 'activity',
+              location: intent.params.location || 'Jaipur',
+              walkingDistanceMeters: 150,
+              stairsCount: 0,
+              cost: intent.params.cost || 200,
+              costPerPerson: intent.params.cost || 200,
+              isOutdoor: false,
+              wheelchairAccessible: true,
+              status: 'confirmed',
+            };
+            setItinerary((prev) => [...prev, addedItem]);
+            setActiveTab('timeline');
+          }
+          break;
+        }
+        case 'STATUS_BRIEFING':
+        default:
+          break;
       }
     }
 
@@ -554,8 +882,10 @@ export function TripProvider({ children }: { children: React.ReactNode }) {
       setVaultSubTab(res.navigation.subTab);
     }
 
-    // Speak aloud response
-    speakText(res.spokenResponse);
+    // Speak aloud response using British voice cadence if speech wasn't silenced
+    if (shouldSpeak) {
+      speakText(res.spokenResponse);
+    }
 
     return res;
   };
@@ -580,14 +910,17 @@ export function TripProvider({ children }: { children: React.ReactNode }) {
         isAssistantOpen,
         setIsAssistantOpen,
         isSpeaking,
+        isJarvisSpeaking: isSpeaking,
         speakText,
         stopSpeaking,
+        stopJarvisVoiceNow: stopSpeaking,
         isJarvisOpen,
         setIsJarvisOpen,
         isSosModalOpen,
         setIsSosModalOpen,
         lastJarvisResult,
         executeJarvisCommand,
+        executeAutonomousJarvis: executeJarvisCommand,
         resolveConflict,
         submitQuadraticVote,
         finalizePoll,

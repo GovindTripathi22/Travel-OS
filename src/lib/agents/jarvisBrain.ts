@@ -423,15 +423,40 @@ export function processJarvisVoiceCommand(
       lower.includes('dadaji') ||
       lower.includes('elderly') ||
       lower.includes('senior') ||
-      lower.includes('grandfather')
+      lower.includes('grandfather') ||
+      lower.includes('devendra')
     ) {
-      targetUser = ctx.users.find((u) => u.id === 'dadaji') || targetUser;
-    } else if (lower.includes('kabir') || lower.includes('kid')) {
-      targetUser = ctx.users.find((u) => u.id === 'kabir') || targetUser;
+      targetUser =
+        ctx.users.find(
+          (u) =>
+            u.id === 'dadaji' ||
+            u.personaType === 'elderly' ||
+            u.name.toLowerCase().includes('dadaji') ||
+            u.name.toLowerCase().includes('devendra')
+        ) || targetUser;
+    } else if (lower.includes('kabir') || lower.includes('kid') || lower.includes('leo')) {
+      targetUser =
+        ctx.users.find(
+          (u) =>
+            u.id === 'kabir' ||
+            u.personaType === 'kid' ||
+            u.name.toLowerCase().includes('kabir') ||
+            u.name.toLowerCase().includes('leo')
+        ) || targetUser;
     } else if (lower.includes('priya') || lower.includes('jain')) {
-      targetUser = ctx.users.find((u) => u.id === 'priya') || targetUser;
-    } else if (lower.includes('rohan') || lower.includes('planner')) {
-      targetUser = ctx.users.find((u) => u.id === 'rohan') || targetUser;
+      targetUser =
+        ctx.users.find(
+          (u) => u.id === 'priya' || u.name.toLowerCase().includes('priya')
+        ) || targetUser;
+    } else if (lower.includes('rohan') || lower.includes('planner') || lower.includes('aarav')) {
+      targetUser =
+        ctx.users.find(
+          (u) =>
+            u.id === 'rohan' ||
+            u.role === 'planner' ||
+            u.name.toLowerCase().includes('rohan') ||
+            u.name.toLowerCase().includes('aarav')
+        ) || targetUser;
     }
 
     return {
@@ -574,3 +599,24 @@ export function processJarvisVoiceCommand(
     ],
   };
 }
+
+export interface JarvisExecutionResult {
+  command: string;
+  latencyMs: number;
+  tools: string[];
+  summary: string;
+  intents: any[];
+}
+
+export function analyzeJarvisCommand(rawPrompt: string, activeDay = 1): JarvisExecutionResult {
+  const { runEdgeSlmNlu } = require('../slm/edgeSlmEngine');
+  const slm = runEdgeSlmNlu(rawPrompt, { activeDay });
+  return {
+    command: rawPrompt,
+    latencyMs: slm.latencyMs,
+    tools: slm.intents.map((i: any) => i.type),
+    summary: `Jarvis parsed ${slm.intents.length} autonomous tool action(s).`,
+    intents: slm.intents,
+  };
+}
+

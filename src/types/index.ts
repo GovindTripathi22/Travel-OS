@@ -46,6 +46,7 @@ export interface ItineraryItem {
   stairsCount?: number;
   dietaryTags?: string[];
   costPerPerson?: number;
+  cost?: number;
   status: 'confirmed' | 'draft' | 'pending_vote';
   conflictWarning?: string;
   image?: string;
@@ -79,9 +80,11 @@ export interface PollOption {
   title: string;
   description: string;
   costEstimate: string;
+  estimatedCost?: number;
   location: string;
   category: string;
   image?: string;
+  votes?: number;
 }
 
 export interface MechanismPoll {

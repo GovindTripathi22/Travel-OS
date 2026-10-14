@@ -61,6 +61,7 @@ export default function JarvisHUDModal() {
   };
 
   const startVoiceInput = () => {
+    stopSpeaking();
     if (typeof window !== 'undefined') {
       const SpeechRecognition =
         (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
