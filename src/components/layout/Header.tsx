@@ -12,7 +12,10 @@ import {
   ShieldCheck,
   LogOut,
   LogIn,
-  UserCheck
+  UserCheck,
+  CloudRain,
+  Sun,
+  Coins,
 } from 'lucide-react';
 
 export default function Header() {
@@ -25,6 +28,10 @@ export default function Header() {
     viewMode,
     setViewMode,
     triggerJarvisVoice,
+    weather,
+    toggleWeather,
+    currency,
+    setCurrency,
   } = useTrip();
 
   const {
@@ -206,6 +213,46 @@ export default function Header() {
                 </div>
               )}
             </div>
+
+            {/* Currency Selector Pill */}
+            <div className="flex items-center bg-white border border-[#EBE7DF] rounded-full p-0.5 text-xs shadow-2xs">
+              {(['INR', 'USD', 'EUR', 'JPY'] as const).map((c) => (
+                <button
+                  key={c}
+                  onClick={() => setCurrency(c)}
+                  className={`px-2 py-0.5 rounded-full font-bold text-[10px] transition ${
+                    currency === c
+                      ? 'bg-[#1C1917] text-white shadow-xs'
+                      : 'text-[#78716C] hover:text-[#1C1917]'
+                  }`}
+                >
+                  {c}
+                </button>
+              ))}
+            </div>
+
+            {/* Weather Simulator Pill */}
+            <button
+              onClick={toggleWeather}
+              title={`Simulated Weather: ${weather}. Click to toggle rain risk simulation.`}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border transition shadow-2xs ${
+                weather === 'Rainy'
+                  ? 'bg-blue-50 text-blue-700 border-blue-200 animate-pulse'
+                  : 'bg-amber-50 text-amber-700 border-amber-200'
+              }`}
+            >
+              {weather === 'Rainy' ? (
+                <>
+                  <CloudRain className="w-3.5 h-3.5 text-blue-600" />
+                  <span className="hidden sm:inline">Rainy (Sim)</span>
+                </>
+              ) : (
+                <>
+                  <Sun className="w-3.5 h-3.5 text-amber-600" />
+                  <span className="hidden sm:inline">Sunny</span>
+                </>
+              )}
+            </button>
 
             {/* Mobile Viewport Toggle */}
             <button

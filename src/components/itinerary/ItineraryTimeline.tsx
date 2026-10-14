@@ -7,19 +7,32 @@ import {
   Utensils,
   Footprints,
   CheckCircle2,
-  Sparkles
+  Sparkles,
+  CloudRain,
+  Wand2,
+  AlertTriangle,
 } from 'lucide-react';
 
 export default function ItineraryTimeline() {
-  const { itinerary, conflicts, resolveConflict } = useTrip();
+  const {
+    itinerary,
+    conflicts,
+    resolveConflict,
+    weather,
+    adaptWeatherIndoor,
+    autoHealSchedule,
+  } = useTrip();
   const [selectedDay, setSelectedDay] = useState(1);
 
   const dayEvents = itinerary.filter((item) => item.day === selectedDay);
+  const dayConflicts = conflicts.filter(
+    (c) => !c.resolved && dayEvents.some((e) => e.id === c.eventId)
+  );
 
   return (
     <div className="space-y-4">
-      {/* Day Selector */}
-      <div className="flex items-center justify-between pb-2 border-b border-[#EBE7DF]">
+      {/* Day Selector & Auto-Heal Quick Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-[#EBE7DF]">
         <div className="flex items-center gap-1.5 bg-[#F4F1EA] p-1 rounded-xl">
           {[1, 2, 3].map((d) => (
             <button
@@ -36,9 +49,30 @@ export default function ItineraryTimeline() {
           ))}
         </div>
 
-        <span className="text-xs text-[#A8A29E] font-medium">
-          {dayEvents.length} events
-        </span>
+        {/* Quick Auto-Healing & Weather Adaptation Actions */}
+        <div className="flex items-center gap-2">
+          {weather === 'Rainy' && (
+            <button
+              onClick={() => adaptWeatherIndoor(selectedDay)}
+              className="flex items-center gap-1.5 px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition shadow-xs"
+            >
+              <CloudRain className="w-3.5 h-3.5" />
+              <span>Swap Indoor Stops</span>
+            </button>
+          )}
+
+          <button
+            onClick={() => autoHealSchedule(selectedDay)}
+            className="flex items-center gap-1.5 px-3 py-1 bg-[#1C1917] hover:bg-[#2C2724] text-white rounded-xl text-xs font-bold transition shadow-xs"
+          >
+            <Wand2 className="w-3.5 h-3.5 text-[#D97746]" />
+            <span>1-Click Auto-Heal</span>
+          </button>
+
+          <span className="text-xs text-[#A8A29E] font-medium hidden sm:inline">
+            {dayEvents.length} events
+          </span>
+        </div>
       </div>
 
       {/* Events List */}

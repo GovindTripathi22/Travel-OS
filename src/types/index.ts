@@ -37,6 +37,7 @@ export interface ItineraryItem {
   day: number;
   date: string;
   time: string;
+  endTime?: string;
   title: string;
   description: string;
   category: 'activity' | 'dining' | 'transit' | 'rest';
@@ -48,6 +49,13 @@ export interface ItineraryItem {
   status: 'confirmed' | 'draft' | 'pending_vote';
   conflictWarning?: string;
   image?: string;
+  isOutdoor?: boolean;
+  indoorFallback?: string;
+  fatigueLoad?: number;
+  wheelchairAccessible?: boolean;
+  elderNote?: string;
+  kidQuest?: string;
+  kidQuestCompleted?: boolean;
 }
 
 export interface ConflictAlert {
@@ -194,4 +202,20 @@ export interface JarvisActionResult {
     subTab?: 'passes' | 'rendezvous' | 'alignment' | 'photos';
   };
 }
+
+export interface PackingItem {
+  id: string;
+  text: string;
+  tag: string;
+  done: boolean;
+}
+
+export interface PhraseItem {
+  id: string;
+  en: string;
+  hi?: string;
+  jp?: string;
+  badge: string;
+}
+
 

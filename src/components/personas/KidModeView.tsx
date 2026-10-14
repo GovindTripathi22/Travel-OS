@@ -17,24 +17,19 @@ import {
 } from 'lucide-react';
 
 export default function KidModeView() {
-  const { currentUser, setIsAssistantOpen, users } = useTrip();
-  const [xp, setXp] = useState(320);
+  const { currentUser, setIsAssistantOpen, users, itinerary, toggleKidQuest } = useTrip();
   const [showLostModal, setShowLostModal] = useState(false);
-  const [claimedQuests, setClaimedQuests] = useState<Record<string, boolean>>({
-    'peacock': true,
-    'sundial': false,
-    'camel': false,
-  });
 
   const planner = users.find((u) => u.role === 'planner') || users[0];
+  const questStops = itinerary.filter((item) => item.kidQuest);
+  const completedStopsCount = questStops.filter((item) => item.kidQuestCompleted).length;
+  const baseXP = 200;
+  const earnedXP = baseXP + completedStopsCount * 150;
+  const maxXP = baseXP + Math.max(1, questStops.length) * 150;
 
-  const triggerQuestComplete = (questKey: string, questXp: number) => {
-    if (claimedQuests[questKey]) return;
-
-    setClaimedQuests((prev) => ({ ...prev, [questKey]: true }));
-    setXp((prev) => prev + questXp);
-
-    if (typeof window !== 'undefined') {
+  const handleQuestToggle = (stopId: string, isCompleted?: boolean) => {
+    toggleKidQuest(stopId);
+    if (!isCompleted && typeof window !== 'undefined') {
       confetti({
         particleCount: 80,
         spread: 70,
@@ -77,11 +72,11 @@ export default function KidModeView() {
             <div className="flex items-center justify-center gap-1.5 text-amber-100 text-xs font-bold uppercase tracking-wider">
               <Trophy className="w-4 h-4 text-yellow-200" /> Total Explorer XP
             </div>
-            <div className="text-3xl font-black">{xp} / 400 XP</div>
+            <div className="text-3xl font-black">{earnedXP} / {maxXP} XP</div>
             <div className="w-44 bg-black/20 h-2.5 rounded-full mt-2 overflow-hidden mx-auto">
               <div
                 className="bg-yellow-300 h-full rounded-full transition-all duration-500"
-                style={{ width: `${Math.min(100, (xp / 400) * 100)}%` }}
+                style={{ width: `${Math.min(100, (earnedXP / maxXP) * 100)}%` }}
               />
             </div>
           </div>
@@ -99,124 +94,60 @@ export default function KidModeView() {
         </button>
       </div>
 
-      {/* Fun Countdown Hero */}
-      <div className="bg-white border-2 border-orange-200 rounded-3xl p-6 shadow-sm mb-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-4 text-center sm:text-left">
-          <div className="w-16 h-16 rounded-2xl bg-orange-100 flex items-center justify-center text-3xl shrink-0">
-            🐪
-          </div>
-          <div>
-            <span className="text-xs font-black uppercase tracking-wider text-orange-600">
-              Next Exciting Adventure
-            </span>
-            <h2 className="text-2xl font-black text-slate-900">
-              Chokhi Dhani Camel Ride!
-            </h2>
-            <p className="text-slate-600 text-sm">
-              Live puppet theatre, magic show, and fresh mango kulfi tonight.
-            </p>
-          </div>
-        </div>
-
-        <div className="bg-orange-50 border border-orange-200 px-5 py-3 rounded-2xl text-center shrink-0">
-          <div className="text-xs font-bold text-orange-800 uppercase tracking-wide">
-            Starts In
-          </div>
-          <div className="text-2xl font-black text-orange-600">
-            ~45 Mins
-          </div>
-        </div>
-      </div>
-
       {/* Scavenger Hunt & Passport Stamps */}
       <div className="bg-white border-2 border-amber-200 rounded-3xl p-6 shadow-sm mb-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <Compass className="w-6 h-6 text-amber-600" />
             <h2 className="text-xl font-black text-slate-900">
-              Explorer Passport & Quests
+              Explorer Passport & Quests ({completedStopsCount}/{questStops.length} Solved)
             </h2>
           </div>
           <span className="text-xs font-bold bg-amber-100 text-amber-800 px-3 py-1 rounded-full">
-            Tap to Claim XP!
+            Tap to Claim +150 XP!
           </span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {/* Quest 1 */}
-          <div
-            onClick={() => triggerQuestComplete('peacock', 50)}
-            className={`border-2 rounded-2xl p-4 text-center transition cursor-pointer ${
-              claimedQuests['peacock']
-                ? 'bg-emerald-50 border-emerald-300'
-                : 'bg-white border-slate-200 hover:border-amber-400'
-            }`}
-          >
-            <div className="text-4xl mb-2">🦚</div>
-            <h3 className="font-bold text-slate-900 text-sm">Spot Royal Peacocks</h3>
-            <p className="text-xs text-slate-500 mt-1">Look in Rambagh Palace Garden</p>
-            <div className="mt-3">
-              {claimedQuests['peacock'] ? (
-                <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
-                  <CheckCircle2 className="w-3.5 h-3.5" /> Stamp Earned (+50 XP)
-                </span>
-              ) : (
-                <span className="text-xs font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
-                  Tap when Spotted (+50 XP)
-                </span>
-              )}
-            </div>
-          </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {questStops.map((stop) => {
+            const isDone = !!stop.kidQuestCompleted;
 
-          {/* Quest 2 */}
-          <div
-            onClick={() => triggerQuestComplete('sundial', 60)}
-            className={`border-2 rounded-2xl p-4 text-center transition cursor-pointer ${
-              claimedQuests['sundial']
-                ? 'bg-emerald-50 border-emerald-300'
-                : 'bg-white border-slate-200 hover:border-amber-400'
-            }`}
-          >
-            <div className="text-4xl mb-2">⌛</div>
-            <h3 className="font-bold text-slate-900 text-sm">Read the Ancient Sundial</h3>
-            <p className="text-xs text-slate-500 mt-1">At Jantar Mantar Observatory</p>
-            <div className="mt-3">
-              {claimedQuests['sundial'] ? (
-                <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
-                  <CheckCircle2 className="w-3.5 h-3.5" /> Stamp Earned (+60 XP)
-                </span>
-              ) : (
-                <span className="text-xs font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
-                  Tap to Claim (+60 XP)
-                </span>
-              )}
-            </div>
-          </div>
+            return (
+              <div
+                key={stop.id}
+                onClick={() => handleQuestToggle(stop.id, isDone)}
+                className={`border-2 rounded-2xl p-4 transition cursor-pointer flex flex-col justify-between ${
+                  isDone
+                    ? 'bg-emerald-50 border-emerald-300'
+                    : 'bg-white border-slate-200 hover:border-amber-400'
+                }`}
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-2xl">🦁</span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                      Day {stop.day} &bull; {stop.time}
+                    </span>
+                  </div>
+                  <h3 className="font-bold text-slate-900 text-sm">{stop.title}</h3>
+                  <p className="text-xs text-slate-600 mt-1 font-medium">{stop.kidQuest}</p>
+                </div>
 
-          {/* Quest 3 */}
-          <div
-            onClick={() => triggerQuestComplete('camel', 80)}
-            className={`border-2 rounded-2xl p-4 text-center transition cursor-pointer ${
-              claimedQuests['camel']
-                ? 'bg-emerald-50 border-emerald-300'
-                : 'bg-white border-slate-200 hover:border-amber-400'
-            }`}
-          >
-            <div className="text-4xl mb-2">🐪</div>
-            <h3 className="font-bold text-slate-900 text-sm">Ride the Royal Camel</h3>
-            <p className="text-xs text-slate-500 mt-1">Tonight at Chokhi Dhani</p>
-            <div className="mt-3">
-              {claimedQuests['camel'] ? (
-                <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
-                  <CheckCircle2 className="w-3.5 h-3.5" /> Stamp Earned (+80 XP)
-                </span>
-              ) : (
-                <span className="text-xs font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
-                  Tap after Ride (+80 XP)
-                </span>
-              )}
-            </div>
-          </div>
+                <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+                  <span className="text-xs font-bold text-amber-600">+150 XP Bounty</span>
+                  {isDone ? (
+                    <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded-full inline-flex items-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5" /> Stamp Earned!
+                    </span>
+                  ) : (
+                    <span className="text-xs font-bold text-amber-800 bg-amber-100 px-2.5 py-1 rounded-full">
+                      Tap to Complete Mission
+                    </span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 

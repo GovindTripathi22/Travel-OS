@@ -88,3 +88,25 @@ export function minimizeDebts(
 
   return settlements;
 }
+
+/**
+ * Smart Fairness Recommender: Determines who should pay for the next group expense.
+ * Identifies the companion with the lowest net balance (highest deficit vs group average).
+ */
+export function recommendNextPayer(balances: Record<string, number>, users: User[]): { nextPayer: User; nextPayerDeficit: number } {
+  let nextPayer = users[0] || { id: 'rohan', name: 'Rohan' };
+  let minBalance = Infinity;
+
+  for (const u of users) {
+    const bal = balances[u.id] ?? 0;
+    if (bal < minBalance) {
+      minBalance = bal;
+      nextPayer = u;
+    }
+  }
+
+  return {
+    nextPayer,
+    nextPayerDeficit: Math.round(Math.abs(minBalance === Infinity ? 0 : minBalance) * 100) / 100,
+  };
+}

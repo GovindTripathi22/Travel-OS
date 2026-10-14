@@ -12,14 +12,20 @@ import {
   Lock,
   Users,
   CheckCircle2,
-  X
+  X,
+  CheckSquare,
+  Square,
+  Languages,
+  Luggage,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth/AuthContext';
+import { LOCAL_PHRASES } from '@/lib/state/mockData';
 
 export default function DocumentVault() {
-  const { documents, users, currentUser } = useTrip();
+  const { documents, users, currentUser, packingList, togglePackingItem } = useTrip();
   const { canViewDocument, isAdmin } = useAuth();
   const [selectedDoc, setSelectedDoc] = useState<DocumentItem | null>(null);
+  const [vaultView, setVaultView] = useState<'passes' | 'packing' | 'phrases'>('passes');
 
   // Filter documents based on strict Firebase RBAC permissions
   const visibleDocuments = documents.filter((doc) => canViewDocument(doc));
@@ -45,13 +51,51 @@ export default function DocumentVault() {
           </p>
         </div>
 
-        <div className="text-xs text-slate-500 font-medium">
-          Showing <strong>{visibleDocuments.length}</strong> permitted documents for {currentUser.name.split(' ')[0]}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+          {/* Sub-View Selector */}
+          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-2xl">
+            <button
+              onClick={() => setVaultView('passes')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+                vaultView === 'passes'
+                  ? 'bg-white text-slate-900 shadow-2xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <FileText className="w-3.5 h-3.5" />
+              <span>Passes ({visibleDocuments.length})</span>
+            </button>
+
+            <button
+              onClick={() => setVaultView('packing')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+                vaultView === 'packing'
+                  ? 'bg-white text-slate-900 shadow-2xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Luggage className="w-3.5 h-3.5" />
+              <span>Packing ({packingList.filter((p) => p.done).length}/{packingList.length})</span>
+            </button>
+
+            <button
+              onClick={() => setVaultView('phrases')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+                vaultView === 'phrases'
+                  ? 'bg-white text-slate-900 shadow-2xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Languages className="w-3.5 h-3.5" />
+              <span>Phrases ({LOCAL_PHRASES.length})</span>
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Document Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* 1. Passes Grid View */}
+      {vaultView === 'passes' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {visibleDocuments.map((doc) => {
           const owner = users.find((u) => u.id === doc.ownerId);
 
@@ -105,7 +149,82 @@ export default function DocumentVault() {
             </div>
           );
         })}
-      </div>
+        </div>
+      )}
+
+      {/* 2. Packing Checklist View */}
+      {vaultView === 'packing' && (
+        <div className="bg-white border-2 border-slate-200 rounded-3xl p-6 shadow-sm space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div>
+              <h3 className="text-base font-bold text-slate-900">Essential Packing Checklist</h3>
+              <p className="text-xs text-slate-500">Curated for Jaipur, monsoon rain guards, and multi-gen health needs</p>
+            </div>
+            <span className="text-xs font-bold bg-orange-100 text-[#D97746] px-3 py-1 rounded-full">
+              {packingList.filter((p) => p.done).length} / {packingList.length} Packed
+            </span>
+          </div>
+
+          <div className="space-y-2">
+            {packingList.map((item) => (
+              <div
+                key={item.id}
+                onClick={() => togglePackingItem(item.id)}
+                className={`flex items-center justify-between p-3.5 rounded-2xl border transition cursor-pointer ${
+                  item.done
+                    ? 'bg-emerald-50/60 border-emerald-200 text-slate-500'
+                    : 'bg-white border-slate-200 hover:border-orange-300 text-slate-900'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  {item.done ? (
+                    <CheckSquare className="w-5 h-5 text-emerald-600 shrink-0" />
+                  ) : (
+                    <Square className="w-5 h-5 text-slate-400 shrink-0" />
+                  )}
+                  <span className={`text-xs font-semibold ${item.done ? 'line-through text-slate-400' : ''}`}>
+                    {item.text}
+                  </span>
+                </div>
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 shrink-0">
+                  {item.tag}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 3. Offline Travel Phrases View */}
+      {vaultView === 'phrases' && (
+        <div className="bg-white border-2 border-slate-200 rounded-3xl p-6 shadow-sm space-y-4">
+          <div className="pb-3 border-b border-slate-100">
+            <h3 className="text-base font-bold text-slate-900">Local Travel Phrasebook (Offline English &rarr; Hindi)</h3>
+            <p className="text-xs text-slate-500">Quick emergency and dietary phrases to show auto drivers, palace staff, and chefs</p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {LOCAL_PHRASES.map((phrase) => (
+              <div
+                key={phrase.id}
+                className="p-4 rounded-2xl border border-slate-200 bg-slate-50/50 flex flex-col justify-between"
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#D97746] bg-orange-100 px-2 py-0.5 rounded-full">
+                      {phrase.badge}
+                    </span>
+                  </div>
+                  <p className="text-xs font-medium text-slate-600">{phrase.en}</p>
+                  <p className="text-sm font-bold text-slate-900 mt-2 font-hindi bg-white p-2.5 rounded-xl border border-slate-200">
+                    &ldquo;{phrase.hi}&rdquo;
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Document Quick View / QR Modal */}
       {selectedDoc && (

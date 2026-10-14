@@ -21,11 +21,14 @@ import {
   INITIAL_TRAVEL_STATUS,
   INITIAL_DOCUMENTS,
   INITIAL_MEMORIES,
+  INITIAL_PACKING,
+  LOCAL_PHRASES,
 } from './mockData';
-import { calculateNetBalances, minimizeDebts } from '../algorithms/debtMinimizer';
-import { detectTripConflicts } from '../algorithms/conflictDetector';
+import { calculateNetBalances, minimizeDebts, recommendNextPayer } from '../algorithms/debtMinimizer';
+import { detectTripConflicts, detectWeatherAndTemporalConflicts, toMinutes, fromMinutes } from '../algorithms/conflictDetector';
 import { resolveQuadraticPoll, resolveBordaCountPoll } from '../algorithms/mechanismVoting';
 import { processJarvisVoiceCommand, JarvisContext } from '../agents/jarvisBrain';
+import { runEdgeSlmNlu } from '../slm/edgeSlmEngine';
 import { useAuth } from '../auth/AuthContext';
 
 interface TripContextType {
@@ -60,6 +63,16 @@ interface TripContextType {
   addExpense: (expense: Omit<Expense, 'id'>) => void;
   updateTravelStatus: (userId: string, step: TravelStatus['currentStep'], text: string) => void;
   updateWellbeing: (userId: string, battery: number) => void;
+  weather: 'Sunny' | 'Rainy';
+  toggleWeather: () => void;
+  currency: 'INR' | 'USD' | 'EUR' | 'JPY';
+  setCurrency: (c: 'INR' | 'USD' | 'EUR' | 'JPY') => void;
+  packingList: import('@/types').PackingItem[];
+  togglePackingItem: (id: string) => void;
+  autoHealSchedule: (dayTarget?: number) => void;
+  adaptWeatherIndoor: (dayTarget?: number) => void;
+  toggleKidQuest: (stopId: string) => void;
+  nextPayerInfo: { nextPayer: User; nextPayerDeficit: number };
   activeTab: 'timeline' | 'decisions' | 'expenses' | 'vault';
   setActiveTab: (tab: 'timeline' | 'decisions' | 'expenses' | 'vault') => void;
   vaultSubTab: 'passes' | 'rendezvous' | 'alignment' | 'photos';
@@ -89,8 +102,85 @@ export function TripProvider({ children }: { children: React.ReactNode }) {
   const [isSosModalOpen, setIsSosModalOpen] = useState(false);
   const [lastJarvisResult, setLastJarvisResult] = useState<JarvisActionResult | null>(null);
   const [activeTab, setActiveTab] = useState<'timeline' | 'decisions' | 'expenses' | 'vault'>('timeline');
+  const [weather, setWeather] = useState<'Sunny' | 'Rainy'>('Sunny');
+  const [currency, setCurrency] = useState<'INR' | 'USD' | 'EUR' | 'JPY'>('INR');
+  const [packingList, setPackingList] = useState<import('@/types').PackingItem[]>(INITIAL_PACKING);
   const [vaultSubTab, setVaultSubTab] = useState<'passes' | 'rendezvous' | 'alignment' | 'photos'>('passes');
   const [voiceTriggerCount, setVoiceTriggerCount] = useState(0);
+
+  const toggleWeather = () => {
+    setWeather((prev) => (prev === 'Sunny' ? 'Rainy' : 'Sunny'));
+  };
+
+  const togglePackingItem = (id: string) => {
+    setPackingList((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, done: !item.done } : item))
+    );
+  };
+
+  const toggleKidQuest = (stopId: string) => {
+    setItinerary((prev) =>
+      prev.map((item) =>
+        item.id === stopId ? { ...item, kidQuestCompleted: !item.kidQuestCompleted } : item
+      )
+    );
+  };
+
+  // Weather Adaptation: Swaps outdoor stops to verified indoor fallbacks
+  const adaptWeatherIndoor = (dayTarget?: number) => {
+    setItinerary((prev) =>
+      prev.map((item) => {
+        if ((!dayTarget || item.day === dayTarget) && item.isOutdoor && item.indoorFallback) {
+          return {
+            ...item,
+            title: item.indoorFallback,
+            description: `${item.description} [Weather Adaptation: Swapped for indoor shelter during rain]`,
+            isOutdoor: false,
+          };
+        }
+        return item;
+      })
+    );
+  };
+
+  // 1-Click Auto-Heal: Resolves temporal overlaps and adds 15m safety buffers between consecutive stops
+  const autoHealSchedule = (dayTarget?: number) => {
+    setItinerary((prev) => {
+      const days = Array.from(new Set(prev.map((i) => i.day)));
+      let updated = [...prev];
+
+      days.forEach((day) => {
+        if (dayTarget && day !== dayTarget) return;
+
+        const dayStops = updated
+          .filter((i) => i.day === day)
+          .sort((a, b) => toMinutes(a.time) - toMinutes(b.time));
+
+        let currentCursor = toMinutes(dayStops[0]?.time || '09:00');
+
+        dayStops.forEach((stop) => {
+          const startM = Math.max(toMinutes(stop.time), currentCursor);
+          const stopEnd = stop.endTime ? toMinutes(stop.endTime) : startM + 90;
+          const duration = Math.max(45, stopEnd - toMinutes(stop.time));
+          const healedEnd = startM + duration;
+
+          updated = updated.map((i) =>
+            i.id === stop.id
+              ? {
+                  ...i,
+                  time: fromMinutes(startM),
+                  endTime: fromMinutes(healedEnd),
+                }
+              : i
+          );
+
+          currentCursor = healedEnd + 15; // 15-minute buffer
+        });
+      });
+
+      return updated;
+    });
+  };
 
   const triggerJarvisVoice = () => {
     setVoiceTriggerCount((prev) => prev + 1);
@@ -102,10 +192,12 @@ export function TripProvider({ children }: { children: React.ReactNode }) {
     if (fresh) setCurrentUser(fresh);
   }, [users]);
 
-  // Compute Conflicts
+  // Compute Conflicts (User constraints + Weather / Temporal overlaps)
   const rawConflicts = useMemo(() => {
-    return detectTripConflicts(itinerary, users);
-  }, [itinerary, users]);
+    const userAlerts = detectTripConflicts(itinerary, users);
+    const weatherTemporalAlerts = detectWeatherAndTemporalConflicts(itinerary, weather);
+    return [...userAlerts, ...weatherTemporalAlerts];
+  }, [itinerary, users, weather]);
 
   const conflicts = useMemo(() => {
     return rawConflicts.map((c) => ({
@@ -114,14 +206,18 @@ export function TripProvider({ children }: { children: React.ReactNode }) {
     }));
   }, [rawConflicts, resolvedConflictIds]);
 
-  // Compute Balances and Minimized Settlements
+  // Compute Balances, Settlements, and Smart Next Payer
   const netBalances = useMemo(() => {
     return calculateNetBalances(expenses, users);
   }, [expenses, users]);
 
   const settlements = useMemo(() => {
-    return minimizeDebts(netBalances, 'INR');
-  }, [netBalances]);
+    return minimizeDebts(netBalances, currency);
+  }, [netBalances, currency]);
+
+  const nextPayerInfo = useMemo(() => {
+    return recommendNextPayer(netBalances, users);
+  }, [netBalances, users]);
 
   // Speech synthesis for voice briefing with Chrome keep-alive heartbeat
   const speakText = (text: string) => {
@@ -424,6 +520,32 @@ export function TripProvider({ children }: { children: React.ReactNode }) {
       updateTravelStatus(currentUser.id, res.cardData.step, res.cardData.text);
     }
 
+    // Run Local Edge SLM analysis to check for chained multi-intent or entity extractions
+    const slmAnalysis = runEdgeSlmNlu(command, { currentUser, users });
+    for (const intent of slmAnalysis.intents) {
+      if (intent.type === 'WEATHER_SWAP') {
+        adaptWeatherIndoor(intent.params?.day);
+      } else if (intent.type === 'HEAL_CONFLICTS') {
+        autoHealSchedule(intent.params?.day);
+      } else if (intent.type === 'ADD_PACKING' && intent.params?.item) {
+        setPackingList((prev) => [
+          ...prev,
+          { id: `pk-${Date.now()}`, text: intent.params.item, tag: 'User Added', done: false },
+        ]);
+      } else if (intent.type === 'ADD_EXPENSE' && intent.params?.amount) {
+        addExpense({
+          title: intent.params.title || 'Group Expense',
+          amount: intent.params.amount,
+          currency: 'INR',
+          paidByUserId: intent.params.payerId || currentUser.id,
+          splitWithUserIds: users.map((u) => u.id),
+          category: intent.params.category || 'misc',
+          date: 'Today',
+          verified: true,
+        });
+      }
+    }
+
     // Apply autonomous tab & sub-tab navigation
     if (res.navigation?.tab) {
       setActiveTab(res.navigation.tab);
@@ -473,6 +595,16 @@ export function TripProvider({ children }: { children: React.ReactNode }) {
         updateTravelStatus,
         updateWellbeing,
         addItineraryRestBuffer,
+        weather,
+        toggleWeather,
+        currency,
+        setCurrency,
+        packingList,
+        togglePackingItem,
+        autoHealSchedule,
+        adaptWeatherIndoor,
+        toggleKidQuest,
+        nextPayerInfo,
         activeTab,
         setActiveTab,
         vaultSubTab,

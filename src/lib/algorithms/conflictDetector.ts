@@ -119,3 +119,79 @@ export function detectTripConflicts(
 
   return alerts;
 }
+
+export function toMinutes(timeStr: string): number {
+  const [h, m] = (timeStr || '09:00').split(':').map(Number);
+  return (h || 0) * 60 + (m || 0);
+}
+
+export function fromMinutes(totalMins: number): string {
+  const clamped = Math.max(0, Math.min(23 * 60 + 45, totalMins));
+  const h = Math.floor(clamped / 60);
+  const m = clamped % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}
+
+export function detectWeatherAndTemporalConflicts(
+  items: ItineraryItem[],
+  weather: 'Sunny' | 'Rainy'
+): ConflictAlert[] {
+  const alerts: ConflictAlert[] = [];
+  const days = Array.from(new Set(items.map((i) => i.day))).sort();
+
+  days.forEach((day) => {
+    const dayStops = items
+      .filter((i) => i.day === day)
+      .sort((a, b) => toMinutes(a.time) - toMinutes(b.time));
+
+    for (let i = 0; i < dayStops.length; i++) {
+      const curr = dayStops[i];
+
+      // Weather Conflict: Outdoor stop during rain
+      if (weather === 'Rainy' && curr.isOutdoor) {
+        alerts.push({
+          id: `weather-${curr.id}`,
+          type: 'pacing',
+          severity: 'critical',
+          affectedUserId: 'all',
+          eventId: curr.id,
+          description: `Rain Risk at Outdoor Stop: ${curr.title}. Heavy downpour forecasted.`,
+          suggestedAction: {
+            title: `Swap to "${curr.indoorFallback || 'Indoor Palace Hall'}"`,
+            resolutionType: 'swap_venue',
+            details: `Jarvis can swap ${curr.title} to an indoor heritage alternative with zero rain disruption.`,
+            replacementTitle: curr.indoorFallback || `${curr.title} (Indoor Hall)`,
+          },
+          resolved: false,
+        });
+      }
+
+      // Overlap Detection
+      if (i < dayStops.length - 1) {
+        const next = dayStops[i + 1];
+        const endCurr = curr.endTime ? toMinutes(curr.endTime) : toMinutes(curr.time) + 90;
+        const startNext = toMinutes(next.time);
+
+        if (endCurr > startNext) {
+          const overlapMins = endCurr - startNext;
+          alerts.push({
+            id: `overlap-${curr.id}-${next.id}`,
+            type: 'pacing',
+            severity: 'critical',
+            affectedUserId: 'all',
+            eventId: next.id,
+            description: `${overlapMins}-min Overlap: "${curr.title}" ends at ${curr.endTime || fromMinutes(endCurr)}, but "${next.title}" starts at ${next.time}.`,
+            suggestedAction: {
+              title: `Auto-Heal: Shift "${next.title}" by +${overlapMins + 30}m`,
+              resolutionType: 'inject_buffer',
+              details: `Auto-heal will slide subsequent stops to ensure a minimum 30-min buffer.`,
+            },
+            resolved: false,
+          });
+        }
+      }
+    }
+  });
+
+  return alerts;
+}

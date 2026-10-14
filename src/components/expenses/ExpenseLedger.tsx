@@ -7,7 +7,9 @@ import {
   ArrowRight,
   Plus,
   CheckCircle2,
-  X
+  X,
+  Sparkles,
+  Scale,
 } from 'lucide-react';
 
 export default function ExpenseLedger() {
@@ -16,6 +18,8 @@ export default function ExpenseLedger() {
     settlements,
     users,
     addExpense,
+    nextPayerInfo,
+    currency,
   } = useTrip();
 
   const [showAddModal, setShowAddModal] = useState(false);
@@ -79,6 +83,40 @@ export default function ExpenseLedger() {
           <span>Add Expense</span>
         </button>
       </div>
+
+      {/* Smart Fairness Recommender: Who Pays Next? */}
+      {nextPayerInfo && (
+        <div className="bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-rose-500/10 border border-orange-200/80 rounded-2xl p-4 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center shrink-0">
+              <Scale className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black uppercase tracking-wider text-[#D97746] bg-orange-100 px-2 py-0.5 rounded-full">
+                  Fairness AI Recommendation
+                </span>
+                <span className="text-xs text-[#78716C]">Who Pays Next?</span>
+              </div>
+              <p className="text-xs font-bold text-[#1C1917] mt-0.5">
+                Suggested Next Payer: <span className="text-[#D97746]">{nextPayerInfo.nextPayer?.name}</span>
+                <span className="font-normal text-[#78716C] ml-1.5">
+                  (Currently paid ₹{nextPayerInfo.nextPayerDeficit.toLocaleString('en-IN')} less than group median)
+                </span>
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              setPayerId(nextPayerInfo.nextPayer.id);
+              setShowAddModal(true);
+            }}
+            className="px-3 py-1.5 bg-white border border-orange-200 hover:border-orange-300 text-orange-700 rounded-xl text-xs font-bold shadow-2xs transition shrink-0"
+          >
+            Assign Next
+          </button>
+        </div>
+      )}
 
       {/* Settlements Directed Transfer List */}
       <div className="bg-white border border-[#EBE7DF] rounded-2xl p-5 shadow-2xs space-y-3">
