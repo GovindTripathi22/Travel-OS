@@ -195,7 +195,7 @@ export function runEdgeSlmNlu(rawPrompt: string, context?: { activeDay?: number;
       .replace(/^(please\s+)?(add|pack|check|put)\s+/i, '')
       .replace(/\s+to\s+(the\s+)?packing\s+list/i, '')
       .trim() || 'Travel Essential';
-    intents.push({ type: 'ADD_PACKING', params: { text: cleanPack } });
+    intents.push({ type: 'ADD_PACKING', params: { text: cleanPack, item: cleanPack } });
   }
 
   // 12. Intent: Remove / Move Timeline Stop
@@ -227,6 +227,7 @@ export function runEdgeSlmNlu(rawPrompt: string, context?: { activeDay?: number;
         currency: detectedCurrency,
         originalAmount: originalAmount || amountINR,
         paidByUserId: payerId,
+        payerId: payerId,
       },
     });
   }

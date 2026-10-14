@@ -67,14 +67,15 @@ export function minimizeDebts(
     const creditor = creditors[cIdx];
     const debtor = debtors[dIdx];
 
+    const rate = currency === 'USD' ? 0.0119 : currency === 'EUR' ? 0.011 : currency === 'JPY' ? 1.81 : 1;
     const settledAmount = Math.min(creditor.amount, debtor.amount);
-    const rounded = Math.round(settledAmount * 100) / 100;
+    const converted = Math.round(settledAmount * rate * 100) / 100;
 
-    if (rounded > 0) {
+    if (converted > 0) {
       settlements.push({
         fromUserId: debtor.userId,
         toUserId: creditor.userId,
-        amount: rounded,
+        amount: converted,
         currency,
       });
     }
