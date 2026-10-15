@@ -33,15 +33,15 @@ export default function ItineraryTimeline() {
     <div className="space-y-4">
       {/* Day Selector & Auto-Heal Quick Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-[#EBE7DF]">
-        <div className="flex items-center gap-1.5 bg-[#F4F1EA] p-1 rounded-xl">
+        <div className="flex items-center gap-1.5 bg-[#F4F1EA] p-1.5 rounded-2xl border border-[#EBE7DF] shadow-2xs">
           {[1, 2, 3].map((d) => (
             <button
               key={d}
               onClick={() => setSelectedDay(d)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 ${
                 selectedDay === d
-                  ? 'bg-white text-[#1C1917] shadow-2xs font-bold'
-                  : 'text-[#78716C] hover:text-[#1C1917]'
+                  ? 'bg-white text-[#1C1917] shadow-xs font-bold border border-[#EBE7DF]'
+                  : 'text-[#78716C] hover:text-[#1C1917] hover:bg-white/50'
               }`}
             >
               Day {d} {d === 1 ? '· Arrival' : d === 2 ? '· Amber Fort' : '· Palaces'}
@@ -54,7 +54,7 @@ export default function ItineraryTimeline() {
           {weather === 'Rainy' && (
             <button
               onClick={() => adaptWeatherIndoor(selectedDay)}
-              className="flex items-center gap-1.5 px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition shadow-xs"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 shadow-2xs hover:shadow-xs"
             >
               <CloudRain className="w-3.5 h-3.5" />
               <span>Swap Indoor Stops</span>
@@ -63,14 +63,14 @@ export default function ItineraryTimeline() {
 
           <button
             onClick={() => autoHealSchedule(selectedDay)}
-            className="flex items-center gap-1.5 px-3 py-1 bg-[#1C1917] hover:bg-[#2C2724] text-white rounded-xl text-xs font-bold transition shadow-xs"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#1C1917] hover:bg-[#D97746] text-white rounded-xl text-xs font-bold transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 shadow-2xs hover:shadow-xs"
           >
             <Wand2 className="w-3.5 h-3.5 text-[#D97746]" />
             <span>1-Click Auto-Heal</span>
           </button>
 
-          <span className="text-xs text-[#A8A29E] font-medium hidden sm:inline">
-            {dayEvents.length} events
+          <span className="text-xs text-[#A8A29E] font-medium hidden sm:inline pl-1">
+            {dayEvents.length} stops
           </span>
         </div>
       </div>

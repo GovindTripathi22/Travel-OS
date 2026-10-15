@@ -133,14 +133,14 @@ export default function MechanismPollCard() {
                     <button
                       onClick={() => submitQuadraticVote(poll.id, opt.id, -1)}
                       disabled={myVotes <= 0}
-                      className="w-7 h-7 rounded-lg bg-white border border-[#EBE7DF] hover:bg-[#F4F1EA] disabled:opacity-30 disabled:cursor-not-allowed font-bold text-xs"
+                      className="w-7 h-7 rounded-lg bg-white border border-[#EBE7DF] hover:bg-[#F4F1EA] hover:border-[#D6D0C5] hover:scale-110 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100 font-bold text-xs transition-all duration-150 shadow-2xs"
                     >
                       &minus;
                     </button>
                     <button
                       onClick={() => submitQuadraticVote(poll.id, opt.id, 1)}
                       disabled={remainingCredits < nextCost}
-                      className="w-7 h-7 rounded-lg bg-[#D97746] hover:bg-[#C26333] disabled:opacity-30 disabled:cursor-not-allowed font-bold text-xs text-white"
+                      className="w-7 h-7 rounded-lg bg-[#D97746] hover:bg-[#C26333] hover:scale-110 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100 font-bold text-xs text-white transition-all duration-150 shadow-2xs"
                     >
                       +
                     </button>
@@ -161,10 +161,10 @@ export default function MechanismPollCard() {
         {poll.status === 'active' ? (
           <button
             onClick={() => finalizePoll(poll.id)}
-            className="px-4 py-2 bg-[#D97746] hover:bg-[#C26333] text-white rounded-xl font-semibold shadow-xs transition active:scale-95 flex items-center gap-1.5"
+            className="px-4 py-2 bg-[#D97746] hover:bg-[#C26333] text-white rounded-xl text-xs font-bold shadow-xs hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 flex items-center gap-1.5"
           >
             <Sparkles className="w-3.5 h-3.5" />
-            Resolve with Consensus Engine
+            <span>Resolve with Consensus Engine</span>
           </button>
         ) : (
           <span className="font-semibold text-[#4D7C5F]">

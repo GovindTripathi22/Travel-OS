@@ -77,7 +77,7 @@ export default function ExpenseLedger() {
 
         <button
           onClick={() => setShowAddModal(true)}
-          className="px-3.5 py-2 bg-[#D97746] hover:bg-[#C26333] text-white rounded-xl text-xs font-semibold shadow-xs transition flex items-center justify-center gap-1.5 self-start sm:self-auto"
+          className="px-4 py-2 bg-[#D97746] hover:bg-[#C26333] text-white rounded-xl text-xs font-bold shadow-xs hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 flex items-center justify-center gap-1.5 self-start sm:self-auto"
         >
           <Plus className="w-3.5 h-3.5" />
           <span>Add Expense</span>
@@ -86,7 +86,7 @@ export default function ExpenseLedger() {
 
       {/* Smart Fairness Recommender: Who Pays Next? */}
       {nextPayerInfo && (
-        <div className="bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-rose-500/10 border border-orange-200/80 rounded-2xl p-4 flex items-center justify-between gap-4">
+        <div className="bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-rose-500/10 border border-orange-200/80 rounded-2xl p-4 flex items-center justify-between gap-4 shadow-2xs">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center shrink-0">
               <Scale className="w-5 h-5" />
@@ -111,7 +111,7 @@ export default function ExpenseLedger() {
               setPayerId(nextPayerInfo.nextPayer.id);
               setShowAddModal(true);
             }}
-            className="px-3 py-1.5 bg-white border border-orange-200 hover:border-orange-300 text-orange-700 rounded-xl text-xs font-bold shadow-2xs transition shrink-0"
+            className="px-3.5 py-1.5 bg-white border border-orange-200 hover:border-orange-400 text-orange-700 hover:text-orange-800 rounded-xl text-xs font-bold shadow-2xs hover:shadow-xs transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 shrink-0"
           >
             Assign Next
           </button>
@@ -202,7 +202,7 @@ export default function ExpenseLedger() {
             <button
               type="button"
               onClick={simulateReceiptCapture}
-              className="w-full my-3 bg-[#F4F1EA] text-[#D97746] p-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition"
+              className="w-full my-3 bg-[#FAF5EE] hover:bg-[#F4ECE0] text-[#D97746] hover:text-[#C26333] border border-[#E8DFC8] p-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 shadow-2xs hover:shadow-xs"
             >
               <Receipt className="w-3.5 h-3.5" />
               {receiptSimulated ? '✓ Scanned: Rawat Mishtan' : 'Simulate Camera Receipt Scan'}
@@ -263,7 +263,7 @@ export default function ExpenseLedger() {
 
               <button
                 type="submit"
-                className="w-full mt-2 py-2.5 bg-[#D97746] hover:bg-[#C26333] text-white rounded-xl text-xs font-semibold shadow-xs"
+                className="w-full mt-2 py-2.5 bg-[#D97746] hover:bg-[#C26333] text-white rounded-xl text-xs font-bold shadow-xs hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-95"
               >
                 Save &amp; Recalculate
               </button>

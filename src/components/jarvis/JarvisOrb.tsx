@@ -225,7 +225,7 @@ export default function JarvisOrb() {
           }`}
         />
 
-        <div className="relative flex items-center bg-[#141210] border border-[#2E2822] hover:border-[#D97746]/60 rounded-full p-1.5 shadow-2xl transition">
+        <div className="relative flex items-center bg-[#141210]/95 backdrop-blur-md border border-[#2E2822] hover:border-[#D97746]/60 rounded-full p-1.5 shadow-2xl transition-all duration-300 hover:shadow-[0_8px_30px_rgba(217,119,70,0.25)] hover:-translate-y-0.5">
           {/* Hands-Free Toggle Button */}
           <button
             onClick={toggleHandsFree}
@@ -234,7 +234,7 @@ export default function JarvisOrb() {
                 ? 'Turn Off Hands-Free Autonomous Mode'
                 : 'Turn ON Hands-Free Autonomous Mode (Alt + J)'
             }
-            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 ${
               isHandsFree
                 ? 'bg-cyan-500 text-black font-extrabold shadow-lg shadow-cyan-500/30 scale-105'
                 : 'text-[#A8A29E] hover:text-white hover:bg-white/10'
@@ -251,11 +251,11 @@ export default function JarvisOrb() {
           <button
             onClick={toggleHandsFree}
             title={isHandsFree ? 'JARVIS Listening — Click to Pause' : 'Click to Turn ON Voice Listening'}
-            className="flex items-center gap-2.5 px-3 py-1.5 pr-2 text-white hover:opacity-90 transition text-left"
+            className="flex items-center gap-2.5 px-3 py-1.5 pr-2 text-white hover:opacity-95 transition-all duration-200 text-left hover:scale-[1.02] active:scale-98"
           >
             <div
-              className={`w-7 h-7 rounded-full flex items-center justify-center text-white shadow-2xs transition ${
-                isHandsFree ? 'bg-cyan-600 animate-pulse' : 'bg-[#D97746]'
+              className={`w-7 h-7 rounded-full flex items-center justify-center text-white shadow-2xs transition-all duration-300 ${
+                isHandsFree ? 'bg-cyan-600 animate-pulse' : 'bg-[#D97746] hover:bg-[#C26333]'
               }`}
             >
               <Sparkles className="w-3.5 h-3.5" />
@@ -264,7 +264,7 @@ export default function JarvisOrb() {
               <div className="text-xs font-black tracking-tight flex items-center gap-1.5">
                 <span>JARVIS</span>
                 <span
-                  className={`text-[9px] font-bold px-1.5 py-0.2 rounded-full border ${
+                  className={`text-[9px] font-bold px-1.5 py-0.2 rounded-full border transition-colors ${
                     isHandsFree
                       ? 'bg-cyan-950 text-cyan-300 border-cyan-700/50'
                       : 'bg-[#D97746]/20 text-[#E68A57] border-[#D97746]/30'
@@ -287,7 +287,7 @@ export default function JarvisOrb() {
           <button
             onClick={() => setIsJarvisOpen(true)}
             title="Open JARVIS Command Cheatsheet & Manual Input HUD"
-            className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/15 border border-white/10 text-[#A8A29E] hover:text-white flex items-center justify-center transition"
+            className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/15 border border-white/10 text-[#A8A29E] hover:text-white flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95"
           >
             <Sparkles className="w-3.5 h-3.5 text-[#D97746]" />
           </button>
@@ -296,7 +296,7 @@ export default function JarvisOrb() {
           <button
             onClick={() => setIsSosModalOpen(true)}
             title="Emergency Hospital & Police SOS"
-            className="w-8 h-8 rounded-full bg-red-950/70 hover:bg-red-900 border border-red-700/60 text-red-300 flex items-center justify-center transition ml-1"
+            className="w-8 h-8 rounded-full bg-red-950/70 hover:bg-red-900 border border-red-700/60 text-red-300 hover:text-white flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 ml-1"
           >
             <ShieldAlert className="w-3.5 h-3.5" />
           </button>

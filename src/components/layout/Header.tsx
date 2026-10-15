@@ -12,16 +12,16 @@ import {
   ShieldCheck,
   LogOut,
   LogIn,
-  UserCheck,
   CloudRain,
   Sun,
-  Coins,
   Mic,
   MicOff,
   Square,
   Wand2,
   Bot,
-  Cpu,
+  SlidersHorizontal,
+  ArrowRight,
+  Zap,
 } from 'lucide-react';
 
 export default function Header() {
@@ -30,10 +30,8 @@ export default function Header() {
     setCurrentUser,
     users,
     setIsAssistantOpen,
-    setIsJarvisOpen,
     viewMode,
     setViewMode,
-    triggerJarvisVoice,
     weather,
     toggleWeather,
     currency,
@@ -56,10 +54,44 @@ export default function Header() {
   } = useAuth();
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [isEnvOpen, setIsEnvOpen] = useState(false);
+  const [showQuickChips, setShowQuickChips] = useState(false);
   const [quickCmd, setQuickCmd] = useState('');
   const [listening, setListening] = useState(false);
+
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const envRef = useRef<HTMLDivElement>(null);
+  const chipsRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
+
+  // Sync active profile from Auth into TripContext only when activeProfile genuinely changes
+  const prevActiveProfileIdRef = useRef(activeProfile?.id);
+  useEffect(() => {
+    if (activeProfile && activeProfile.id !== prevActiveProfileIdRef.current) {
+      prevActiveProfileIdRef.current = activeProfile.id;
+      if (activeProfile.id !== currentUser.id) {
+        setCurrentUser(activeProfile);
+      }
+    }
+  }, [activeProfile, currentUser.id, setCurrentUser]);
+
+  // Close dropdowns on outside click
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      const target = e.target as Node;
+      if (dropdownRef.current && !dropdownRef.current.contains(target)) {
+        setIsDropdownOpen(false);
+      }
+      if (envRef.current && !envRef.current.contains(target)) {
+        setIsEnvOpen(false);
+      }
+      if (chipsRef.current && !chipsRef.current.contains(target)) {
+        setShowQuickChips(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleVoiceInput = () => {
     if (stopJarvisVoiceNow) stopJarvisVoiceNow();
@@ -117,63 +149,266 @@ export default function Header() {
     }
   };
 
-  // Sync active profile from Auth into TripContext only when activeProfile genuinely changes
-  const prevActiveProfileIdRef = useRef(activeProfile?.id);
-  useEffect(() => {
-    if (activeProfile && activeProfile.id !== prevActiveProfileIdRef.current) {
-      prevActiveProfileIdRef.current = activeProfile.id;
-      if (activeProfile.id !== currentUser.id) {
-        setCurrentUser(activeProfile);
-      }
-    }
-  }, [activeProfile, currentUser.id, setCurrentUser]);
+  const handleCommandSubmit = () => {
+    if (!quickCmd.trim()) return;
+    if (executeAutonomousJarvis) executeAutonomousJarvis(quickCmd);
+    else executeJarvisCommand(quickCmd);
+    setQuickCmd('');
+    setShowQuickChips(false);
+  };
 
-  // Close dropdown on outside click
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setIsDropdownOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  const handleChipClick = (cmd: string) => {
+    if (executeAutonomousJarvis) executeAutonomousJarvis(cmd);
+    else executeJarvisCommand(cmd);
+    setShowQuickChips(false);
+  };
+
+  const QUICK_ACTION_CHIPS = [
+    { label: '⚡ Fix Overlaps', cmd: 'Jarvis, fix all schedule conflicts' },
+    { label: '🕒 Move Amber Fort → 10:00', cmd: 'Jarvis, move Amber Fort to 10:00' },
+    { label: '🌧️ Rain Swap', cmd: 'Jarvis, it is raining, swap outdoor stops to indoor' },
+    { label: '👴 Switch to Dadaji', cmd: 'Jarvis, switch to Dadaji' },
+    { label: '💴 Currency → JPY', cmd: 'Jarvis, change currency to JPY' },
+    { label: '🗳️ Lock Poll Winner', cmd: 'Jarvis, commit poll winner to itinerary' },
+  ];
 
   return (
-    <header className="sticky top-0 z-40 bg-[#FAF9F6]/95 backdrop-blur-md border-b border-[#EBE7DF]">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6">
-        <div className="flex items-center justify-between h-16">
-          {/* Brand Logo & Name */}
-          <div className="flex items-center gap-2.5">
+    <header className="sticky top-0 z-40 bg-[#FAF9F6]/90 backdrop-blur-md border-b border-[#EBE7DF] transition-all">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6">
+        <div className="flex items-center justify-between h-16 gap-3">
+          {/* Brand Logo & Editorial Wordmark */}
+          <div className="flex items-center gap-3 shrink-0">
             <img
               src="/logo.jpg"
               alt="Sahyatri Logo"
-              className="w-8 h-8 rounded-xl object-contain shadow-2xs border border-[#EBE7DF]"
+              className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl object-contain shadow-2xs border border-[#EBE7DF] transition-transform duration-300 hover:scale-105"
             />
-            <div className="flex items-baseline gap-1.5">
-              <span className="font-extrabold text-base tracking-tight text-[#1C1917]">
+            <div className="flex items-baseline gap-2">
+              <span className="font-serif-title text-lg sm:text-xl font-bold tracking-tight text-[#1C1917]">
                 Sahyatri
               </span>
-              <span className="text-[11px] font-semibold text-[#D97746] tracking-wider uppercase hidden sm:inline">
+              <span className="text-[10px] font-bold tracking-widest text-[#D97746] uppercase hidden sm:inline px-2 py-0.5 rounded-full bg-[#FAF5EE] border border-[#E8DFC8]/60">
                 AI Travel OS
               </span>
             </div>
           </div>
 
-          {/* Traveler Switcher & Actions */}
-          <div className="flex items-center gap-2.5">
-            {/* Authenticated Traveler Profile Pill */}
+          {/* Center: Autonomous Omni-Voice & Command Capsule */}
+          <div className="relative flex-1 max-w-lg hidden md:block" ref={chipsRef}>
+            <div className="bg-white hover:bg-[#FAF9F6]/60 focus-within:bg-white border border-[#EBE7DF] hover:border-[#D6D0C5] focus-within:border-[#D97746] rounded-full px-3.5 py-1.5 shadow-2xs hover:shadow-xs transition-all duration-300 flex items-center gap-2">
+              <Bot className="w-4 h-4 text-[#D97746] shrink-0" />
+              <input
+                type="text"
+                value={quickCmd}
+                onChange={(e) => setQuickCmd(e.target.value)}
+                onFocus={() => setShowQuickChips(true)}
+                onKeyDown={(e) => e.key === 'Enter' && handleCommandSubmit()}
+                placeholder='Ask JARVIS or type: "switch to Dadaji", "fix overlaps"...'
+                className="w-full bg-transparent text-xs text-[#1C1917] placeholder-[#A8A29E] focus:outline-none"
+              />
+
+              {/* Quick Actions Trigger Button */}
+              <button
+                type="button"
+                onClick={() => setShowQuickChips(!showQuickChips)}
+                title="View quick autonomous voice prompts"
+                className={`p-1.5 rounded-full text-xs transition-all duration-200 ${
+                  showQuickChips
+                    ? 'bg-[#FAF5EE] text-[#D97746]'
+                    : 'text-[#A8A29E] hover:text-[#1C1917] hover:bg-[#F4F1EA]'
+                }`}
+              >
+                <Zap className="w-3.5 h-3.5" />
+              </button>
+
+              {/* Microphone Voice Button */}
+              <button
+                type="button"
+                onClick={handleVoiceInput}
+                title={listening ? 'Stop voice recognition' : 'Speak voice command to JARVIS'}
+                className={`p-1.5 rounded-full text-xs font-semibold flex items-center justify-center transition-all duration-200 ${
+                  listening
+                    ? 'bg-rose-500 text-white animate-pulse scale-110 shadow-sm'
+                    : 'bg-[#F4F1EA] hover:bg-[#EBE7DF] text-[#1C1917] hover:scale-105 active:scale-95'
+                }`}
+              >
+                {listening ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
+              </button>
+
+              {/* Execute Arrow Button */}
+              {quickCmd.trim() && (
+                <button
+                  type="button"
+                  onClick={handleCommandSubmit}
+                  className="p-1.5 rounded-full bg-[#1C1917] hover:bg-[#D97746] text-white hover:scale-105 active:scale-95 transition-all duration-200 shadow-2xs"
+                  title="Execute command"
+                >
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+
+            {/* Quick Action Suggestion Chips Popover (Appears gracefully on focus/toggle) */}
+            {showQuickChips && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-[#EBE7DF] p-3 z-50 animate-in fade-in zoom-in-95 duration-150">
+                <div className="flex items-center justify-between mb-2 px-1">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#A8A29E]">
+                    ⚡ Quick Autonomous Actions
+                  </span>
+                  <span className="text-[10px] text-[#78716C]">Sub-5ms Edge SLM</span>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {QUICK_ACTION_CHIPS.map((chip, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => handleChipClick(chip.cmd)}
+                      className="px-2.5 py-1 rounded-lg text-[11px] font-medium bg-[#FAF9F6] hover:bg-[#FAF5EE] text-[#44403C] hover:text-[#D97746] border border-[#EBE7DF] hover:border-[#E8DFC8] transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-95"
+                    >
+                      {chip.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Right Section: Minimum, High-Value Relevant Controls */}
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Hard-Stop Voice Button (Only appears when JARVIS is actively speaking) */}
+            {(isSpeaking || isJarvisSpeaking) && (
+              <button
+                onClick={() => {
+                  if (stopJarvisVoiceNow) stopJarvisVoiceNow();
+                  else if (stopSpeaking) stopSpeaking();
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold shadow-md shadow-rose-600/30 animate-pulse hover:scale-105 active:scale-95 transition-all duration-200"
+                title="Hard interrupt JARVIS speech immediately"
+              >
+                <Square className="w-3.5 h-3.5 fill-white" />
+                <span>Stop Voice</span>
+              </button>
+            )}
+
+            {/* Contextual Trip Environment Pill (Weather · Currency · Viewport) */}
+            <div className="relative" ref={envRef}>
+              <button
+                onClick={() => setIsEnvOpen(!isEnvOpen)}
+                title="Trip Simulator & Settings (Currency, Weather, Viewport)"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white hover:bg-[#F5F2EB] border border-[#EBE7DF] hover:border-[#D6D0C5] text-xs font-semibold text-[#1C1917] shadow-2xs hover:shadow-xs transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-95"
+              >
+                {weather === 'Rainy' ? (
+                  <CloudRain className="w-3.5 h-3.5 text-blue-600 animate-pulse" />
+                ) : (
+                  <Sun className="w-3.5 h-3.5 text-amber-500" />
+                )}
+                <span className="hidden sm:inline">{weather}</span>
+                <span className="text-[#A8A29E]">·</span>
+                <span className="font-mono text-[11px] font-bold text-[#D97746]">{currency}</span>
+                <ChevronDown className="w-3 h-3 text-[#A8A29E]" />
+              </button>
+
+              {/* Environment Popover Menu */}
+              {isEnvOpen && (
+                <div className="absolute right-0 mt-2 w-64 bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-[#EBE7DF] p-3 z-50 animate-in fade-in zoom-in-95 duration-150 space-y-3">
+                  {/* Currency Selector */}
+                  <div>
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-[#A8A29E] mb-1.5 px-1">
+                      Active Currency
+                    </div>
+                    <div className="grid grid-cols-4 gap-1">
+                      {(['INR', 'USD', 'EUR', 'JPY'] as const).map((c) => (
+                        <button
+                          key={c}
+                          onClick={() => {
+                            setCurrency(c);
+                            setIsEnvOpen(false);
+                          }}
+                          className={`py-1 text-center rounded-lg font-mono text-xs font-bold transition-all duration-200 hover:scale-105 active:scale-95 ${
+                            currency === c
+                              ? 'bg-[#1C1917] text-white shadow-xs'
+                              : 'bg-[#FAF9F6] text-[#78716C] hover:text-[#1C1917] border border-[#EBE7DF]'
+                          }`}
+                        >
+                          {c}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Weather Simulator */}
+                  <div>
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-[#A8A29E] mb-1.5 px-1">
+                      Weather Simulator
+                    </div>
+                    <button
+                      onClick={() => {
+                        toggleWeather();
+                        setIsEnvOpen(false);
+                      }}
+                      className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-all duration-200 hover:scale-[1.02] active:scale-95 ${
+                        weather === 'Rainy'
+                          ? 'bg-blue-50 text-blue-700 border-blue-200'
+                          : 'bg-amber-50 text-amber-700 border-amber-200'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        {weather === 'Rainy' ? (
+                          <CloudRain className="w-4 h-4 text-blue-600" />
+                        ) : (
+                          <Sun className="w-4 h-4 text-amber-500" />
+                        )}
+                        <span>{weather === 'Rainy' ? 'Rainy Mode (Sim)' : 'Sunny Mode (Sim)'}</span>
+                      </div>
+                      <span className="text-[10px] text-[#A8A29E]">Toggle</span>
+                    </button>
+                  </div>
+
+                  {/* Viewport Frame Toggle */}
+                  <div className="pt-2 border-t border-[#EBE7DF]">
+                    <button
+                      onClick={() => {
+                        setViewMode(viewMode === 'full' ? 'phone_preview' : 'full');
+                        setIsEnvOpen(false);
+                      }}
+                      className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-semibold text-[#78716C] hover:text-[#1C1917] hover:bg-[#F4F1EA] transition"
+                    >
+                      <div className="flex items-center gap-2">
+                        {viewMode === 'full' ? (
+                          <Smartphone className="w-4 h-4 text-[#D97746]" />
+                        ) : (
+                          <Monitor className="w-4 h-4 text-[#D97746]" />
+                        )}
+                        <span>{viewMode === 'full' ? 'Simulate Mobile Frame' : 'Full Screen View'}</span>
+                      </div>
+                      <span className="text-[10px] text-[#A8A29E]">Switch</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Ask AI Assistant Button */}
+            <button
+              onClick={() => setIsAssistantOpen(true)}
+              className="px-3 py-1.5 bg-[#FAF5EE] hover:bg-[#F4ECE0] border border-[#E8DFC8] text-[#D97746] hover:text-[#C26333] rounded-full text-xs font-bold transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 flex items-center gap-1.5 shadow-2xs hover:shadow-xs"
+              title="Open Personal Assistant Drawer"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Ask AI</span>
+            </button>
+
+            {/* Authenticated Traveler Profile Pill & Dropdown */}
             <div className="relative" ref={dropdownRef}>
               <button
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="flex items-center gap-2 px-2.5 py-1.5 rounded-full bg-white border border-[#EBE7DF] hover:border-[#D6D0C5] text-xs font-semibold text-[#1C1917] transition shadow-2xs"
+                className="flex items-center gap-2 px-2.5 py-1.5 rounded-full bg-white border border-[#EBE7DF] hover:border-[#D6D0C5] text-xs font-semibold text-[#1C1917] transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 shadow-2xs hover:shadow-xs"
               >
                 <img
                   src={currentUser.avatar}
                   alt={currentUser.name}
                   className="w-5 h-5 rounded-full object-cover"
                 />
-                <span className="max-w-[90px] truncate sm:max-w-none">
+                <span className="max-w-[70px] sm:max-w-none truncate font-semibold">
                   {currentUser.name.split(' ')[0]}
                 </span>
                 <span
@@ -185,12 +420,12 @@ export default function Header() {
                 >
                   {isAdmin ? 'Admin' : 'Companion'}
                 </span>
-                <ChevronDown className="w-3.5 h-3.5 text-[#78716C]" />
+                <ChevronDown className="w-3 h-3 text-[#A8A29E]" />
               </button>
 
               {/* Authenticated Account & RBAC Dropdown Menu */}
               {isDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-[#EBE7DF] p-2.5 z-50 animate-in fade-in zoom-in-95 duration-150 space-y-2">
+                <div className="absolute right-0 mt-2 w-72 bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-[#EBE7DF] p-3 z-50 animate-in fade-in zoom-in-95 duration-150 space-y-2.5">
                   {/* Active Account Identity Card */}
                   <div className="p-2.5 rounded-xl bg-[#FAF9F6] border border-[#EBE7DF]">
                     <div className="flex items-center justify-between">
@@ -225,9 +460,9 @@ export default function Header() {
                               setCurrentUser(u);
                               setIsDropdownOpen(false);
                             }}
-                            className={`w-full flex items-center justify-between p-2 rounded-xl text-left text-xs transition ${
+                            className={`w-full flex items-center justify-between p-2 rounded-xl text-left text-xs transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-98 ${
                               isSelected
-                                ? 'bg-[#FAF9F6] text-[#1C1917] font-bold border border-[#EBE7DF]'
+                                ? 'bg-[#FAF9F6] text-[#1C1917] font-bold border border-[#EBE7DF] shadow-2xs'
                                 : 'text-[#78716C] hover:text-[#1C1917] hover:bg-[#F4F1EA]'
                             }`}
                           >
@@ -258,13 +493,13 @@ export default function Header() {
                   </div>
 
                   {/* Auth Actions: Switch Account & Sign Out */}
-                  <div className="pt-1 border-t border-[#EBE7DF] space-y-1">
+                  <div className="pt-2 border-t border-[#EBE7DF] space-y-1">
                     <button
                       onClick={() => {
                         setIsDropdownOpen(false);
                         setIsAuthModalOpen(true);
                       }}
-                      className="w-full flex items-center gap-2 p-2 rounded-xl text-xs font-semibold text-[#1C1917] hover:bg-[#F4F1EA] transition"
+                      className="w-full flex items-center gap-2 p-2 rounded-xl text-xs font-semibold text-[#1C1917] hover:bg-[#F4F1EA] transition-colors"
                     >
                       <LogIn className="w-4 h-4 text-[#D97746]" />
                       <span>Sign In / Create Account</span>
@@ -275,7 +510,7 @@ export default function Header() {
                         setIsDropdownOpen(false);
                         signOut();
                       }}
-                      className="w-full flex items-center gap-2 p-2 rounded-xl text-xs font-semibold text-red-600 hover:bg-red-50 transition"
+                      className="w-full flex items-center gap-2 p-2 rounded-xl text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors"
                     >
                       <LogOut className="w-4 h-4 text-red-500" />
                       <span>Sign Out</span>
@@ -284,161 +519,39 @@ export default function Header() {
                 </div>
               )}
             </div>
-
-            {/* Currency Selector Pill */}
-            <div className="flex items-center bg-white border border-[#EBE7DF] rounded-full p-0.5 text-xs shadow-2xs">
-              {(['INR', 'USD', 'EUR', 'JPY'] as const).map((c) => (
-                <button
-                  key={c}
-                  onClick={() => setCurrency(c)}
-                  className={`px-2 py-0.5 rounded-full font-bold text-[10px] transition ${
-                    currency === c
-                      ? 'bg-[#1C1917] text-white shadow-xs'
-                      : 'text-[#78716C] hover:text-[#1C1917]'
-                  }`}
-                >
-                  {c}
-                </button>
-              ))}
-            </div>
-
-            {/* Weather Simulator Pill */}
-            <button
-              onClick={toggleWeather}
-              title={`Simulated Weather: ${weather}. Click to toggle rain risk simulation.`}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border transition shadow-2xs ${
-                weather === 'Rainy'
-                  ? 'bg-blue-50 text-blue-700 border-blue-200 animate-pulse'
-                  : 'bg-amber-50 text-amber-700 border-amber-200'
-              }`}
-            >
-              {weather === 'Rainy' ? (
-                <>
-                  <CloudRain className="w-3.5 h-3.5 text-blue-600" />
-                  <span className="hidden sm:inline">Rainy (Sim)</span>
-                </>
-              ) : (
-                <>
-                  <Sun className="w-3.5 h-3.5 text-amber-600" />
-                  <span className="hidden sm:inline">Sunny</span>
-                </>
-              )}
-            </button>
-
-            {/* Mobile Viewport Toggle */}
-            <button
-              onClick={() => setViewMode(viewMode === 'full' ? 'phone_preview' : 'full')}
-              title={viewMode === 'full' ? 'Simulate Mobile Frame' : 'Full Screen'}
-              className="p-2 rounded-full text-[#78716C] hover:text-[#1C1917] hover:bg-[#F4F1EA] transition"
-            >
-              {viewMode === 'full' ? (
-                <Smartphone className="w-4 h-4" />
-              ) : (
-                <Monitor className="w-4 h-4 text-[#D97746]" />
-              )}
-            </button>
-
-            {/* Instant Stop Voice Button */}
-            {(isSpeaking || isJarvisSpeaking) && (
-              <button
-                onClick={() => {
-                  if (stopJarvisVoiceNow) stopJarvisVoiceNow();
-                  else if (stopSpeaking) stopSpeaking();
-                }}
-                className="px-3 py-1.5 rounded-full bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm animate-pulse transition"
-                title="Stop Jarvis speech immediately"
-              >
-                <Square className="w-3.5 h-3.5 fill-white" />
-                <span>Stop Voice</span>
-              </button>
-            )}
-
-            {/* JARVIS Voice Button */}
-            <button
-              onClick={() => triggerJarvisVoice()}
-              title="Activate JARVIS Autonomous Voice Control"
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#1C1917] hover:bg-[#2C2724] text-white rounded-full text-xs font-semibold shadow-xs border border-[#3E3832] transition active:scale-95 group"
-            >
-              <span className="w-2 h-2 rounded-full bg-[#D97746] group-hover:animate-ping" />
-              <span>JARVIS</span>
-            </button>
-
-            {/* AI Assistant Button */}
-            <button
-              onClick={() => setIsAssistantOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#D97746] hover:bg-[#C26333] text-white rounded-full text-xs font-semibold shadow-xs transition active:scale-95"
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Ask AI</span>
-            </button>
           </div>
         </div>
 
-        {/* Autonomous JARVIS Command Bar with Quick Action Chips */}
-        <div className="pt-2 pb-2.5 border-t border-[#EBE7DF]/80 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-          <div className="flex-1 flex items-center gap-2 bg-white border border-[#EBE7DF] focus-within:border-[#D97746] rounded-xl px-3 py-1.5 shadow-2xs transition">
+        {/* Mobile Omni-Search Bar (Only visible on small screens so mobile users also get JARVIS) */}
+        <div className="block md:hidden pb-2.5">
+          <div className="bg-white border border-[#EBE7DF] focus-within:border-[#D97746] rounded-full px-3 py-1.5 shadow-2xs flex items-center gap-2">
             <Bot className="w-4 h-4 text-[#D97746] shrink-0" />
             <input
               type="text"
               value={quickCmd}
               onChange={(e) => setQuickCmd(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && quickCmd.trim()) {
-                  if (executeAutonomousJarvis) executeAutonomousJarvis(quickCmd);
-                  else executeJarvisCommand(quickCmd);
-                  setQuickCmd('');
-                }
-              }}
-              placeholder='Command JARVIS: "fix schedule conflicts", "switch to Dadaji", "it is raining", "Priya paid ₹1200 for taxi"...'
+              onKeyDown={(e) => e.key === 'Enter' && handleCommandSubmit()}
+              placeholder='Command JARVIS: "switch to Dadaji"...'
               className="w-full bg-transparent text-xs text-[#1C1917] placeholder-[#A8A29E] focus:outline-none"
             />
             <button
+              type="button"
               onClick={handleVoiceInput}
-              title={listening ? 'Stop listening' : 'Speak voice command to JARVIS'}
-              className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 shrink-0 transition ${
-                listening
-                  ? 'bg-rose-500 text-white animate-pulse'
-                  : 'bg-[#F4F1EA] text-[#1C1917] hover:bg-[#EBE7DF]'
+              className={`p-1.5 rounded-full text-xs font-semibold flex items-center justify-center transition-all ${
+                listening ? 'bg-rose-500 text-white animate-pulse' : 'bg-[#F4F1EA] text-[#1C1917]'
               }`}
             >
               {listening ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
-              <span>{listening ? 'Listening...' : 'Voice'}</span>
             </button>
-            <button
-              onClick={() => {
-                if (quickCmd.trim()) {
-                  if (executeAutonomousJarvis) executeAutonomousJarvis(quickCmd);
-                  else executeJarvisCommand(quickCmd);
-                  setQuickCmd('');
-                }
-              }}
-              className="px-3 py-1 rounded-lg bg-[#1C1917] hover:bg-[#2C2724] text-white font-bold text-xs flex items-center gap-1 shrink-0 transition"
-            >
-              <Wand2 className="w-3.5 h-3.5" />
-              <span>Execute</span>
-            </button>
-          </div>
-
-          <div className="flex items-center gap-1.5 overflow-x-auto text-[11px] shrink-0 pb-1 sm:pb-0">
-            {[
-              { label: '⚡ Fix Overlaps', cmd: 'Jarvis, fix all schedule conflicts' },
-              { label: '🕒 Move Amber Fort → 10:00', cmd: 'Jarvis, move Amber Fort to 10:00' },
-              { label: '🌧️ Rain Swap', cmd: 'Jarvis, it is raining, swap outdoor stops to indoor' },
-              { label: '👴 Switch to Dadaji', cmd: 'Jarvis, switch to Dadaji' },
-              { label: '💴 Currency → JPY', cmd: 'Jarvis, change currency to JPY' },
-              { label: '🗳️ Lock Poll Winner', cmd: 'Jarvis, commit poll winner to itinerary' },
-            ].map((chip, i) => (
+            {quickCmd.trim() && (
               <button
-                key={i}
-                onClick={() => {
-                  if (executeAutonomousJarvis) executeAutonomousJarvis(chip.cmd);
-                  else executeJarvisCommand(chip.cmd);
-                }}
-                className="px-2.5 py-1 rounded-lg bg-white hover:bg-[#FAF9F6] border border-[#EBE7DF] hover:border-[#D6D0C5] text-[#44403C] hover:text-[#1C1917] shrink-0 transition shadow-2xs font-medium"
+                type="button"
+                onClick={handleCommandSubmit}
+                className="p-1.5 rounded-full bg-[#1C1917] text-white"
               >
-                {chip.label}
+                <ArrowRight className="w-3.5 h-3.5" />
               </button>
-            ))}
+            )}
           </div>
         </div>
       </div>
