@@ -16,6 +16,7 @@ import {
   EyeOff
 } from 'lucide-react';
 import { UserRole, PersonaType } from '@/types';
+import { createSvgAvatar } from '@/lib/state/mockData';
 
 export default function AuthModal() {
   const {
@@ -76,7 +77,7 @@ export default function AuthModal() {
       name: 'Rohan Sharma',
       badge: 'Trip Planner · Admin',
       role: 'Full super-agent privileges, budget approvals, conflict manager',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+      avatar: createSvgAvatar('RS', '#ea580c', '#c2410c'),
       color: 'border-orange-500/40 bg-orange-500/5',
     },
     {
@@ -84,7 +85,7 @@ export default function AuthModal() {
       name: 'Dada-ji (Ramesh)',
       badge: 'Elderly Mode (72y)',
       role: 'High-contrast large text, personal BP medication, zero-stair routes',
-      avatar: 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=150',
+      avatar: createSvgAvatar('DS', '#059669', '#047857'),
       color: 'border-amber-500/40 bg-amber-500/5',
     },
     {
@@ -92,7 +93,7 @@ export default function AuthModal() {
       name: 'Priya Patel',
       badge: 'Dietary Companion',
       role: 'Strict Jain dietary boundary enforcement & private health vault',
-      avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150',
+      avatar: createSvgAvatar('PS', '#7c3aed', '#6d28d9'),
       color: 'border-emerald-500/40 bg-emerald-500/5',
     },
     {
@@ -100,7 +101,7 @@ export default function AuthModal() {
       name: 'Kabir Sharma',
       badge: 'Kid Mode (9y)',
       role: 'Gamified explorer quests, elephant badges & ice cream countdown',
-      avatar: 'https://images.unsplash.com/photo-1502086223501-7ea6ecd79368?w=150',
+      avatar: createSvgAvatar('KB', '#0284c7', '#0369a1'),
       color: 'border-indigo-500/40 bg-indigo-500/5',
     },
   ];

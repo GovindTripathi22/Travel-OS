@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
       engine: slmResult.model,
       latencyMs: slmResult.latencyMs,
       intents: slmResult.intents,
-      reply: `At your service. Executed ${slmResult.intents.length} autonomous task(s) in ${slmResult.latencyMs}ms.`,
+      reply: `Command confirmed. Executed ${slmResult.intents.length} autonomous task(s) in ${slmResult.latencyMs}ms.`,
       data: companionRes,
     });
   } catch (error: any) {

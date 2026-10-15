@@ -221,4 +221,9 @@ export interface PhraseItem {
   badge: string;
 }
 
+export type PersonaMode = 'standard' | 'elderly' | 'kid';
+export type JarvisControlMode = 'autonomous' | 'manual';
+export type JarvisVoiceState = 'idle' | 'listening' | 'processing' | 'speaking' | 'interrupted';
+export type TravelerProfile = User;
+
 

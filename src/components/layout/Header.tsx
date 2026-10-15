@@ -22,12 +22,16 @@ import {
   SlidersHorizontal,
   ArrowRight,
   Zap,
+  User as UserIcon,
+  X,
 } from 'lucide-react';
+import { createSvgAvatar, AVATAR_PRESETS } from '@/lib/state/mockData';
 
 export default function Header() {
   const {
     currentUser,
     setCurrentUser,
+    updateCurrentUser,
     users,
     setIsAssistantOpen,
     viewMode,
@@ -58,6 +62,20 @@ export default function Header() {
   const [showQuickChips, setShowQuickChips] = useState(false);
   const [quickCmd, setQuickCmd] = useState('');
   const [listening, setListening] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [nameInput, setNameInput] = useState(currentUser.name);
+  const [selectedAvatar, setSelectedAvatar] = useState(currentUser.avatar);
+
+  const safeAvatarSrc = (u: { name: string; avatar?: string }) => {
+    if (u.avatar && u.avatar.startsWith('data:image/svg+xml')) return u.avatar;
+    const initials = (u.name || 'TR')
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .slice(0, 2)
+      .toUpperCase() || 'TR';
+    return u.avatar || createSvgAvatar(initials, '#ea580c', '#c2410c');
+  };
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const envRef = useRef<HTMLDivElement>(null);
@@ -404,8 +422,12 @@ export default function Header() {
                 className="flex items-center gap-2 px-2.5 py-1.5 rounded-full bg-white border border-[#EBE7DF] hover:border-[#D6D0C5] text-xs font-semibold text-[#1C1917] transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 shadow-2xs hover:shadow-xs"
               >
                 <img
-                  src={currentUser.avatar}
+                  src={safeAvatarSrc(currentUser)}
                   alt={currentUser.name}
+                  onError={(e) => {
+                    const initials = (currentUser.name || 'TR').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'TR';
+                    (e.target as HTMLImageElement).src = createSvgAvatar(initials, '#ea580c', '#c2410c');
+                  }}
                   className="w-5 h-5 rounded-full object-cover"
                 />
                 <span className="max-w-[70px] sm:max-w-none truncate font-semibold">
@@ -468,8 +490,12 @@ export default function Header() {
                           >
                             <div className="flex items-center gap-2">
                               <img
-                                src={u.avatar}
+                                src={safeAvatarSrc(u)}
                                 alt={u.name}
+                                onError={(e) => {
+                                  const initials = (u.name || 'TR').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'TR';
+                                  (e.target as HTMLImageElement).src = createSvgAvatar(initials, '#0284c7', '#1d4ed8');
+                                }}
                                 className="w-6 h-6 rounded-full object-cover"
                               />
                               <div>
@@ -492,8 +518,21 @@ export default function Header() {
                     </div>
                   </div>
 
-                  {/* Auth Actions: Switch Account & Sign Out */}
+                  {/* Auth Actions: Profile Editor, Switch Account & Sign Out */}
                   <div className="pt-2 border-t border-[#EBE7DF] space-y-1">
+                    <button
+                      onClick={() => {
+                        setIsDropdownOpen(false);
+                        setNameInput(currentUser.name);
+                        setSelectedAvatar(currentUser.avatar);
+                        setIsProfileOpen(true);
+                      }}
+                      className="w-full flex items-center gap-2 p-2 rounded-xl text-xs font-semibold text-[#1C1917] hover:bg-[#F4F1EA] transition-colors"
+                    >
+                      <UserIcon className="w-4 h-4 text-[#D97746]" />
+                      <span>Edit Profile &amp; Avatar</span>
+                    </button>
+
                     <button
                       onClick={() => {
                         setIsDropdownOpen(false);
@@ -555,6 +594,92 @@ export default function Header() {
           </div>
         </div>
       </div>
+
+      {/* Profile & Avatar Customizer Modal */}
+      {isProfileOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (updateCurrentUser) {
+                updateCurrentUser({
+                  name: nameInput.trim() || currentUser.name,
+                  avatar: selectedAvatar,
+                });
+              }
+              setIsProfileOpen(false);
+            }}
+            className="w-full max-w-md bg-white border border-[#EBE7DF] rounded-3xl p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-150"
+          >
+            <div className="flex items-center justify-between border-b border-[#EBE7DF] pb-3">
+              <h3 className="text-base font-bold text-[#1C1917]">Traveler Profile &amp; Avatar</h3>
+              <button
+                type="button"
+                onClick={() => setIsProfileOpen(false)}
+                className="p-1.5 rounded-xl bg-[#FAF9F6] text-stone-400 hover:text-[#1C1917]"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="flex items-center gap-4">
+              <img
+                src={selectedAvatar}
+                alt="Selected Avatar"
+                className="h-16 w-16 rounded-full ring-2 ring-[#D97746] object-cover"
+              />
+              <div className="flex-1">
+                <label className="block text-xs font-bold text-stone-500 mb-1">Display Name</label>
+                <input
+                  type="text"
+                  value={nameInput}
+                  onChange={(e) => setNameInput(e.target.value)}
+                  className="w-full bg-[#FAF9F6] border border-[#EBE7DF] rounded-xl px-3 py-2 text-sm text-[#1C1917] outline-none focus:border-[#D97746]"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-stone-500 mb-2">
+                Select Offline-Safe Vector Avatar
+              </label>
+              <div className="flex items-center gap-3">
+                {AVATAR_PRESETS.map((preset) => (
+                  <button
+                    key={preset.label}
+                    type="button"
+                    onClick={() => setSelectedAvatar(preset.url)}
+                    className={`relative h-11 w-11 rounded-full overflow-hidden transition ${
+                      selectedAvatar === preset.url
+                        ? 'ring-2 ring-[#D97746] scale-105'
+                        : 'opacity-70 hover:opacity-100'
+                    }`}
+                    title={preset.label}
+                  >
+                    <img src={preset.url} alt={preset.label} className="h-full w-full" />
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setIsProfileOpen(false)}
+                className="px-4 py-2 rounded-xl bg-[#FAF9F6] text-stone-600 text-xs font-semibold hover:bg-stone-100"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 rounded-xl bg-[#1C1917] hover:bg-[#D97746] text-white text-xs font-bold flex items-center gap-1.5 transition"
+              >
+                <Check className="w-3.5 h-3.5" /> Save Profile
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </header>
   );
 }

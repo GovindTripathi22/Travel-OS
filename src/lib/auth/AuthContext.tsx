@@ -10,7 +10,7 @@ import {
   subscribeToAuth,
 } from '../firebase/authService';
 import { User, DocumentItem, UserRole, PersonaType } from '@/types';
-import { INITIAL_USERS } from '../state/mockData';
+import { INITIAL_USERS, createSvgAvatar } from '../state/mockData';
 
 interface AuthContextType {
   user: AuthSessionUser | null;
@@ -150,7 +150,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       personaType: persona,
       relationship: role === 'planner' ? 'Trip Leader' : 'Companion',
       age: persona === 'elderly' ? 70 : persona === 'kid' ? 10 : 28,
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+      avatar: createSvgAvatar(name.slice(0, 2).toUpperCase() || 'TR', '#0284c7', '#1d4ed8'),
       phone: '+91 98000 00000',
       preferences: {
         dietary: ['Vegetarian'],

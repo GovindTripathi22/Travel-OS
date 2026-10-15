@@ -1,19 +1,20 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
-import { useTrip } from '@/lib/state/TripContext';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Mic,
   MicOff,
+  Square,
   Sparkles,
-  Volume2,
-  VolumeX,
-  ShieldAlert,
   Radio,
-  Headphones,
-  Check
+  Hand,
+  Terminal,
+  ShieldAlert,
+  Check,
 } from 'lucide-react';
-import { playJarvisChime } from '@/lib/audio/jarvisAudio';
+import { useTrip } from '@/lib/state/TripContext';
+import { jarvisAudio, playJarvisChime } from '@/lib/audio/jarvisAudio';
+import { JarvisControlMode, JarvisVoiceState } from '@/types';
 
 export default function JarvisOrb() {
   const {
@@ -22,181 +23,144 @@ export default function JarvisOrb() {
     isSpeaking,
     stopSpeaking,
     executeJarvisCommand,
+    isSosModalOpen,
     setIsSosModalOpen,
     currentUser,
     voiceTriggerCount,
+    jarvisControlMode,
+    setJarvisControlMode,
+    jarvisVoiceState,
+    setJarvisVoiceState,
+    setIsHUDModalOpen,
   } = useTrip();
 
-  const [isListening, setIsListening] = useState(false);
-  const [isHandsFree, setIsHandsFree] = useState(false);
-  const [liveTranscript, setLiveTranscript] = useState('');
+  const [liveTranscript, setLiveTranscript] = useState<string>('');
   const [lastActionToast, setLastActionToast] = useState<string | null>(null);
+  const [isSystemActive, setIsSystemActive] = useState<boolean>(false);
 
-  const recognitionRef = useRef<any>(null);
-  const isHandsFreeRef = useRef(isHandsFree);
-  isHandsFreeRef.current = isHandsFree;
-  const isSpeakingRef = useRef(isSpeaking);
-  isSpeakingRef.current = isSpeaking;
-  const prevVoiceCountRef = useRef(voiceTriggerCount);
+  // Guard ref so Jarvis NEVER repeats its greeting in a loop!
+  const hasGreetedRef = useRef<boolean>(false);
+  const executeCmdRef = useRef(executeJarvisCommand);
+  executeCmdRef.current = executeJarvisCommand;
 
-  // Initialize Speech Recognition
+  // Bind audio controller callbacks
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    const SpeechRecognition =
-      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-
-    if (!SpeechRecognition) return;
-
-    try {
-      const recognition = new SpeechRecognition();
-      recognition.continuous = true;
-      recognition.interimResults = true;
-      recognition.lang = 'en-IN'; // Indian English / Global English support
-
-      recognition.onstart = () => {
-        setIsListening(true);
-      };
-
-      recognition.onresult = (event: any) => {
-        // Acoustic Mutex Guard: Ignore speech if JARVIS is actively speaking or cooling down
-        if (isSpeakingRef.current) {
+    jarvisAudio.configure(
+      async (transcript, isFinal) => {
+        if (!isFinal) {
+          setLiveTranscript(transcript);
           return;
         }
 
-        let interim = '';
-        let final = '';
+        setLiveTranscript('');
+        setJarvisVoiceState('processing');
 
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
-          if (event.results[i].isFinal) {
-            final += event.results[i][0].transcript;
-          } else {
-            interim += event.results[i][0].transcript;
-          }
-        }
+        // Play wake chime
+        playJarvisChime('wake');
 
-        const currentSpeech = final || interim;
-        setLiveTranscript(currentSpeech);
+        // Execute command
+        const result = executeCmdRef.current(transcript);
 
-        if (final && final.trim().length > 1) {
-          // Play Iron Man Wake Chime
-          playJarvisChime('wake');
+        // Play confirmation chime
+        setTimeout(() => {
+          playJarvisChime('confirm');
+        }, 150);
 
-          // Execute action autonomously!
-          const result = executeJarvisCommand(final.trim());
-
-          // Play confirmation chime
-          setTimeout(() => {
-            playJarvisChime('confirm');
-          }, 200);
-
+        if (result && result.summary) {
           setLastActionToast(result.summary);
-          setLiveTranscript('');
           setTimeout(() => setLastActionToast(null), 4000);
         }
-      };
-
-      recognition.onerror = (e: any) => {
-        if (e.error === 'not-allowed') {
-          setIsHandsFree(false);
-          setIsListening(false);
-        }
-      };
-
-      recognition.onend = () => {
-        setIsListening(false);
-        // Autonomous Auto-Restart if Hands-Free Mode is Enabled!
-        if (isHandsFreeRef.current) {
-          setTimeout(() => {
-            if (isHandsFreeRef.current && recognitionRef.current) {
-              try {
-                recognitionRef.current.start();
-              } catch {
-                // already running
-              }
-            }
-          }, 350);
-        }
-      };
-
-      recognitionRef.current = recognition;
-    } catch {
-      // Browser SpeechRecognition not permitted
-    }
-
-    return () => {
-      if (recognitionRef.current) {
-        try {
-          recognitionRef.current.stop();
-        } catch {}
+      },
+      (newState: JarvisVoiceState) => {
+        setJarvisVoiceState(newState);
       }
-    };
-  }, [executeJarvisCommand]);
+    );
+  }, [setJarvisVoiceState]);
 
-  // Toggle Hands-Free Autonomous Mode
-  const toggleHandsFree = () => {
-    if (!recognitionRef.current) {
-      setIsJarvisOpen(true);
-      return;
-    }
-
-    if (isHandsFree) {
-      setIsHandsFree(false);
-      playJarvisChime('sleep');
-      try {
-        recognitionRef.current.stop();
-      } catch {}
-      setIsListening(false);
-      setLiveTranscript('');
-    } else {
-      setIsHandsFree(true);
-      playJarvisChime('wake');
-      try {
-        recognitionRef.current.start();
-      } catch {}
-    }
-  };
-
-  // 1-Click Autonomous Voice Trigger from Header, Banner, or Anywhere in App
-  useEffect(() => {
-    if (voiceTriggerCount > prevVoiceCountRef.current) {
-      prevVoiceCountRef.current = voiceTriggerCount;
-      if (!isHandsFree) {
-        toggleHandsFree();
-      } else {
-        playJarvisChime('wake');
-        if (recognitionRef.current) {
-          try {
-            recognitionRef.current.start();
-          } catch {}
-        }
-      }
-    }
-  }, [voiceTriggerCount, isHandsFree]);
-
-  // Keyboard shortcut (Alt + J) to toggle autonomous JARVIS
+  // Global Keyboard Shortcuts: Alt+J to toggle Mic / Interrupt Jarvis, Escape to stop voice
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.altKey && (e.key === 'j' || e.key === 'J')) {
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+
+      if ((e.altKey && (e.key === 'j' || e.key === 'J')) || (e.ctrlKey && e.code === 'Space')) {
         e.preventDefault();
-        toggleHandsFree();
+        if (!isSystemActive) {
+          setIsSystemActive(true);
+          jarvisAudio.startSystem(jarvisControlMode);
+        }
+        jarvisAudio.toggleManualMic();
+      } else if (e.key === 'Escape' && (isSpeaking || jarvisVoiceState === 'speaking')) {
+        e.preventDefault();
+        jarvisAudio.stopSpeaking(true);
+        if (stopSpeaking) stopSpeaking();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isHandsFree]);
+  }, [isSystemActive, jarvisControlMode, isSpeaking, jarvisVoiceState, stopSpeaking]);
+
+  // Master Power Toggle
+  const handleTogglePower = () => {
+    if (isSystemActive) {
+      setIsSystemActive(false);
+      hasGreetedRef.current = false;
+      jarvisAudio.stopSystem();
+      playJarvisChime('sleep');
+    } else {
+      setIsSystemActive(true);
+      jarvisAudio.startSystem(jarvisControlMode);
+      playJarvisChime('wake');
+
+      // Speak startup greeting ONLY ONCE per power-on
+      if (!hasGreetedRef.current) {
+        hasGreetedRef.current = true;
+        const greeting =
+          jarvisControlMode === 'autonomous'
+            ? `Jarvis online in Autonomous Mode for ${currentUser.name.split(' ')[0]}. Standing by.`
+            : `Jarvis online in Manual Mode. Press the microphone button or Alt+J to speak.`;
+        jarvisAudio.speak(greeting);
+      }
+    }
+  };
+
+  // Switch between Autonomous and Manual modes
+  const handleSwitchMode = (nextMode: JarvisControlMode) => {
+    setJarvisControlMode(nextMode);
+    jarvisAudio.setControlMode(nextMode);
+  };
 
   return (
-    <div className="fixed bottom-6 right-6 z-40 flex flex-col items-end gap-2 pointer-events-auto">
-      {/* 1. Real-Time Spoken Transcript Bubble (Appears as you speak) */}
-      {liveTranscript && (
-        <div className="bg-[#1C1917]/95 text-white text-xs font-semibold px-4 py-2 rounded-2xl shadow-2xl border border-[#D97746] flex items-center gap-2 max-w-sm backdrop-blur-md animate-in slide-in-from-bottom-2 duration-150">
-          <span className="w-2.5 h-2.5 rounded-full bg-[#D97746] animate-ping shrink-0" />
-          <span className="truncate">&ldquo;{liveTranscript}&rdquo;</span>
+    <div className="fixed bottom-6 right-6 z-40 flex flex-col items-end gap-2.5 pointer-events-auto">
+      {/* 1. Live Transcript / Barge-In Banner */}
+      {(liveTranscript || jarvisVoiceState === 'speaking' || isSpeaking || jarvisVoiceState === 'interrupted') && (
+        <div className="max-w-xs sm:max-w-sm bg-[#141210]/95 border border-[#D97746]/50 backdrop-blur-xl px-4 py-2.5 rounded-2xl shadow-2xl text-xs text-[#FAF9F6] flex items-center justify-between gap-3 animate-in slide-in-from-bottom-2 duration-150">
+          <div className="flex items-center gap-2 truncate">
+            <span className="h-2 w-2 rounded-full bg-[#D97746] animate-ping shrink-0" />
+            <span className="truncate">
+              {jarvisVoiceState === 'interrupted'
+                ? 'Speech interrupted — listening to you...'
+                : liveTranscript
+                ? `"${liveTranscript}..."`
+                : 'Jarvis speaking (say "Stop" or press Esc)...'}
+            </span>
+          </div>
+          {(jarvisVoiceState === 'speaking' || isSpeaking) && (
+            <button
+              onClick={() => {
+                jarvisAudio.stopSpeaking(true);
+                if (stopSpeaking) stopSpeaking();
+              }}
+              className="px-2.5 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 text-rose-300 font-semibold shrink-0 flex items-center gap-1 transition active:scale-95"
+              title="Interrupt Jarvis Speech (Esc)"
+            >
+              <Square className="w-3 h-3 fill-current" /> Stop
+            </button>
+          )}
         </div>
       )}
 
-      {/* 2. Autonomous Action Toast (Appears when JARVIS executes in background) */}
+      {/* 2. Autonomous Action Toast */}
       {lastActionToast && (
         <div className="bg-emerald-950/95 text-emerald-100 text-xs font-bold px-4 py-2.5 rounded-2xl shadow-2xl border border-emerald-500/50 flex items-center gap-2 max-w-sm backdrop-blur-md animate-in fade-in zoom-in-95 duration-200">
           <Check className="w-4 h-4 text-emerald-400 shrink-0" />
@@ -204,103 +168,107 @@ export default function JarvisOrb() {
         </div>
       )}
 
-      {/* 3. Hands-Free Indicator Pill */}
-      {isHandsFree && !liveTranscript && !lastActionToast && (
-        <div className="bg-[#1C1917]/90 text-white text-[11px] font-semibold px-3 py-1 rounded-full shadow-lg border border-cyan-500/40 flex items-center gap-2 backdrop-blur-sm animate-pulse">
-          <span className="w-2 h-2 rounded-full bg-cyan-400" />
-          <span>Autonomous Voice Listening &bull; Say &ldquo;Jarvis...&rdquo;</span>
-        </div>
-      )}
-
-      {/* 4. Main JARVIS Arc Reactor HUD Orb */}
-      <div className="relative group">
-        {/* Holographic Glowing Rings */}
-        <div
-          className={`absolute -inset-1 rounded-full blur-md transition duration-500 ${
-            isHandsFree
-              ? 'bg-gradient-to-r from-cyan-500 to-[#D97746] opacity-90 animate-pulse'
-              : isSpeaking
-              ? 'bg-[#4D7C5F] opacity-80 animate-pulse'
-              : 'bg-gradient-to-r from-[#D97746] to-[#E68A57] opacity-40 group-hover:opacity-75'
-          }`}
-        />
-
-        <div className="relative flex items-center bg-[#141210]/95 backdrop-blur-md border border-[#2E2822] hover:border-[#D97746]/60 rounded-full p-1.5 shadow-2xl transition-all duration-300 hover:shadow-[0_8px_30px_rgba(217,119,70,0.25)] hover:-translate-y-0.5">
-          {/* Hands-Free Toggle Button */}
+      {/* 3. Main Floating Jarvis Control Dock */}
+      <div className="flex items-center gap-1.5 bg-[#141210]/95 border border-[#2E2822] hover:border-[#D97746]/60 backdrop-blur-2xl p-1.5 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.65)] transition-all duration-300">
+        {/* Autonomous vs Manual Mode Segmented Switch */}
+        <div className="flex items-center bg-black/40 p-1 rounded-xl border border-white/5">
           <button
-            onClick={toggleHandsFree}
-            title={
-              isHandsFree
-                ? 'Turn Off Hands-Free Autonomous Mode'
-                : 'Turn ON Hands-Free Autonomous Mode (Alt + J)'
-            }
-            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 ${
-              isHandsFree
-                ? 'bg-cyan-500 text-black font-extrabold shadow-lg shadow-cyan-500/30 scale-105'
-                : 'text-[#A8A29E] hover:text-white hover:bg-white/10'
+            type="button"
+            onClick={() => handleSwitchMode('autonomous')}
+            className={`px-2 py-1 rounded-lg text-[11px] font-semibold flex items-center gap-1 transition-all ${
+              jarvisControlMode === 'autonomous'
+                ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-xs'
+                : 'text-stone-400 hover:text-stone-200'
             }`}
+            title="Full Autonomous Mode: Continuous listening + acoustic echo suppression & barge-in"
           >
-            {isHandsFree ? (
-              <Radio className="w-4 h-4 animate-spin" />
-            ) : (
-              <Mic className="w-4 h-4" />
-            )}
+            <Radio className="w-3 h-3" />
+            <span>Auto</span>
           </button>
-
-          {/* JARVIS Core Arc Display — Clicking immediately turns ON voice listening */}
           <button
-            onClick={toggleHandsFree}
-            title={isHandsFree ? 'JARVIS Listening — Click to Pause' : 'Click to Turn ON Voice Listening'}
-            className="flex items-center gap-2.5 px-3 py-1.5 pr-2 text-white hover:opacity-95 transition-all duration-200 text-left hover:scale-[1.02] active:scale-98"
+            type="button"
+            onClick={() => handleSwitchMode('manual')}
+            className={`px-2 py-1 rounded-lg text-[11px] font-semibold flex items-center gap-1 transition-all ${
+              jarvisControlMode === 'manual'
+                ? 'bg-[#D97746]/20 text-[#E68A57] border border-[#D97746]/40 shadow-xs'
+                : 'text-stone-400 hover:text-stone-200'
+            }`}
+            title="Manual Mode: Push-to-Talk Mic button or Alt+J shortcut"
           >
-            <div
-              className={`w-7 h-7 rounded-full flex items-center justify-center text-white shadow-2xs transition-all duration-300 ${
-                isHandsFree ? 'bg-cyan-600 animate-pulse' : 'bg-[#D97746] hover:bg-[#C26333]'
-              }`}
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-            </div>
-            <div>
-              <div className="text-xs font-black tracking-tight flex items-center gap-1.5">
-                <span>JARVIS</span>
-                <span
-                  className={`text-[9px] font-bold px-1.5 py-0.2 rounded-full border transition-colors ${
-                    isHandsFree
-                      ? 'bg-cyan-950 text-cyan-300 border-cyan-700/50'
-                      : 'bg-[#D97746]/20 text-[#E68A57] border-[#D97746]/30'
-                  }`}
-                >
-                  {isHandsFree ? 'LISTENING' : 'VOICE OS'}
-                </span>
-              </div>
-              <div className="text-[10px] text-[#A8A29E] font-medium leading-tight">
-                {isSpeaking
-                  ? 'Speaking response...'
-                  : isHandsFree
-                  ? 'Listening for voice... (Speak now)'
-                  : 'Click to Turn On Voice'}
-              </div>
-            </div>
-          </button>
-
-          {/* Quick HUD Cheatsheet & Terminal Button */}
-          <button
-            onClick={() => setIsJarvisOpen(true)}
-            title="Open JARVIS Command Cheatsheet & Manual Input HUD"
-            className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/15 border border-white/10 text-[#A8A29E] hover:text-white flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-[#D97746]" />
-          </button>
-
-          {/* Quick Emergency SOS Trigger */}
-          <button
-            onClick={() => setIsSosModalOpen(true)}
-            title="Emergency Hospital & Police SOS"
-            className="w-8 h-8 rounded-full bg-red-950/70 hover:bg-red-900 border border-red-700/60 text-red-300 hover:text-white flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 ml-1"
-          >
-            <ShieldAlert className="w-3.5 h-3.5" />
+            <Hand className="w-3 h-3" />
+            <span>Manual</span>
           </button>
         </div>
+
+        {/* Dedicated Push-to-Talk / Mic Control Button */}
+        <button
+          type="button"
+          onClick={() => {
+            if (!isSystemActive) {
+              setIsSystemActive(true);
+              jarvisAudio.startSystem(jarvisControlMode);
+            }
+            jarvisAudio.toggleManualMic();
+          }}
+          className={`p-2 rounded-xl border font-medium text-xs flex items-center gap-1.5 transition-all ${
+            jarvisVoiceState === 'listening'
+              ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300 animate-pulse'
+              : jarvisVoiceState === 'speaking' || isSpeaking
+              ? 'bg-amber-500/20 border-amber-500/50 text-amber-300'
+              : 'bg-white/5 hover:bg-white/10 border-white/10 text-stone-300'
+          }`}
+          title="Toggle Microphone / Interrupt Speech (Shortcut: Alt + J)"
+        >
+          {jarvisVoiceState === 'listening' ? (
+            <Mic className="w-3.5 h-3.5 text-emerald-400" />
+          ) : (
+            <MicOff className="w-3.5 h-3.5 text-stone-400" />
+          )}
+          <span className="hidden md:inline text-[11px]">
+            {jarvisVoiceState === 'listening'
+              ? 'Listening'
+              : jarvisVoiceState === 'speaking' || isSpeaking
+              ? 'Interrupt'
+              : 'Mic'}
+          </span>
+        </button>
+
+        {/* Open Jarvis Command HUD Modal */}
+        <button
+          type="button"
+          onClick={() => {
+            setIsHUDModalOpen(true);
+            setIsJarvisOpen(true);
+          }}
+          className="p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-cyan-300 transition-all hover:scale-105 active:scale-95"
+          title="Open Jarvis Command HUD"
+        >
+          <Terminal className="w-3.5 h-3.5" />
+        </button>
+
+        {/* Quick Emergency SOS Trigger */}
+        <button
+          type="button"
+          onClick={() => setIsSosModalOpen(true)}
+          className="p-2 rounded-xl bg-rose-950/70 hover:bg-rose-900 border border-rose-500/40 text-rose-300 transition-all hover:scale-105 active:scale-95"
+          title="Emergency SOS Broadcast"
+        >
+          <ShieldAlert className="w-3.5 h-3.5" />
+        </button>
+
+        {/* Master Jarvis Orb Power Button */}
+        <button
+          type="button"
+          onClick={handleTogglePower}
+          className={`relative h-9 px-3 rounded-xl font-bold text-[11px] tracking-wider uppercase flex items-center gap-1.5 transition-all hover:scale-102 active:scale-98 ${
+            isSystemActive
+              ? 'bg-gradient-to-r from-cyan-500 to-[#D97746] text-white shadow-[0_0_20px_rgba(217,119,70,0.4)]'
+              : 'bg-white/10 hover:bg-white/15 text-stone-300 border border-white/10'
+          }`}
+        >
+          <Sparkles className="w-3.5 h-3.5" />
+          <span>{isSystemActive ? 'JARVIS ON' : 'JARVIS'}</span>
+        </button>
       </div>
     </div>
   );

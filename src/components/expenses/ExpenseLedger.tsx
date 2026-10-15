@@ -18,6 +18,7 @@ export default function ExpenseLedger() {
     settlements,
     users,
     addExpense,
+    settleAllDebts,
     nextPayerInfo,
     currency,
   } = useTrip();
@@ -120,9 +121,19 @@ export default function ExpenseLedger() {
 
       {/* Settlements Directed Transfer List */}
       <div className="bg-white border border-[#EBE7DF] rounded-2xl p-5 shadow-2xs space-y-3">
-        <h3 className="text-sm font-bold text-[#1C1917]">
-          Simplified Debt Settlements ({settlements.length} transfers)
-        </h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-bold text-[#1C1917]">
+            Simplified Debt Settlements ({settlements.length} transfers)
+          </h3>
+          {settlements.length > 0 && settleAllDebts && (
+            <button
+              onClick={settleAllDebts}
+              className="px-3 py-1 bg-[#1C1917] hover:bg-[#D97746] text-white rounded-xl text-xs font-semibold shadow-2xs transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-95"
+            >
+              1-Click Settle All
+            </button>
+          )}
+        </div>
 
         <div className="divide-y divide-[#EBE7DF]">
           {settlements.map((s, idx) => {

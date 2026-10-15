@@ -41,12 +41,30 @@ export function processJarvisVoiceCommand(
 
   const lower = (clean || rawInput.trim()).toLowerCase();
 
+  // 0. ACOUSTIC ECHO SUPPRESSION GUARD
+  // If input is merely acoustic echo from Jarvis's own voice, ignore it immediately without re-triggering speech
+  if (
+    lower.includes('at your service') ||
+    lower.includes('standing by for your travel command') ||
+    lower.includes('telemetry systems online') ||
+    lower.includes('how may i assist') ||
+    lower === 'stop' ||
+    lower === 'quiet' ||
+    lower === 'silence'
+  ) {
+    return {
+      intent: 'UNKNOWN',
+      summary: 'Acoustic echo filtered',
+      spokenResponse: '',
+    };
+  }
+
   // If user just spoke the wake word
   if (!clean || lower === 'jarvis' || lower === 'hey jarvis') {
     return {
       intent: 'UNKNOWN',
       summary: 'JARVIS Standby & Listening',
-      spokenResponse: `At your service, ${ctx.currentUser.name.split(' ')[0]}. Standing by for your travel command.`,
+      spokenResponse: `Standing by for your travel command, ${ctx.currentUser.name.split(' ')[0]}.`,
       actionExecuted: 'STANDBY_ACK',
       quickReplies: ['Add ₹1,200 Lunch', "Check Dadaji's Meds", 'Show Debt Graph', 'Emergency SOS'],
     };
@@ -582,7 +600,7 @@ export function processJarvisVoiceCommand(
   return {
     intent: 'QUERY_SCHEDULE',
     summary: `Next Event: ${nextItem.title} at ${nextItem.time}`,
-    spokenResponse: `At your service. Next scheduled activity is "${nextItem.title}" at ${nextItem.time} at ${nextItem.location}. All transportation and dietary requirements are pre-vetted.`,
+    spokenResponse: `Next scheduled activity is "${nextItem.title}" at ${nextItem.time} at ${nextItem.location}. All transportation and dietary requirements are pre-vetted.`,
     navigation: { tab: 'timeline' },
     cardType: 'schedule',
     cardData: {

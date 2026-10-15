@@ -89,6 +89,19 @@ interface TripContextType {
   voiceTriggerCount: number;
   triggerJarvisVoice: () => void;
   addItineraryRestBuffer: (afterEventId: string, minutes: number) => void;
+  jarvisControlMode: import('@/types').JarvisControlMode;
+  setJarvisControlMode: (mode: import('@/types').JarvisControlMode) => void;
+  jarvisVoiceState: import('@/types').JarvisVoiceState;
+  setJarvisVoiceState: (state: import('@/types').JarvisVoiceState) => void;
+  isHUDModalOpen: boolean;
+  setIsHUDModalOpen: (open: boolean) => void;
+  resolveAllConflicts: () => void;
+  settleAllDebts: () => void;
+  resolvePollAndCommit: (pollId: string) => void;
+  addItineraryItem: (item: any) => void;
+  updateCurrentUser: (patch: Partial<User>) => void;
+  personaMode: import('@/types').PersonaMode;
+  setPersonaMode: (mode: import('@/types').PersonaMode) => void;
 }
 
 const TripContext = createContext<TripContextType | undefined>(undefined);
@@ -116,6 +129,9 @@ export function TripProvider({ children }: { children: React.ReactNode }) {
   const [packingList, setPackingList] = useState<import('@/types').PackingItem[]>(INITIAL_PACKING);
   const [vaultSubTab, setVaultSubTab] = useState<'passes' | 'rendezvous' | 'alignment' | 'photos'>('passes');
   const [voiceTriggerCount, setVoiceTriggerCount] = useState(0);
+  const [jarvisControlMode, setJarvisControlMode] = useState<import('@/types').JarvisControlMode>('autonomous');
+  const [jarvisVoiceState, setJarvisVoiceState] = useState<import('@/types').JarvisVoiceState>('idle');
+  const [isHUDModalOpen, setIsHUDModalOpen] = useState(false);
 
   const toggleWeather = () => {
     setWeather((prev) => (prev === 'Sunny' ? 'Rainy' : 'Sunny'));
@@ -390,6 +406,58 @@ export function TripProvider({ children }: { children: React.ReactNode }) {
       id: `exp-${Date.now()}`,
     };
     setExpenses((prev) => [newExp, ...prev]);
+  };
+
+  // Settle all debts using minimal transfers
+  const settleAllDebts = () => {
+    if (settlements.length === 0) return;
+    const nameOf = (id: string) => users.find((u) => u.id === id)?.name.split(' ')[0] || id;
+    const settlementEntries: Expense[] = settlements.map((s, idx) => ({
+      id: `settle-${Date.now()}-${idx}`,
+      title: `Settlement: ${nameOf(s.fromUserId)} → ${nameOf(s.toUserId)}`,
+      amount: s.amount,
+      currency: currency || 'INR',
+      paidByUserId: s.fromUserId,
+      splitWithUserIds: [s.toUserId],
+      category: 'transit',
+      date: 'Today',
+      verified: true,
+    }));
+    setExpenses((prev) => [...settlementEntries, ...prev]);
+  };
+
+  // Resolve all conflicts with 1-click auto-heal
+  const resolveAllConflicts = () => {
+    autoHealSchedule();
+    conflicts.forEach((c) => resolveConflict(c.id));
+  };
+
+  // Resolve poll and commit winner to itinerary
+  const resolvePollAndCommit = (pollId: string) => {
+    finalizePoll(pollId);
+  };
+
+  // Add itinerary item
+  const addItineraryItem = (item: any) => {
+    setItinerary((prev) => [
+      ...prev,
+      {
+        ...item,
+        id: item.id || `it-${Date.now()}`,
+        status: item.status || 'confirmed',
+      },
+    ]);
+  };
+
+  // Update Current User
+  const updateCurrentUser = (patch: Partial<User>) => {
+    setCurrentUser((prev) => ({ ...prev, ...patch }));
+    setUsers((prev) => prev.map((u) => (u.id === currentUser.id ? { ...u, ...patch } : u)));
+  };
+
+  const personaMode = (currentUser.personaType || 'standard') as import('@/types').PersonaMode;
+  const setPersonaMode = (mode: import('@/types').PersonaMode) => {
+    updateCurrentUser({ personaType: mode as import('@/types').PersonaType });
   };
 
   // Update Travel Status
@@ -944,6 +1012,19 @@ export function TripProvider({ children }: { children: React.ReactNode }) {
         setVaultSubTab,
         voiceTriggerCount,
         triggerJarvisVoice,
+        jarvisControlMode,
+        setJarvisControlMode,
+        jarvisVoiceState,
+        setJarvisVoiceState,
+        isHUDModalOpen,
+        setIsHUDModalOpen,
+        resolveAllConflicts,
+        settleAllDebts,
+        resolvePollAndCommit,
+        addItineraryItem,
+        updateCurrentUser,
+        personaMode,
+        setPersonaMode,
       }}
     >
       {children}

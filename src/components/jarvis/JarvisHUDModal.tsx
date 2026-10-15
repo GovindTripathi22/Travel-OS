@@ -28,6 +28,8 @@ export default function JarvisHUDModal() {
   const {
     isJarvisOpen,
     setIsJarvisOpen,
+    isHUDModalOpen,
+    setIsHUDModalOpen,
     isSpeaking,
     speakText,
     stopSpeaking,
@@ -35,6 +37,8 @@ export default function JarvisHUDModal() {
     executeJarvisCommand,
     setIsSosModalOpen,
     currentUser,
+    jarvisControlMode,
+    setJarvisControlMode,
   } = useTrip();
 
   const [input, setInput] = useState('');
@@ -42,13 +46,20 @@ export default function JarvisHUDModal() {
   const [transcriptPreview, setTranscriptPreview] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const isOpen = isJarvisOpen || isHUDModalOpen;
+
+  const handleClose = () => {
+    setIsJarvisOpen(false);
+    if (setIsHUDModalOpen) setIsHUDModalOpen(false);
+  };
+
   useEffect(() => {
-    if (isJarvisOpen && inputRef.current) {
+    if (isOpen && inputRef.current) {
       inputRef.current.focus();
     }
-  }, [isJarvisOpen]);
+  }, [isOpen]);
 
-  if (!isJarvisOpen) return null;
+  if (!isOpen) return null;
 
   const handleExecute = (textToRun?: string) => {
     const cmd = textToRun || input;
@@ -195,11 +206,23 @@ export default function JarvisHUDModal() {
           </div>
 
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                const next = jarvisControlMode === 'autonomous' ? 'manual' : 'autonomous';
+                setJarvisControlMode(next);
+              }}
+              className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 text-xs font-semibold text-cyan-300 flex items-center gap-1.5 transition"
+              title="Toggle Autonomous / Manual Mode"
+            >
+              {jarvisControlMode === 'autonomous' ? 'Auto Mode' : 'Manual (Alt+J)'}
+            </button>
+
             {isSpeaking ? (
               <button
                 onClick={stopSpeaking}
                 title="Stop Speaking"
-                className="p-2 rounded-xl bg-[#D97746] text-white hover:bg-[#C26333] transition"
+                className="p-2 rounded-xl bg-rose-600 text-white hover:bg-rose-500 transition animate-pulse"
               >
                 <VolumeX className="w-4 h-4" />
               </button>
@@ -216,7 +239,7 @@ export default function JarvisHUDModal() {
             )}
 
             <button
-              onClick={() => setIsJarvisOpen(false)}
+              onClick={handleClose}
               className="p-2 rounded-xl text-[#A8A29E] hover:text-white hover:bg-white/10 transition"
             >
               <X className="w-5 h-5" />

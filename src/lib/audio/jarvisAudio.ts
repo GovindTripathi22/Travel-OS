@@ -1,15 +1,11 @@
 'use client';
 
-/**
- * Natural British J.A.R.V.I.S. Audio Engine + Code-Synthesized Acoustic Sound Engine.
- * Features:
- * - Selects authentic British neural voices (Ryan / Thomas / Daniel / Arthur / Google UK English Male).
- * - Real-time hard-stop interrupt (stopJarvisSpeech).
- * - Scrubs symbols, markdown, and emojis before speaking.
- * - Native Web Audio API oscillators for wake, confirmation, healing, and SOS chimes.
- */
+import { JarvisControlMode, JarvisVoiceState } from '@/types';
 
-let speechListener: ((speaking: boolean) => void) | null = null;
+type TranscriptCallback = (transcript: string, isFinal: boolean) => void;
+type StateChangeCallback = (state: JarvisVoiceState) => void;
+
+let globalSpeechListener: ((speaking: boolean) => void) | null = null;
 let cachedVoices: SpeechSynthesisVoice[] = [];
 
 if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
@@ -21,21 +17,11 @@ if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
 }
 
 export function onJarvisSpeechStateChange(cb: (speaking: boolean) => void) {
-  speechListener = cb;
+  globalSpeechListener = cb;
 }
 
-function setSpeaking(state: boolean) {
-  if (speechListener) speechListener(state);
-}
-
-export function stopJarvisSpeech() {
-  if (typeof window === 'undefined') return;
-  try {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-    }
-  } catch {}
-  setSpeaking(false);
+function setGlobalSpeaking(state: boolean) {
+  if (globalSpeechListener) globalSpeechListener(state);
 }
 
 export function pickBestJarvisVoice(lang = 'en-GB'): SpeechSynthesisVoice | null {
@@ -88,30 +74,22 @@ export function cleanTextForJarvisSpeech(rawText: string): string {
     .trim();
 }
 
-export function speakWithJarvisVoice(text: string, lang = 'en-GB', enabled = true) {
-  if (!enabled || typeof window === 'undefined' || !('speechSynthesis' in window)) return;
-  const clean = cleanTextForJarvisSpeech(text);
-  if (!clean) return;
-
-  try {
-    window.speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(clean);
-    const voice = pickBestJarvisVoice(lang);
-    if (voice) {
-      u.voice = voice;
-      u.lang = voice.lang;
-    } else {
-      u.lang = lang;
-    }
-    u.rate = lang.startsWith('ja') ? 0.94 : 0.99;
-    u.pitch = lang.startsWith('ja') ? 1.0 : 0.93;
-    u.onstart = () => setSpeaking(true);
-    u.onend = () => setSpeaking(false);
-    u.onerror = () => setSpeaking(false);
-    window.speechSynthesis.speak(u);
-  } catch {
-    setSpeaking(false);
+export function stopJarvisSpeech(wasInterrupted = false) {
+  if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+    try {
+      window.speechSynthesis.cancel();
+    } catch {}
   }
+  setGlobalSpeaking(false);
+  jarvisAudio.stopSpeaking(wasInterrupted);
+}
+
+export function speakWithJarvisVoice(text: string, lang = 'en-GB', enabled = true, onDone?: () => void) {
+  if (!enabled || typeof window === 'undefined' || !('speechSynthesis' in window)) {
+    if (onDone) onDone();
+    return;
+  }
+  jarvisAudio.speak(text, onDone);
 }
 
 export function playJarvisSound(kind: 'chime' | 'heal' | 'sos' | 'xp' = 'chime', enabled = true) {
@@ -215,10 +193,376 @@ export function playJarvisChime(type: JarvisChimeType) {
   } catch {}
 }
 
-export const jarvisAudio = {
-  speak: (text: string) => speakWithJarvisVoice(text, 'en-GB', true),
-  stop: () => stopJarvisSpeech(),
-  playChime: () => playJarvisSound('chime', true),
-  playSuccess: () => playJarvisSound('heal', true),
-  playAlert: () => playJarvisSound('sos', true),
-};
+export class JarvisAudioController {
+  private recognition: any = null;
+  private controlMode: JarvisControlMode = 'autonomous';
+  private voiceState: JarvisVoiceState = 'idle';
+  private isSystemActive: boolean = false;
+  private isSpeakingNow: boolean = false;
+  private currentSpokenText: string = '';
+  private speechStartedAt: number = 0;
+
+  private onTranscriptCb: TranscriptCallback | null = null;
+  private onStateChangeCb: StateChangeCallback | null = null;
+  private restartTimer: ReturnType<typeof setTimeout> | null = null;
+
+  constructor() {
+    if (typeof window !== 'undefined') {
+      const SpeechRecognition =
+        (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      if (SpeechRecognition) {
+        this.recognition = new SpeechRecognition();
+        this.recognition.continuous = true;
+        this.recognition.interimResults = true;
+        this.recognition.lang = 'en-US';
+        this.setupRecognitionHandlers();
+      }
+    }
+  }
+
+  private setState(next: JarvisVoiceState) {
+    this.voiceState = next;
+    setGlobalSpeaking(next === 'speaking');
+    if (this.onStateChangeCb) {
+      this.onStateChangeCb(next);
+    }
+  }
+
+  public getVoiceState(): JarvisVoiceState {
+    return this.voiceState;
+  }
+
+  public getControlMode(): JarvisControlMode {
+    return this.controlMode;
+  }
+
+  public isActive(): boolean {
+    return this.isSystemActive;
+  }
+
+  public isSpeaking(): boolean {
+    return this.isSpeakingNow;
+  }
+
+  /**
+   * Normalizes text to compare microphone transcripts against Jarvis's own TTS output.
+   * This prevents the acoustic feedback loop where Jarvis hears itself saying "At your service".
+   */
+  public normalize(text: string): string {
+    return text
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  /**
+   * Checks if the microphone transcript is merely acoustic echo from Jarvis's own speaker output.
+   */
+  public isSelfEcho(heardText: string): boolean {
+    if (!this.isSpeakingNow || !this.currentSpokenText) return false;
+    const normHeard = this.normalize(heardText);
+    const normSpoken = this.normalize(this.currentSpokenText);
+    if (!normHeard || normHeard.length < 3) return true;
+
+    // Explicit barge-in interruption keywords always break through immediately
+    const bargeInKeywords = [
+      'stop',
+      'wait',
+      'hold on',
+      'pause',
+      'quiet',
+      'cancel',
+      'shut up',
+      'enough',
+      'listen',
+      'hush'
+    ];
+    if (bargeInKeywords.some((kw) => normHeard.includes(kw))) {
+      return false;
+    }
+
+    // If the heard phrase is contained inside what Jarvis is currently speaking, it's speaker echo!
+    if (normSpoken.includes(normHeard)) {
+      return true;
+    }
+
+    // Check word overlap ratio: if >= 60% of heard words come from Jarvis's current sentence, ignore as echo
+    const heardWords = normHeard.split(' ').filter((w) => w.length > 2);
+    const spokenWords = new Set(normSpoken.split(' '));
+    if (heardWords.length > 0) {
+      const overlapCount = heardWords.filter((w) => spokenWords.has(w)).length;
+      if (overlapCount / heardWords.length >= 0.6) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  private setupRecognitionHandlers() {
+    if (!this.recognition) return;
+
+    this.recognition.onresult = (event: any) => {
+      let interimTranscript = '';
+      let finalTranscript = '';
+
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const piece = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          finalTranscript += piece;
+        } else {
+          interimTranscript += piece;
+        }
+      }
+
+      const candidate = (finalTranscript || interimTranscript).trim();
+      if (!candidate) return;
+
+      // 1. Acoustic Echo Guard: Ignore Jarvis's own voice coming from the speakers
+      if (this.isSelfEcho(candidate)) {
+        return;
+      }
+
+      // 2. Barge-In Interruption: If Jarvis is currently speaking and a real human interrupts:
+      if (this.isSpeakingNow) {
+        const elapsedSinceSpeakStart = Date.now() - this.speechStartedAt;
+        // Require at least 300ms after TTS start so initial speaker pop doesn't self-cancel
+        if (elapsedSinceSpeakStart > 300 && candidate.split(/\s+/).length >= 1) {
+          this.stopSpeaking(true);
+        } else {
+          return;
+        }
+      }
+
+      if (interimTranscript && this.onTranscriptCb) {
+        this.onTranscriptCb(interimTranscript.trim(), false);
+      }
+
+      if (finalTranscript && this.onTranscriptCb) {
+        const cleaned = finalTranscript.trim();
+        // If user just said "stop" or "quiet" to interrupt, don't trigger a new response loop
+        const norm = this.normalize(cleaned);
+        if (['stop', 'quiet', 'pause', 'cancel', 'silence', 'shut up'].includes(norm)) {
+          this.stopSpeaking(true);
+          return;
+        }
+        this.onTranscriptCb(cleaned, true);
+        // In Manual mode, automatically stop mic after one complete command is captured
+        if (this.controlMode === 'manual') {
+          this.stopListening();
+        }
+      }
+    };
+
+    this.recognition.onerror = (event: any) => {
+      if (event.error === 'no-speech' || event.error === 'aborted') {
+        return;
+      }
+      console.warn('[JarvisAudio] SpeechRecognition warning:', event.error);
+    };
+
+    this.recognition.onend = () => {
+      // ONLY auto-restart in Autonomous mode when system is active
+      if (this.isSystemActive && this.controlMode === 'autonomous') {
+        if (this.restartTimer) clearTimeout(this.restartTimer);
+        this.restartTimer = setTimeout(() => {
+          if (this.isSystemActive && this.controlMode === 'autonomous') {
+            try {
+              this.recognition.start();
+              if (!this.isSpeakingNow) {
+                this.setState('listening');
+              }
+            } catch {
+              // Already started
+            }
+          }
+        }, 300);
+      } else if (!this.isSpeakingNow) {
+        this.setState('idle');
+      }
+    };
+  }
+
+  public configure(
+    onTranscript: TranscriptCallback,
+    onStateChange: StateChangeCallback
+  ) {
+    this.onTranscriptCb = onTranscript;
+    this.onStateChangeCb = onStateChange;
+  }
+
+  public setControlMode(mode: JarvisControlMode) {
+    this.controlMode = mode;
+    if (mode === 'manual') {
+      if (this.restartTimer) clearTimeout(this.restartTimer);
+      try {
+        this.recognition?.stop();
+      } catch {}
+      if (!this.isSpeakingNow) {
+        this.setState('idle');
+      }
+    } else if (mode === 'autonomous' && this.isSystemActive) {
+      this.startListening();
+    }
+  }
+
+  public startSystem(mode: JarvisControlMode = this.controlMode) {
+    this.isSystemActive = true;
+    this.controlMode = mode;
+    if (mode === 'autonomous') {
+      this.startListening();
+    } else {
+      this.setState('idle');
+    }
+  }
+
+  public stopSystem() {
+    this.isSystemActive = false;
+    if (this.restartTimer) clearTimeout(this.restartTimer);
+    this.stopSpeaking(false);
+    try {
+      this.recognition?.stop();
+    } catch {}
+    this.setState('idle');
+  }
+
+  public startListening() {
+    this.isSystemActive = true;
+    if (this.isSpeakingNow) {
+      this.stopSpeaking(true);
+    }
+    if (!this.recognition) return;
+    try {
+      this.recognition.start();
+      this.setState('listening');
+    } catch {
+      this.setState('listening');
+    }
+  }
+
+  public stopListening() {
+    if (this.restartTimer) clearTimeout(this.restartTimer);
+    try {
+      this.recognition?.stop();
+    } catch {}
+    if (!this.isSpeakingNow) {
+      this.setState('idle');
+    }
+  }
+
+  public toggleManualMic() {
+    if (this.isSpeakingNow) {
+      this.stopSpeaking(true);
+      this.startListening();
+      return;
+    }
+    if (this.voiceState === 'listening') {
+      this.stopListening();
+    } else {
+      this.startListening();
+    }
+  }
+
+  public stopSpeaking(wasInterrupted: boolean = false) {
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      try {
+        window.speechSynthesis.cancel();
+      } catch {}
+    }
+    this.isSpeakingNow = false;
+    this.currentSpokenText = '';
+    setGlobalSpeaking(false);
+
+    if (wasInterrupted) {
+      this.setState('interrupted');
+      setTimeout(() => {
+        if (this.isSystemActive && this.controlMode === 'autonomous') {
+          this.setState('listening');
+        } else {
+          this.setState('idle');
+        }
+      }, 400);
+    } else {
+      if (this.isSystemActive && this.controlMode === 'autonomous') {
+        this.setState('listening');
+      } else {
+        this.setState('idle');
+      }
+    }
+  }
+
+  public speak(text: string, onDone?: () => void) {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+      if (onDone) onDone();
+      return;
+    }
+
+    try {
+      window.speechSynthesis.cancel();
+    } catch {}
+
+    const cleanText = cleanTextForJarvisSpeech(text);
+    if (!cleanText) {
+      if (onDone) onDone();
+      return;
+    }
+
+    this.currentSpokenText = cleanText;
+    this.isSpeakingNow = true;
+    this.speechStartedAt = Date.now();
+    this.setState('speaking');
+
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    utterance.rate = 1.02;
+    utterance.pitch = 0.95;
+
+    const voice = pickBestJarvisVoice('en-GB');
+    if (voice) {
+      utterance.voice = voice;
+      utterance.lang = voice.lang;
+    }
+
+    utterance.onend = () => {
+      this.isSpeakingNow = false;
+      this.currentSpokenText = '';
+      setGlobalSpeaking(false);
+      if (this.isSystemActive && this.controlMode === 'autonomous') {
+        this.setState('listening');
+      } else {
+        this.setState('idle');
+      }
+      if (onDone) onDone();
+    };
+
+    utterance.onerror = () => {
+      this.isSpeakingNow = false;
+      this.currentSpokenText = '';
+      setGlobalSpeaking(false);
+      if (this.isSystemActive && this.controlMode === 'autonomous') {
+        this.setState('listening');
+      } else {
+        this.setState('idle');
+      }
+      if (onDone) onDone();
+    };
+
+    window.speechSynthesis.speak(utterance);
+  }
+
+  // Backwards compatibility helper methods
+  public stop() {
+    this.stopSpeaking(false);
+  }
+  public playChime() {
+    playJarvisChime('wake');
+  }
+  public playSuccess() {
+    playJarvisSound('heal', true);
+  }
+  public playAlert() {
+    playJarvisSound('sos', true);
+  }
+}
+
+export const jarvisAudio = new JarvisAudioController();

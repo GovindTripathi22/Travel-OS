@@ -8,6 +8,35 @@ import {
   PhotoMemory,
 } from '@/types';
 
+/**
+ * Generates a crisp, 100% offline-proof SVG Data-URI avatar so profile images NEVER break.
+ */
+export function createSvgAvatar(initials: string, bgStart: string, bgEnd: string): string {
+  const cleanInitials = initials.slice(0, 2).toUpperCase();
+  const id = `g_${cleanInitials}_${bgStart.replace(/[^a-zA-Z0-9]/g, '')}`;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+    <defs>
+      <linearGradient id="${id}" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="${bgStart}" />
+        <stop offset="100%" stop-color="${bgEnd}" />
+      </linearGradient>
+    </defs>
+    <rect width="128" height="128" rx="64" fill="url(#${id})" />
+    <circle cx="64" cy="64" r="60" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="3" />
+    <text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" fill="#ffffff" font-family="system-ui, -apple-system, sans-serif" font-size="46" font-weight="700" letter-spacing="1">${cleanInitials}</text>
+  </svg>`;
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
+
+export const AVATAR_PRESETS = [
+  { label: 'Cyber Cyan', url: createSvgAvatar('RS', '#0284c7', '#2563eb') },
+  { label: 'Emerald Nomad', url: createSvgAvatar('DS', '#059669', '#0d9488') },
+  { label: 'Sunset Amber', url: createSvgAvatar('KB', '#d97706', '#dc2626') },
+  { label: 'Royal Violet', url: createSvgAvatar('PS', '#7c3aed', '#db2777') },
+  { label: 'Midnight Slate', url: createSvgAvatar('VM', '#334155', '#0f172a') },
+  { label: 'Rose Quartz', url: createSvgAvatar('AS', '#db2777', '#be185d') },
+];
+
 export const INITIAL_USERS: User[] = [
   {
     id: 'rohan',
@@ -16,7 +45,7 @@ export const INITIAL_USERS: User[] = [
     personaType: 'standard',
     relationship: 'Trip Leader / Son',
     age: 32,
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+    avatar: createSvgAvatar('RS', '#ea580c', '#c2410c'),
     phone: '+91 98765 43210',
     batteryLevel: 58,
     voiceCredits: 100,
@@ -38,7 +67,7 @@ export const INITIAL_USERS: User[] = [
     personaType: 'elderly',
     relationship: 'Grandfather',
     age: 72,
-    avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
+    avatar: createSvgAvatar('DS', '#059669', '#047857'),
     phone: '+91 98111 22334',
     batteryLevel: 68,
     voiceCredits: 100,
@@ -70,7 +99,7 @@ export const INITIAL_USERS: User[] = [
     personaType: 'kid',
     relationship: 'Nephew',
     age: 9,
-    avatar: 'https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=150&auto=format&fit=crop&q=80',
+    avatar: createSvgAvatar('KB', '#0284c7', '#0369a1'),
     phone: '+91 98222 33445 (Mom\'s Phone)',
     batteryLevel: 94,
     voiceCredits: 100,
@@ -93,7 +122,7 @@ export const INITIAL_USERS: User[] = [
     personaType: 'standard',
     relationship: 'Sister-in-law',
     age: 29,
-    avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80',
+    avatar: createSvgAvatar('PS', '#7c3aed', '#6d28d9'),
     phone: '+91 98333 44556',
     batteryLevel: 75,
     voiceCredits: 100,
@@ -115,7 +144,7 @@ export const INITIAL_USERS: User[] = [
     personaType: 'standard',
     relationship: 'Brother',
     age: 34,
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+    avatar: createSvgAvatar('VM', '#d97706', '#b45309'),
     phone: '+91 98444 55667',
     batteryLevel: 88,
     voiceCredits: 100,
@@ -137,7 +166,7 @@ export const INITIAL_USERS: User[] = [
     personaType: 'standard',
     relationship: 'Cousin',
     age: 27,
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
+    avatar: createSvgAvatar('AS', '#db2777', '#be185d'),
     phone: '+91 98555 66778',
     batteryLevel: 82,
     voiceCredits: 100,
