@@ -65,6 +65,18 @@ export default function Header() {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [nameInput, setNameInput] = useState(currentUser.name);
   const [selectedAvatar, setSelectedAvatar] = useState(currentUser.avatar);
+  const [liveWeather, setLiveWeather] = useState<any>(null);
+  const [liveForex, setLiveForex] = useState<any>(null);
+
+  useEffect(() => {
+    fetch('/api/live-data')
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.weather) setLiveWeather(d.weather);
+        if (d.forex) setLiveForex(d.forex);
+      })
+      .catch(() => {});
+  }, []);
 
   const safeAvatarSrc = (u: { name: string; avatar?: string }) => {
     if (u.avatar && u.avatar.startsWith('data:image/svg+xml')) return u.avatar;
@@ -380,6 +392,31 @@ export default function Header() {
                       <span className="text-[10px] text-[#A8A29E]">Toggle</span>
                     </button>
                   </div>
+
+                  {/* Live Real-Time Telemetry Badge */}
+                  {liveWeather && (
+                    <div className="p-2.5 rounded-xl bg-[#FAF9F6] border border-[#EBE7DF] text-[11px] space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold flex items-center gap-1.5 text-[#D97746]">
+                          <Sun className="w-3.5 h-3.5" /> Live {liveWeather.destination.split(',')[0]} Telemetry
+                        </span>
+                        <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 border border-emerald-200 px-1.5 py-0.2 rounded-full">
+                          ● Live
+                        </span>
+                      </div>
+                      <div className="text-[#1C1917] font-semibold text-xs">
+                        {liveWeather.temperatureC}°C &bull; {liveWeather.condition}
+                      </div>
+                      <div className="text-[10px] text-[#78716C]">
+                        Feels like {liveWeather.apparentTempC}°C &bull; Wind {liveWeather.windSpeedKmh} km/h
+                      </div>
+                      {liveForex && (
+                        <div className="text-[10px] text-[#D97746] font-medium pt-0.5 border-t border-[#EBE7DF]/80">
+                          Forex: 1 INR = ¥{liveForex.rates.JPY} JPY ($1 = ₹{(1 / (liveForex.rates.USD || 0.012)).toFixed(1)})
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {/* Viewport Frame Toggle */}
                   <div className="pt-2 border-t border-[#EBE7DF]">
