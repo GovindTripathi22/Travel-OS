@@ -1,6 +1,9 @@
+// src/app/api/chat/route.ts
+
 import { NextRequest, NextResponse } from 'next/server';
 import { generateCompanionResponse } from '@/lib/agents/companionAgent';
 import { runEdgeSlmNlu } from '@/lib/slm/edgeSlmEngine';
+import { searchLiveWeb, fetchLiveWeatherByKey } from '@/lib/api/webFetchService';
 import {
   INITIAL_USERS,
   INITIAL_ITINERARY,
@@ -36,14 +39,99 @@ export async function POST(req: NextRequest) {
     };
     const companionRes = generateCompanionResponse(message, context);
 
-    const apiKey = process.env.GEMINI_API_KEY;
+    // 3. Optional Live Web Search Grounding (if query is factual / seeking info)
+    const queryLower = message.toLowerCase();
+    const needsWebSearch =
+      queryLower.includes('ticket') ||
+      queryLower.includes('price') ||
+      queryLower.includes('weather') ||
+      queryLower.includes('open') ||
+      queryLower.includes('hours') ||
+      queryLower.includes('restaurant') ||
+      queryLower.includes('hotel') ||
+      queryLower.includes('flight') ||
+      queryLower.includes('train') ||
+      queryLower.includes('japan') ||
+      queryLower.includes('kyoto') ||
+      queryLower.includes('jaipur');
 
-    // If Gemini API Key is set, query live Gemini 1.5 Flash
-    if (apiKey && apiKey.trim().length > 5 && !apiKey.includes('your_actual')) {
+    let webGroundingContext = '';
+    let webSources: any[] = [];
+    if (needsWebSearch) {
       try {
-        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+        const snippets = await searchLiveWeb(message, 2);
+        if (snippets.length > 0) {
+          webSources = snippets;
+          webGroundingContext = `\n\nLive Internet Search Results:\n${snippets
+            .map((s) => `- ${s.title}: ${s.content} (${s.url})`)
+            .join('\n')}`;
+        }
+      } catch (err) {
+        console.warn('[WebGrounding] Tavily/Web search skipped:', err);
+      }
+    }
+
+    // 4. Try Groq Cloud Llama-3.3-70B (Fast Cloud AI Brain)
+    const groqKey = process.env.GROQ_API_KEY;
+    const hasValidGroq =
+      groqKey && groqKey.trim().length > 10 && !groqKey.includes('your_') && !groqKey.includes('placeholder');
+
+    if (hasValidGroq) {
+      try {
+        const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${groqKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'llama-3.3-70b-versatile',
+            messages: [
+              {
+                role: 'system',
+                content: `You are J.A.R.V.I.S., the ultimate autonomous travel operating system co-pilot.
+Persona: ${persona}.
+Current destination: Kyoto, Japan / Jaipur, India.
+Always be concise, proactive, authoritative, warm, and helpful. Max 2-3 sentences. Incorporate web search facts when provided.`,
+              },
+              {
+                role: 'user',
+                content: `${message}${webGroundingContext}`,
+              },
+            ],
+            temperature: 0.5,
+            max_tokens: 250,
+          }),
+        });
+
+        if (groqRes.ok) {
+          const groqData = await groqRes.json();
+          const reply = groqData.choices?.[0]?.message?.content?.trim();
+          if (reply) {
+            return NextResponse.json({
+              ok: true,
+              success: true,
+              engine: 'groq-llama-3.3-70b-versatile',
+              latencyMs: slmResult.latencyMs,
+              intents: slmResult.intents,
+              reply,
+              sources: webSources,
+              data: companionRes,
+            });
+          }
+        }
+      } catch (groqErr) {
+        console.warn('[Groq API] Error, falling back:', groqErr);
+      }
+    }
+
+    // 5. Try Gemini API fallback (if key exists)
+    const geminiKey = process.env.GEMINI_API_KEY;
+    if (geminiKey && geminiKey.trim().length > 5 && !geminiKey.includes('your_actual')) {
+      try {
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`;
         const prompt = `You are J.A.R.V.I.S., an intelligent travel co-pilot operating in ${persona} mode for a family expedition.
-Be concise, proactive, clear, and direct. Respond to the user's inquiry: "${message}"`;
+Be concise, proactive, clear, and direct. Respond to the user's inquiry: "${message}"${webGroundingContext}`;
 
         const geminiRes = await fetch(endpoint, {
           method: 'POST',
@@ -66,6 +154,7 @@ Be concise, proactive, clear, and direct. Respond to the user's inquiry: "${mess
             latencyMs: slmResult.latencyMs,
             intents: slmResult.intents,
             reply: replyText,
+            sources: webSources,
             data: companionRes,
           });
         }
@@ -74,14 +163,20 @@ Be concise, proactive, clear, and direct. Respond to the user's inquiry: "${mess
       }
     }
 
-    // Default: Sub-5ms Local Edge SLM + Companion Response
+    // 6. Sub-5ms Local Edge SLM + Companion Response
+    const replyBase =
+      webSources.length > 0 && webSources[0].content
+        ? `According to live web records: ${webSources[0].content.slice(0, 180)}...`
+        : `Command confirmed. Executed ${slmResult.intents.length} autonomous task(s) in ${slmResult.latencyMs}ms.`;
+
     return NextResponse.json({
       ok: true,
       success: true,
       engine: slmResult.model,
       latencyMs: slmResult.latencyMs,
       intents: slmResult.intents,
-      reply: `Command confirmed. Executed ${slmResult.intents.length} autonomous task(s) in ${slmResult.latencyMs}ms.`,
+      reply: replyBase,
+      sources: webSources,
       data: companionRes,
     });
   } catch (error: any) {
