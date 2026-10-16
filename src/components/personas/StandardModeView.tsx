@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect } from 'react';
 import { useTrip } from '@/lib/state/TripContext';
 import ItineraryTimeline from '../itinerary/ItineraryTimeline';
 import MechanismPollCard from '../decision/MechanismPollCard';
@@ -14,207 +14,158 @@ import {
   Vote,
   CreditCard,
   FolderLock,
+  Plane,
+  Compass,
+  Camera,
   Sparkles,
   CheckCircle2,
-  AlertCircle,
   MapPin,
-  Plane,
-  Camera,
-  Compass,
-  Mic,
 } from 'lucide-react';
 
-export default function StandardModeView() {
-  const {
-    currentUser,
-    conflicts,
-    resolveConflict,
-    users,
-    setIsJarvisOpen,
-    activeTab,
-    setActiveTab,
-    vaultSubTab,
-    setVaultSubTab,
-    triggerJarvisVoice,
-  } = useTrip();
+type Tab = 'timeline' | 'decisions' | 'expenses' | 'vault';
+type Sub = 'passes' | 'rendezvous' | 'alignment' | 'photos';
 
-  const unresolvedConflicts = conflicts.filter((c) => !c.resolved);
-  const topConflict = unresolvedConflicts[0];
+interface NavItem {
+  id: string;
+  label: string;
+  desc: string;
+  group: string;
+  icon: React.ElementType;
+  tab: Tab;
+  sub?: Sub;
+}
+
+// Every section is now one tap away (the vault sub-tabs used to be buried).
+const NAV: NavItem[] = [
+  { id: 'timeline', label: 'Timeline', group: 'Plan', icon: Calendar, tab: 'timeline', desc: 'Your day-by-day plan, adapted to how everyone is feeling.' },
+  { id: 'decisions', label: 'Decisions', group: 'Plan', icon: Vote, tab: 'decisions', desc: 'Spend voice credits on what matters most. No deadlocks.' },
+  { id: 'expenses', label: 'Expenses', group: 'Plan', icon: CreditCard, tab: 'expenses', desc: 'Shared costs settled in the fewest possible transfers.' },
+  { id: 'passes', label: 'Passes', group: 'Travel', icon: FolderLock, tab: 'vault', sub: 'passes', desc: 'Boarding passes and QR codes, available offline.' },
+  { id: 'rendezvous', label: 'Rendezvous', group: 'Travel', icon: Plane, tab: 'vault', sub: 'rendezvous', desc: 'Where everyone is, and where to meet at the airport.' },
+  { id: 'alignment', label: 'Alignment', group: 'Together', icon: Compass, tab: 'vault', sub: 'alignment', desc: 'Pace, diet and energy: see where the group differs.' },
+  { id: 'photos', label: 'Photos', group: 'Together', icon: Camera, tab: 'vault', sub: 'photos', desc: 'A shared stream that becomes your trip story.' },
+];
+
+export default function StandardModeView() {
+  const { conflicts, resolveConflict, users, activeTab, setActiveTab, vaultSubTab, setVaultSubTab } = useTrip();
+
+  const topConflict = conflicts.filter((c) => !c.resolved)[0];
+  const current = NAV.find((n) => n.tab === activeTab && (!n.sub || n.sub === vaultSubTab)) ?? NAV[0];
+
+  const go = (n: NavItem) => {
+    setActiveTab(n.tab);
+    if (n.sub) setVaultSubTab(n.sub);
+  };
+
+  // Keep the active pill visible on small screens
+  useEffect(() => {
+    document
+      .querySelector('[data-nav-active="true"]')
+      ?.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
+  }, [current.id]);
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
-      {/* 1. Trip Hero — Architectural Newsreader Editorial Aesthetic */}
-      <section className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-5 border-b border-[#EBE7DF]">
-        <div>
-          <div className="flex items-center gap-2 text-xs font-semibold text-[#D97746] tracking-wide mb-1.5">
-            <MapPin className="w-3.5 h-3.5" />
-            <span className="uppercase tracking-widest text-[10px] font-bold">Jaipur, Rajasthan &bull; Day 1 of 5</span>
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-5">
+      {/* Trip hero */}
+      <section className="hero-card fade-up">
+        <div className="relative z-10 flex flex-col sm:flex-row sm:items-end justify-between gap-5">
+          <div>
+            <span className="chip-glass">
+              <MapPin className="w-3.5 h-3.5" /> Jaipur, Rajasthan &bull; Day 1 of 5
+            </span>
+            <h1 className="font-serif-title text-3xl sm:text-5xl font-bold mt-3 leading-[1.05] tracking-tight">
+              Rajasthan Family Expedition
+            </h1>
+            <p className="mt-2 text-sm text-white/80">Oct 14 &ndash; 18 &bull; {users.length} companions</p>
           </div>
-          <h1 className="font-serif-title text-3xl sm:text-4xl font-bold text-[#1C1917] tracking-tight">
-            Rajasthan Family Expedition
-          </h1>
-          <p className="text-xs sm:text-sm text-[#78716C] mt-1.5 font-normal">
-            Oct 14 &ndash; 18 &bull; 6 companions &bull; Autonomous group travel intelligence &amp; consensus
-          </p>
+          <div className="flex items-center gap-3">
+            <div className="flex -space-x-2">
+              {users.map((u) => (
+                <img
+                  key={u.id}
+                  src={u.avatar}
+                  alt={u.name}
+                  title={u.name}
+                  className="w-9 h-9 rounded-full object-cover border-2 border-white/90 hover:scale-110 hover:z-10 transition-transform"
+                />
+              ))}
+            </div>
+            <span className="chip-glass">
+              <CheckCircle2 className="w-3.5 h-3.5" /> {users.length} aligned
+            </span>
+          </div>
         </div>
-
-        {/* Companion Avatars Group */}
-        <div className="flex items-center gap-2.5">
-          <div className="flex items-center -space-x-2">
-            {users.map((u) => (
-              <img
-                key={u.id}
-                src={u.avatar}
-                alt={u.name}
-                title={`${u.name} (${u.role === 'planner' ? 'Trip Leader' : u.personaType === 'elderly' ? 'Senior Mode' : u.personaType === 'kid' ? 'Kid Mode' : 'Companion'})`}
-                className="w-8 h-8 rounded-full object-cover border-2 border-white ring-1 ring-[#EBE7DF] hover:scale-110 hover:z-10 transition-transform duration-200"
-              />
-            ))}
+        <div className="relative z-10 mt-6">
+          <div className="flex justify-between text-[11px] font-semibold text-white/80 mb-1.5">
+            <span>Trip progress</span>
+            <span>Day 1 / 5</span>
           </div>
-          <span className="text-[11px] font-bold text-[#4D7C5F] bg-[#F3F9F5] px-2.5 py-1 rounded-full border border-[#D1E5D8] shadow-2xs">
-            ✓ 6 Aligned
-          </span>
+          <div className="h-1.5 rounded-full bg-white/25">
+            <div className="h-full w-1/5 rounded-full bg-white" />
+          </div>
         </div>
       </section>
 
-      {/* 2. Proactive Alert — Only Reassuring Card if Unresolved */}
+      {/* Proactive suggestion */}
       {topConflict && (
-        <section className="bg-[#FAF5EE] border border-[#E8DFC8] rounded-2xl p-4 text-[#8A631E] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs transition-all hover:border-[#D97746]/40">
+        <section className="fade-up flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-amber-200/70 bg-gradient-to-r from-amber-50 to-orange-50 p-4 shadow-[var(--shadow-soft)]">
           <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-full bg-[#EFE3C7] text-[#D97746] flex items-center justify-center shrink-0 mt-0.5">
+            <div className="w-9 h-9 rounded-full bg-white text-[#D97746] flex items-center justify-center shrink-0 shadow-sm">
               <Sparkles className="w-4 h-4" />
             </div>
             <div>
-              <div className="text-xs font-bold text-[#8A631E] flex items-center gap-1.5">
-                <span>Proactive Schedule Adaptation</span>
-                <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-[#EFE3C7] text-[#8A631E] font-semibold">Recommended</span>
-              </div>
-              <p className="text-xs text-[#735213] mt-0.5 leading-relaxed">
-                {topConflict.description} &bull; <em>AI Recommendation: {topConflict.suggestedAction.details}</em>
+              <p className="text-xs font-bold text-amber-900">Suggested schedule change</p>
+              <p className="text-xs text-amber-900/80 mt-0.5 leading-relaxed">
+                {topConflict.description} &bull; <em>{topConflict.suggestedAction.details}</em>
               </p>
             </div>
           </div>
-
           <button
             onClick={() => resolveConflict(topConflict.id)}
-            className="w-full sm:w-auto px-4 py-2 bg-[#D97746] hover:bg-[#C26333] text-white rounded-xl text-xs font-bold shadow-xs shrink-0 transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 flex items-center justify-center gap-1.5"
+            className="btn-hover-lift shrink-0 inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#D97746] px-4 py-2 text-xs font-bold text-white hover:bg-[#C26333]"
           >
-            <CheckCircle2 className="w-3.5 h-3.5" />
-            <span>Apply 1-Click Fix</span>
+            <CheckCircle2 className="w-3.5 h-3.5" /> Apply 1-click fix
           </button>
         </section>
       )}
 
-      {/* 3. Primary Segmented Tabs — Minimalist, Tactile & Intuitive */}
-      <nav className="flex items-center gap-1.5 bg-[#F4F1EA] p-1.5 rounded-2xl border border-[#EBE7DF] overflow-x-auto scrollbar-none shadow-2xs">
-        <button
-          onClick={() => setActiveTab('timeline')}
-          className={`flex-1 min-w-[100px] py-2 px-3.5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 text-center flex items-center justify-center gap-1.5 ${
-            activeTab === 'timeline'
-              ? 'bg-white text-[#1C1917] shadow-xs font-bold border border-[#EBE7DF]'
-              : 'text-[#78716C] hover:text-[#1C1917] hover:bg-white/50'
-          }`}
-        >
-          <Calendar className="w-3.5 h-3.5" />
-          <span>Timeline</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('decisions')}
-          className={`flex-1 min-w-[110px] py-2 px-3.5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 text-center flex items-center justify-center gap-1.5 ${
-            activeTab === 'decisions'
-              ? 'bg-white text-[#1C1917] shadow-xs font-bold border border-[#EBE7DF]'
-              : 'text-[#78716C] hover:text-[#1C1917] hover:bg-white/50'
-          }`}
-        >
-          <Vote className="w-3.5 h-3.5" />
-          <span>Decisions</span>
-          <span className="w-1.5 h-1.5 rounded-full bg-[#D97746]" />
-        </button>
-
-        <button
-          onClick={() => setActiveTab('expenses')}
-          className={`flex-1 min-w-[100px] py-2 px-3.5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 text-center flex items-center justify-center gap-1.5 ${
-            activeTab === 'expenses'
-              ? 'bg-white text-[#1C1917] shadow-xs font-bold border border-[#EBE7DF]'
-              : 'text-[#78716C] hover:text-[#1C1917] hover:bg-white/50'
-          }`}
-        >
-          <CreditCard className="w-3.5 h-3.5" />
-          <span>Expenses</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('vault')}
-          className={`flex-1 min-w-[110px] py-2 px-3.5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 text-center flex items-center justify-center gap-1.5 ${
-            activeTab === 'vault'
-              ? 'bg-white text-[#1C1917] shadow-xs font-bold border border-[#EBE7DF]'
-              : 'text-[#78716C] hover:text-[#1C1917] hover:bg-white/50'
-          }`}
-        >
-          <FolderLock className="w-3.5 h-3.5" />
-          <span>Vault &amp; Info</span>
-        </button>
+      {/* One flat navigation: every section, grouped */}
+      <nav aria-label="Trip sections" className="nav-rail scrollbar-none">
+        {NAV.map((n, i) => {
+          const Icon = n.icon;
+          const active = n.id === current.id;
+          return (
+            <React.Fragment key={n.id}>
+              {i > 0 && NAV[i - 1].group !== n.group && <span className="nav-divider" aria-hidden />}
+              <button
+                onClick={() => go(n)}
+                data-nav-active={active}
+                aria-current={active ? 'page' : undefined}
+                className={`nav-pill ${active ? 'is-active' : ''}`}
+              >
+                <Icon className="w-4 h-4" />
+                <span>{n.label}</span>
+              </button>
+            </React.Fragment>
+          );
+        })}
       </nav>
 
-      {/* 4. Tab Content View */}
-      <main className="pt-1">
-        {activeTab === 'timeline' && <ItineraryTimeline />}
-        {activeTab === 'decisions' && <MechanismPollCard />}
-        {activeTab === 'expenses' && <ExpenseLedger />}
-        {activeTab === 'vault' && (
-          <div className="space-y-6">
-            {/* Vault Sub-Tabs */}
-            <div className="flex items-center gap-2 border-b border-[#EBE7DF] pb-3 overflow-x-auto scrollbar-none">
-              <button
-                onClick={() => setVaultSubTab('passes')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
-                  vaultSubTab === 'passes'
-                    ? 'bg-[#1C1917] text-white'
-                    : 'text-[#78716C] hover:text-[#1C1917] bg-white border border-[#EBE7DF]'
-                }`}
-              >
-                Boarding Passes &amp; QR
-              </button>
-              <button
-                onClick={() => setVaultSubTab('rendezvous')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
-                  vaultSubTab === 'rendezvous'
-                    ? 'bg-[#1C1917] text-white'
-                    : 'text-[#78716C] hover:text-[#1C1917] bg-white border border-[#EBE7DF]'
-                }`}
-              >
-                Airport Rendezvous HUD
-              </button>
-              <button
-                onClick={() => setVaultSubTab('alignment')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
-                  vaultSubTab === 'alignment'
-                    ? 'bg-[#1C1917] text-white'
-                    : 'text-[#78716C] hover:text-[#1C1917] bg-white border border-[#EBE7DF]'
-                }`}
-              >
-                Alignment Radar &amp; Energy
-              </button>
-              <button
-                onClick={() => setVaultSubTab('photos')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
-                  vaultSubTab === 'photos'
-                    ? 'bg-[#1C1917] text-white'
-                    : 'text-[#78716C] hover:text-[#1C1917] bg-white border border-[#EBE7DF]'
-                }`}
-              >
-                Shared Photos &amp; Story
-              </button>
-            </div>
+      {/* Section heading + content */}
+      <main key={current.id} className="fade-up space-y-5 pt-1">
+        <header>
+          <p className="eyebrow">{current.group}</p>
+          <h2 className="font-serif-title text-2xl sm:text-3xl font-bold tracking-tight">{current.label}</h2>
+          <p className="text-sm text-[var(--text-muted)] mt-0.5">{current.desc}</p>
+        </header>
 
-            {/* Sub-tab view */}
-            {vaultSubTab === 'passes' && <DocumentVault />}
-            {vaultSubTab === 'rendezvous' && <TravelStatusHUD />}
-            {vaultSubTab === 'alignment' && <PreTripRadar />}
-            {vaultSubTab === 'photos' && <PhotoStream />}
-          </div>
-        )}
+        {current.id === 'timeline' && <ItineraryTimeline />}
+        {current.id === 'decisions' && <MechanismPollCard />}
+        {current.id === 'expenses' && <ExpenseLedger />}
+        {current.id === 'passes' && <DocumentVault />}
+        {current.id === 'rendezvous' && <TravelStatusHUD />}
+        {current.id === 'alignment' && <PreTripRadar />}
+        {current.id === 'photos' && <PhotoStream />}
       </main>
     </div>
   );
