@@ -132,6 +132,44 @@ export function TripProvider({ children }: { children: React.ReactNode }) {
   const [jarvisControlMode, setJarvisControlMode] = useState<import('@/types').JarvisControlMode>('autonomous');
   const [jarvisVoiceState, setJarvisVoiceState] = useState<import('@/types').JarvisVoiceState>('idle');
   const [isHUDModalOpen, setIsHUDModalOpen] = useState(false);
+  const [stateHydrated, setStateHydrated] = useState(false);
+
+  // Keep demo trips usable across refreshes without requiring a backend account.
+  // The versioned envelope lets future releases safely discard incompatible data.
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('sahyatri_trip_state_v1');
+      if (saved) {
+        const data = JSON.parse(saved);
+        if (Array.isArray(data.users)) setUsers(data.users);
+        if (Array.isArray(data.itinerary)) setItinerary(data.itinerary);
+        if (Array.isArray(data.polls)) setPolls(data.polls);
+        if (Array.isArray(data.expenses)) setExpenses(data.expenses);
+        if (data.travelStatus && typeof data.travelStatus === 'object') setTravelStatus(data.travelStatus);
+        if (Array.isArray(data.memories)) setMemories(data.memories);
+        if (Array.isArray(data.packingList)) setPackingList(data.packingList);
+        if (data.weather === 'Sunny' || data.weather === 'Rainy') setWeather(data.weather);
+        if (['INR', 'USD', 'EUR', 'JPY'].includes(data.currency)) setCurrency(data.currency);
+        if (Array.isArray(data.resolvedConflictIds)) setResolvedConflictIds(new Set(data.resolvedConflictIds));
+      }
+    } catch (error) {
+      console.warn('[Sahyatri] Saved trip state could not be restored; using the sample trip.', error);
+    } finally {
+      setStateHydrated(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!stateHydrated) return;
+    try {
+      localStorage.setItem('sahyatri_trip_state_v1', JSON.stringify({
+        users, itinerary, polls, expenses, travelStatus, memories, packingList,
+        weather, currency, resolvedConflictIds: [...resolvedConflictIds],
+      }));
+    } catch (error) {
+      console.warn('[Sahyatri] Trip changes could not be saved in this browser.', error);
+    }
+  }, [stateHydrated, users, itinerary, polls, expenses, travelStatus, memories, packingList, weather, currency, resolvedConflictIds]);
 
   const toggleWeather = () => {
     setWeather((prev) => (prev === 'Sunny' ? 'Rainy' : 'Sunny'));

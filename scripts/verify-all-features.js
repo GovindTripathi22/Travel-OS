@@ -234,9 +234,10 @@ async function runAllVerifications() {
   });
 
   // --- SECTION 7: LIVE WEB SERVER VERIFICATION ---
-  console.log('\n7. Verifying Live Web Server (http://localhost:3000)...');
+  const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+  console.log(`\n7. Verifying Live Web Server (${baseUrl})...`);
 
-  const res = await fetch('http://localhost:3000');
+  const res = await fetch(baseUrl);
   check('HTTP GET http://localhost:3000 returns 200 OK', () => {
     assert.strictEqual(res.status, 200);
   });
@@ -244,7 +245,7 @@ async function runAllVerifications() {
   const html = await res.text();
   check('Live DOM contains Sahyatri branding and core modules', () => {
     assert(html.includes('Sahyatri'), 'Page should include Sahyatri branding');
-    assert(html.includes('AI Travel OS') || html.includes('Travel OS'), 'Page should include Travel OS subtitle');
+    assert(html.includes('AI Group Travel OS') || html.includes('Travel OS'), 'Page should include Travel OS branding');
   });
 
   console.log('\n=============================================================');
