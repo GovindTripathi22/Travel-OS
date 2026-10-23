@@ -51,6 +51,7 @@ export default function Header() {
   const {
     user,
     activeProfile,
+    isAuthenticated,
     isAdmin,
     setIsAuthModalOpen,
     signOut,
@@ -450,6 +451,16 @@ export default function Header() {
             >
               <Sparkles className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Ask AI</span>
+            </button>
+
+            {/* Sign In CTA Button (Direct one-click access) */}
+            <button
+              onClick={() => setIsAuthModalOpen(true)}
+              className="px-3 py-1.5 bg-[#1C1917] hover:bg-[#292524] text-white rounded-full text-xs font-bold transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 flex items-center gap-1.5 shadow-2xs hover:shadow-xs"
+              title="Sign In with Firebase or Switch Companion"
+            >
+              <LogIn className="w-3.5 h-3.5 text-[#D97746]" />
+              <span className="hidden sm:inline">Sign In</span>
             </button>
 
             {/* Authenticated Traveler Profile Pill & Dropdown */}
