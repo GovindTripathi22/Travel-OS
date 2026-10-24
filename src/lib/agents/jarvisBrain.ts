@@ -22,7 +22,7 @@ export interface JarvisContext {
 }
 
 /**
- * In-House Travel JARVIS Brain.
+ * In-House Travel Sahayak (सहायक) Brain.
  * Zero external LLMs. 100% offline, deterministic & heuristic NLP parser.
  * Runs in <15ms, extracts intents & slots, and executes every feature of the website.
  */
@@ -30,10 +30,10 @@ export function processJarvisVoiceCommand(
   rawInput: string,
   ctx: JarvisContext
 ): JarvisActionResult {
-  // Strip wake words (e.g. "Hey Jarvis", "Jarvis", "Ok Jarvis", "Sahyatri")
+  // Strip wake words (e.g. "Hey Sahayak", "Sahayak", "Ok Sahayak", "Suno Sahayak", "Hey Jarvis", "Sahyatri")
   let clean = rawInput.trim();
   const wakeWordMatch = clean.match(
-    /^(?:hey\s+jarvis|jarvis|ok\s+jarvis|hello\s+jarvis|sahyatri)[,\s:]*/i
+    /^(?:hey\s+sahayak|sahayak|ok\s+sahayak|suno\s+sahayak|namaste\s+sahayak|hey\s+jarvis|jarvis|ok\s+jarvis|hello\s+jarvis|sahyatri)[,\s:]*/i
   );
   if (wakeWordMatch) {
     clean = clean.slice(wakeWordMatch[0].length).trim();
@@ -42,15 +42,18 @@ export function processJarvisVoiceCommand(
   const lower = (clean || rawInput.trim()).toLowerCase();
 
   // 0. ACOUSTIC ECHO SUPPRESSION GUARD
-  // If input is merely acoustic echo from Jarvis's own voice, ignore it immediately without re-triggering speech
+  // If input is merely acoustic echo from Sahayak's own voice, ignore it immediately without re-triggering speech
   if (
     lower.includes('at your service') ||
+    lower.includes('aapki seva mein') ||
     lower.includes('standing by for your travel command') ||
     lower.includes('telemetry systems online') ||
     lower.includes('how may i assist') ||
     lower === 'stop' ||
     lower === 'quiet' ||
-    lower === 'silence'
+    lower === 'silence' ||
+    lower === 'ruko' ||
+    lower === 'shant'
   ) {
     return {
       intent: 'UNKNOWN',
@@ -60,11 +63,18 @@ export function processJarvisVoiceCommand(
   }
 
   // If user just spoke the wake word
-  if (!clean || lower === 'jarvis' || lower === 'hey jarvis') {
+  if (
+    !clean ||
+    lower === 'sahayak' ||
+    lower === 'hey sahayak' ||
+    lower === 'suno sahayak' ||
+    lower === 'jarvis' ||
+    lower === 'hey jarvis'
+  ) {
     return {
       intent: 'UNKNOWN',
-      summary: 'JARVIS Standby & Listening',
-      spokenResponse: `Standing by for your travel command, ${ctx.currentUser.name.split(' ')[0]}.`,
+      summary: 'Sahayak Standby & Listening',
+      spokenResponse: `Sahayak aapki seva mein hazir hai, ${ctx.currentUser.name.split(' ')[0]}. Boliye, main kya madad karu?`,
       actionExecuted: 'STANDBY_ACK',
       quickReplies: ['Add ₹1,200 Lunch', "Check Dadaji's Meds", 'Show Debt Graph', 'Emergency SOS'],
     };

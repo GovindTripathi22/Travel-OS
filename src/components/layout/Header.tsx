@@ -195,12 +195,12 @@ export default function Header() {
   };
 
   const QUICK_ACTION_CHIPS = [
-    { label: '⚡ Fix Overlaps', cmd: 'Jarvis, fix all schedule conflicts' },
-    { label: '🕒 Move Amber Fort → 10:00', cmd: 'Jarvis, move Amber Fort to 10:00' },
-    { label: '🌧️ Rain Swap', cmd: 'Jarvis, it is raining, swap outdoor stops to indoor' },
-    { label: '👴 Switch to Dadaji', cmd: 'Jarvis, switch to Dadaji' },
-    { label: '💴 Currency → JPY', cmd: 'Jarvis, change currency to JPY' },
-    { label: '🗳️ Lock Poll Winner', cmd: 'Jarvis, commit poll winner to itinerary' },
+    { label: '⚡ Fix Overlaps', cmd: 'Sahayak, fix all schedule conflicts' },
+    { label: '🕒 Move Amber Fort → 10:00', cmd: 'Sahayak, move Amber Fort to 10:00' },
+    { label: '🌧️ Rain Swap', cmd: 'Sahayak, it is raining, swap outdoor stops to indoor' },
+    { label: '👴 Switch to Dadaji', cmd: 'Sahayak, switch to Dadaji' },
+    { label: '💴 Currency → JPY', cmd: 'Sahayak, change currency to JPY' },
+    { label: '🗳️ Lock Poll Winner', cmd: 'Sahayak, commit poll winner to itinerary' },
   ];
 
   return (
@@ -234,7 +234,7 @@ export default function Header() {
                 onChange={(e) => setQuickCmd(e.target.value)}
                 onFocus={() => setShowQuickChips(true)}
                 onKeyDown={(e) => e.key === 'Enter' && handleCommandSubmit()}
-                placeholder='Ask JARVIS or type: "switch to Dadaji", "fix overlaps"...'
+                placeholder='Ask Sahayak (सहायक) or type: "switch to Dadaji", "fix overlaps"...'
                 className="w-full bg-transparent text-xs text-[#1C1917] placeholder-[#A8A29E] focus:outline-none"
               />
 
@@ -256,7 +256,7 @@ export default function Header() {
               <button
                 type="button"
                 onClick={handleVoiceInput}
-                title={listening ? 'Stop voice recognition' : 'Speak voice command to JARVIS'}
+                title={listening ? 'Stop voice recognition' : 'Speak voice command to Sahayak'}
                 className={`p-1.5 rounded-full text-xs font-semibold flex items-center justify-center transition-all duration-200 ${
                   listening
                     ? 'bg-rose-500 text-white animate-pulse scale-110 shadow-sm'
@@ -305,7 +305,7 @@ export default function Header() {
 
           {/* Right Section: Minimum, High-Value Relevant Controls */}
           <div className="flex items-center gap-2 shrink-0">
-            {/* Hard-Stop Voice Button (Only appears when JARVIS is actively speaking) */}
+            {/* Hard-Stop Voice Button (Only appears when Sahayak is actively speaking) */}
             {(isSpeaking || isJarvisSpeaking) && (
               <button
                 onClick={() => {
@@ -313,10 +313,10 @@ export default function Header() {
                   else if (stopSpeaking) stopSpeaking();
                 }}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold shadow-md shadow-rose-600/30 animate-pulse hover:scale-105 active:scale-95 transition-all duration-200"
-                title="Hard interrupt JARVIS speech immediately"
+                title="Hard interrupt Sahayak speech immediately"
               >
                 <Square className="w-3.5 h-3.5 fill-white" />
-                <span>Stop Voice</span>
+                <span>Ruko / Stop</span>
               </button>
             )}
 
@@ -609,7 +609,7 @@ export default function Header() {
           </div>
         </div>
 
-        {/* Mobile Omni-Search Bar (Only visible on small screens so mobile users also get JARVIS) */}
+        {/* Mobile Omni-Search Bar (Only visible on small screens so mobile users also get Sahayak) */}
         <div className="block md:hidden pb-2.5">
           <div className="bg-white border border-[#EBE7DF] focus-within:border-[#D97746] rounded-full px-3 py-1.5 shadow-2xs flex items-center gap-2">
             <Bot className="w-4 h-4 text-[#D97746] shrink-0" />
@@ -618,7 +618,7 @@ export default function Header() {
               value={quickCmd}
               onChange={(e) => setQuickCmd(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleCommandSubmit()}
-              placeholder='Command JARVIS: "switch to Dadaji"...'
+              placeholder='Command Sahayak: "switch to Dadaji"...'
               className="w-full bg-transparent text-xs text-[#1C1917] placeholder-[#A8A29E] focus:outline-none"
             />
             <button

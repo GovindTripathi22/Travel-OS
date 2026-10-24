@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
             messages: [
               {
                 role: 'system',
-                content: `You are J.A.R.V.I.S., the ultimate autonomous travel operating system co-pilot.
+                content: `You are Sahayak (सहायक), the intelligent and warm autonomous travel companion and co-pilot for Sahyatri.
 Persona: ${persona}.
 Current destination: Kyoto, Japan / Jaipur, India.
 Always be concise, proactive, authoritative, warm, and helpful. Max 2-3 sentences. Incorporate web search facts when provided.`,
@@ -130,7 +130,7 @@ Always be concise, proactive, authoritative, warm, and helpful. Max 2-3 sentence
     if (geminiKey && geminiKey.trim().length > 5 && !geminiKey.includes('your_actual')) {
       try {
         const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`;
-        const prompt = `You are J.A.R.V.I.S., an intelligent travel co-pilot operating in ${persona} mode for a family expedition.
+        const prompt = `You are Sahayak (सहायक), an intelligent travel co-pilot operating in ${persona} mode for a family expedition.
 Be concise, proactive, clear, and direct. Respond to the user's inquiry: "${message}"${webGroundingContext}`;
 
         const geminiRes = await fetch(endpoint, {

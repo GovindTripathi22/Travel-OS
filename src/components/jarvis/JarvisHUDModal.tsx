@@ -193,7 +193,7 @@ export default function JarvisHUDModal() {
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="font-extrabold text-base sm:text-lg tracking-tight">
-                  JARVIS Travel Copilot
+                  Sahayak (सहायक) &bull; Voice Copilot
                 </h2>
                 <span className="text-[10px] uppercase font-bold bg-[#D97746]/20 text-[#E68A57] border border-[#D97746]/30 px-2 py-0.5 rounded-full">
                   100% Offline AI OS

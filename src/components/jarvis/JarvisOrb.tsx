@@ -117,8 +117,8 @@ export default function JarvisOrb() {
         hasGreetedRef.current = true;
         const greeting =
           jarvisControlMode === 'autonomous'
-            ? `Jarvis online in Autonomous Mode for ${currentUser.name.split(' ')[0]}. Standing by.`
-            : `Jarvis online in Manual Mode. Press the microphone button or Alt+J to speak.`;
+            ? `Namaste! Sahayak aapki seva mein hazir hai, ${currentUser.name.split(' ')[0]}. Boliye, main kya madad karu?`
+            : `Namaste! Sahayak Manual Mode mein hai. Microphone dabayein ya Alt+J se bole.`;
         jarvisAudio.speak(greeting);
       }
     }
@@ -142,7 +142,7 @@ export default function JarvisOrb() {
                 ? 'Speech interrupted — listening to you...'
                 : liveTranscript
                 ? `"${liveTranscript}..."`
-                : 'Jarvis speaking (say "Stop" or press Esc)...'}
+                : 'Sahayak bol raha hai (say "Stop", "Ruko" or press Esc)...'}
             </span>
           </div>
           {(jarvisVoiceState === 'speaking' || isSpeaking) && (
@@ -152,7 +152,7 @@ export default function JarvisOrb() {
                 if (stopSpeaking) stopSpeaking();
               }}
               className="px-2.5 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 text-rose-300 font-semibold shrink-0 flex items-center gap-1 transition active:scale-95"
-              title="Interrupt Jarvis Speech (Esc)"
+              title="Interrupt Sahayak Speech (Esc)"
             >
               <Square className="w-3 h-3 fill-current" /> Stop
             </button>
@@ -241,7 +241,7 @@ export default function JarvisOrb() {
             setIsJarvisOpen(true);
           }}
           className="p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-cyan-300 transition-all hover:scale-105 active:scale-95"
-          title="Open Jarvis Command HUD"
+          title="Open Sahayak Voice HUD"
         >
           <Terminal className="w-3.5 h-3.5" />
         </button>
@@ -256,18 +256,18 @@ export default function JarvisOrb() {
           <ShieldAlert className="w-3.5 h-3.5" />
         </button>
 
-        {/* Master Jarvis Orb Power Button */}
+        {/* Master Sahayak Orb Power Button */}
         <button
           type="button"
           onClick={handleTogglePower}
           className={`relative h-9 px-3 rounded-xl font-bold text-[11px] tracking-wider uppercase flex items-center gap-1.5 transition-all hover:scale-102 active:scale-98 ${
             isSystemActive
-              ? 'bg-gradient-to-r from-cyan-500 to-[#D97746] text-white shadow-[0_0_20px_rgba(217,119,70,0.4)]'
+              ? 'bg-gradient-to-r from-emerald-500 to-[#D97746] text-white shadow-[0_0_20px_rgba(217,119,70,0.4)]'
               : 'bg-white/10 hover:bg-white/15 text-stone-300 border border-white/10'
           }`}
         >
           <Sparkles className="w-3.5 h-3.5" />
-          <span>{isSystemActive ? 'JARVIS ON' : 'JARVIS'}</span>
+          <span>{isSystemActive ? 'SAHAYAK ON' : 'SAHAYAK'}</span>
         </button>
       </div>
     </div>
