@@ -73,8 +73,8 @@ export function runEdgeSlmNlu(
   const intents: SlmIntent[] = [];
   const activeDay = typeof context === 'number' ? context : (context?.activeDay || 1);
 
-  // 0. Hard Stop Speech Interrupt ("stop", "silence", "shut up", "mute")
-  if (/^(jarvis[,:\s]*)?(stop|quiet|silence|mute|shut up|cancel speech|pause)\b/i.test(lower)) {
+  // 0. Hard Stop Speech Interrupt ("stop", "ruko", "chup", "quiet", "silence", "shut up", "mute")
+  if (/^(?:sahayak|jarvis|suno sahayak|ok sahayak|hey sahayak)?[,:\s]*(stop|ruko|chup|quiet|silence|mute|shut up|cancel speech|pause|bas|band karo|shant|ruk jao|ruk)\b/i.test(lower)) {
     return {
       model: 'Edge-SLM-Phi3.5-Mini-q4 (Local WebGPU)',
       latencyMs: 0.8,

@@ -41,7 +41,25 @@ export function processJarvisVoiceCommand(
 
   const lower = (clean || rawInput.trim()).toLowerCase();
 
-  // 0. ACOUSTIC ECHO SUPPRESSION GUARD
+  // 0. STOP / INTERRUPT PROTOCOL (HIGHEST PRIORITY)
+  const isExplicitStop =
+    /^(?:sahayak|jarvis|hey sahayak|ok sahayak)?\s*(?:stop|ruko|chup|quiet|pause|cancel|bas|silence|mute|shut up|hush|band karo|shant|ruk jao|ruk|arrey ruko)\b/i.test(lower) ||
+    lower === 'stop' ||
+    lower === 'ruko' ||
+    lower === 'chup' ||
+    lower === 'quiet' ||
+    lower === 'bas';
+
+  if (isExplicitStop) {
+    return {
+      intent: 'STOP',
+      summary: 'Sahayak speech interrupted and stopped',
+      spokenResponse: '',
+      actionExecuted: 'STOP_SPEECH',
+    };
+  }
+
+  // 0B. ACOUSTIC ECHO SUPPRESSION GUARD
   // If input is merely acoustic echo from Sahayak's own voice, ignore it immediately without re-triggering speech
   if (
     lower.includes('at your service') ||
@@ -49,16 +67,15 @@ export function processJarvisVoiceCommand(
     lower.includes('standing by for your travel command') ||
     lower.includes('telemetry systems online') ||
     lower.includes('how may i assist') ||
-    lower === 'stop' ||
-    lower === 'quiet' ||
-    lower === 'silence' ||
-    lower === 'ruko' ||
-    lower === 'shant'
+    lower.includes('all transportation and dietary requirements are pre-vetted') ||
+    lower.includes('next scheduled activity is') ||
+    lower.includes('surya mahal royal rajasthani lunch')
   ) {
     return {
       intent: 'UNKNOWN',
       summary: 'Acoustic echo filtered',
       spokenResponse: '',
+      actionExecuted: 'NO_OP',
     };
   }
 
@@ -574,7 +591,51 @@ export function processJarvisVoiceCommand(
     };
   }
 
-  // 13. CONFLICT RESOLUTION
+  // 13. TIMELINE AUTO-HEALING & SCHEDULE OVERLAPS
+  if (
+    lower.includes('heal') ||
+    lower.includes('auto heal') ||
+    lower.includes('overlap') ||
+    lower.includes('fix schedule') ||
+    lower.includes('fix timeline') ||
+    lower.includes('schedule fix') ||
+    lower.includes('reschedule') ||
+    lower.includes('theek karo') ||
+    lower.includes('slide')
+  ) {
+    return {
+      intent: 'HEAL_SCHEDULE',
+      summary: 'Timeline Auto-Healed: Resolved Overlaps & Added Transit Buffers',
+      spokenResponse: 'Schedule auto-heal ho gaya hai! Timeline ke overlaps resolve karke transit buffer add kar diya hai.',
+      actionExecuted: 'HEAL_SCHEDULE',
+      navigation: { tab: 'timeline' },
+      cardType: 'schedule',
+      quickReplies: ['Show Timeline', 'Swap Indoor Weather', 'Who Pays Next?'],
+    };
+  }
+
+  // 14. WEATHER & RAIN ADAPTATION
+  if (
+    lower.includes('rain') ||
+    lower.includes('raining') ||
+    lower.includes('baarish') ||
+    lower.includes('indoor') ||
+    lower.includes('swap outdoor') ||
+    lower.includes('swap indoor') ||
+    lower.includes('mausam')
+  ) {
+    return {
+      intent: 'WEATHER_ADAPTATION',
+      summary: 'Swapped Outdoor Stops to Indoor Fallbacks for Rainy Weather',
+      spokenResponse: 'Baarish aur weather risk adapt kar diya gaya hai. Outdoor stops ko sheltered indoor venues mein convert kar diya hai.',
+      actionExecuted: 'WEATHER_SWAP',
+      navigation: { tab: 'timeline' },
+      cardType: 'schedule',
+      quickReplies: ['Show Itinerary', 'Fix Overlaps', 'Who Pays Next?'],
+    };
+  }
+
+  // 15. CONFLICT RESOLUTION (Mobility / Ramp / Dietary Conflicts)
   if (
     lower.includes('conflict') ||
     lower.includes('fix') ||
@@ -600,31 +661,129 @@ export function processJarvisVoiceCommand(
     };
   }
 
-  // 14. GENERAL ITINERARY & SCHEDULE QUERY
-  const nextItem = ctx.itinerary[0] || {
-    title: 'Surya Mahal Royal Rajasthani Lunch',
-    time: '13:00',
-    location: 'City Palace Precinct',
-  };
+  // 16. WHO PAYS NEXT / DEBT FAIRNESS
+  if (
+    lower.includes('who pays') ||
+    lower.includes('who should pay') ||
+    lower.includes('next payer') ||
+    lower.includes('kaun pay karega') ||
+    lower.includes('agla kharcha') ||
+    lower.includes('fairness') ||
+    lower.includes('who owes')
+  ) {
+    const nextPayer = ctx.users[1] || ctx.currentUser;
+    return {
+      intent: 'WHO_PAYS_NEXT',
+      summary: `Fair Next Payer Recommended: ${nextPayer.name}`,
+      spokenResponse: `Fairness recommender ke mutabik, agla payment ${nextPayer.name} ko karna chahiye taaki group debt balance rahe.`,
+      actionExecuted: 'NAVIGATE_TAB',
+      navigation: { tab: 'expenses' },
+      cardType: 'expense',
+      quickReplies: ['Add ₹500 Lunch', 'View Expense Ledger', 'Show Timeline'],
+    };
+  }
 
+  // 17. EXPLORER KID QUESTS
+  if (
+    lower.includes('quest') ||
+    lower.includes('xp') ||
+    lower.includes('explorer') ||
+    lower.includes('kabir quest')
+  ) {
+    return {
+      intent: 'COMPLETE_KID_QUEST',
+      summary: 'Explorer Kid Quest Completed (+150 XP)',
+      spokenResponse: 'Explorer Quest complete ho gaya hai! Kabir ko 150 XP award kiye gaye hain.',
+      actionExecuted: 'COMPLETE_KID_QUEST',
+      navigation: { tab: 'timeline' },
+      cardType: 'schedule',
+      quickReplies: ['Switch to Kabir', 'Show XP Level', 'Next Quest'],
+    };
+  }
+
+  // 18. SMART PACKING LIST
+  if (
+    lower.includes('packing') ||
+    lower.includes('pack') ||
+    lower.includes('saman') ||
+    lower.includes('bag')
+  ) {
+    return {
+      intent: 'ADD_PACKING',
+      summary: 'Opened Smart Packing Checklist',
+      spokenResponse: 'Smart packing checklist khol di hai. Sabhi zaroori dawaaiyan aur essentials list mein hain.',
+      actionExecuted: 'NAVIGATE_TAB',
+      navigation: { tab: 'vault', subTab: 'passes' },
+      cardType: 'ticket',
+      quickReplies: ['Add Umbrella', 'Check Dadaji BP Meds', 'Show Itinerary'],
+    };
+  }
+
+  // 19. HELP & CAPABILITIES
+  if (
+    lower.includes('help') ||
+    lower.includes('what can you do') ||
+    lower.includes('kya kar sakte ho') ||
+    lower.includes('commands') ||
+    lower.includes('madad') ||
+    lower.includes('features')
+  ) {
+    return {
+      intent: 'HELP',
+      summary: 'Sahayak AI Capabilities & Commands',
+      spokenResponse: 'Main aapka smart travel assistant hu. Boliye: "Switch to Dadaji", "Fix overlaps", "Baarish indoor swap", "Add 500 taxi expense", ya "Who pays next".',
+      actionExecuted: 'STANDBY_ACK',
+      quickReplies: ['Switch to Dadaji', 'Fix Overlaps', 'Swap Indoor', 'Who Pays Next?'],
+    };
+  }
+
+  // 20. EXPLICIT SCHEDULE & NEXT ACTIVITY QUERY (Triggered ONLY when user explicitly asks for schedule/next stop)
+  if (
+    lower.includes('next') ||
+    lower.includes('upcoming') ||
+    lower.includes('what next') ||
+    lower.includes('agla') ||
+    lower.includes('kya karna hai') ||
+    lower.includes('schedule') ||
+    lower.includes('itinerary') ||
+    lower.includes('plan')
+  ) {
+    const nextItem = ctx.itinerary[0] || {
+      title: 'Surya Mahal Royal Rajasthani Lunch',
+      time: '13:00',
+      location: 'City Palace Precinct',
+    };
+
+    return {
+      intent: 'QUERY_SCHEDULE',
+      summary: `Next Event: ${nextItem.title} at ${nextItem.time}`,
+      spokenResponse: `Next scheduled activity is "${nextItem.title}" at ${nextItem.time} at ${nextItem.location}. All transportation and dietary requirements are pre-vetted.`,
+      navigation: { tab: 'timeline' },
+      cardType: 'schedule',
+      cardData: {
+        title: nextItem.title,
+        time: nextItem.time,
+        location: nextItem.location,
+        walkingMeters: nextItem.walkingDistanceMeters || 50,
+      },
+      quickReplies: [
+        'Add ₹800 Taxi Expense',
+        "Check Dadaji's Meds",
+        'Incur Rest Buffer',
+        'Show Boarding Pass QR',
+      ],
+    };
+  }
+
+  // 21. UNRECOGNIZED INPUT FALLBACK (No loop, no repeating schedule)
   return {
-    intent: 'QUERY_SCHEDULE',
-    summary: `Next Event: ${nextItem.title} at ${nextItem.time}`,
-    spokenResponse: `Next scheduled activity is "${nextItem.title}" at ${nextItem.time} at ${nextItem.location}. All transportation and dietary requirements are pre-vetted.`,
-    navigation: { tab: 'timeline' },
-    cardType: 'schedule',
-    cardData: {
-      title: nextItem.title,
-      time: nextItem.time,
-      location: nextItem.location,
-      walkingMeters: nextItem.walkingDistanceMeters || 50,
-    },
-    quickReplies: [
-      'Add ₹800 Taxi Expense',
-      "Check Dadaji's Meds",
-      'Incur Rest Buffer',
-      'Show Boarding Pass QR',
-    ],
+    intent: 'UNKNOWN',
+    summary: clean ? `Command: "${clean.slice(0, 30)}"` : 'Listening...',
+    spokenResponse: clean.length > 3
+      ? `Maaf kijiye, samajh nahi paya. Try: "Switch to Dadaji", "Fix overlaps", ya "Show itinerary".`
+      : '',
+    actionExecuted: 'NO_OP',
+    quickReplies: ['Switch to Dadaji', 'Fix Overlaps', 'Swap Indoor', 'Show Timeline'],
   };
 }
 

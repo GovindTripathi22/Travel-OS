@@ -175,6 +175,13 @@ export interface ChatMessage {
 }
 
 export type JarvisIntent =
+  | 'STOP'
+  | 'WEATHER_ADAPTATION'
+  | 'HEAL_SCHEDULE'
+  | 'WHO_PAYS_NEXT'
+  | 'COMPLETE_KID_QUEST'
+  | 'ADD_PACKING'
+  | 'HELP'
   | 'ADD_EXPENSE'
   | 'CHECK_MEDICINE'
   | 'INJECT_REST_BUFFER'

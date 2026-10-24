@@ -201,6 +201,7 @@ export class JarvisAudioController {
   private isSpeakingNow: boolean = false;
   private currentSpokenText: string = '';
   private speechStartedAt: number = 0;
+  private speechEndedAt: number = 0;
 
   private onTranscriptCb: TranscriptCallback | null = null;
   private onStateChangeCb: StateChangeCallback | null = null;
@@ -257,6 +258,42 @@ export class JarvisAudioController {
   }
 
   /**
+   * Identifies any stop, silence, cancel, or barge-in interrupt command in English or Hindi.
+   */
+  public isInterruptPhrase(text: string): boolean {
+    if (!text) return false;
+    const norm = this.normalize(text);
+    const words = norm.split(' ');
+    const interruptWords = [
+      'stop',
+      'ruko',
+      'ruk',
+      'chup',
+      'quiet',
+      'pause',
+      'cancel',
+      'bas',
+      'silence',
+      'mute',
+      'shant',
+      'hush',
+      'enough',
+      'wait',
+      'thamo',
+    ];
+    if (words.some((w) => interruptWords.includes(w))) return true;
+    return (
+      norm.includes('stop') ||
+      norm.includes('shut up') ||
+      norm.includes('band karo') ||
+      norm.includes('ruk jao') ||
+      norm.includes('arrey ruko') ||
+      norm.includes('chup raho') ||
+      norm.includes('hold on')
+    );
+  }
+
+  /**
    * Checks if the microphone transcript is merely acoustic echo from Jarvis's own speaker output.
    */
   public isSelfEcho(heardText: string): boolean {
@@ -266,19 +303,7 @@ export class JarvisAudioController {
     if (!normHeard || normHeard.length < 3) return true;
 
     // Explicit barge-in interruption keywords always break through immediately
-    const bargeInKeywords = [
-      'stop',
-      'wait',
-      'hold on',
-      'pause',
-      'quiet',
-      'cancel',
-      'shut up',
-      'enough',
-      'listen',
-      'hush'
-    ];
-    if (bargeInKeywords.some((kw) => normHeard.includes(kw))) {
+    if (this.isInterruptPhrase(normHeard)) {
       return false;
     }
 
@@ -287,12 +312,12 @@ export class JarvisAudioController {
       return true;
     }
 
-    // Check word overlap ratio: if >= 60% of heard words come from Jarvis's current sentence, ignore as echo
+    // Check word overlap ratio: if >= 50% of heard words come from Jarvis's current sentence, ignore as echo
     const heardWords = normHeard.split(' ').filter((w) => w.length > 2);
     const spokenWords = new Set(normSpoken.split(' '));
     if (heardWords.length > 0) {
       const overlapCount = heardWords.filter((w) => spokenWords.has(w)).length;
-      if (overlapCount / heardWords.length >= 0.6) {
+      if (overlapCount / heardWords.length >= 0.5) {
         return true;
       }
     }
@@ -304,6 +329,11 @@ export class JarvisAudioController {
     if (!this.recognition) return;
 
     this.recognition.onresult = (event: any) => {
+      // Cooldown guard: discard microphone audio for 450ms after speech ends to prevent speaker reverb
+      if (Date.now() - this.speechEndedAt < 450) {
+        return;
+      }
+
       let interimTranscript = '';
       let finalTranscript = '';
 
@@ -319,20 +349,28 @@ export class JarvisAudioController {
       const candidate = (finalTranscript || interimTranscript).trim();
       if (!candidate) return;
 
-      // 1. Acoustic Echo Guard: Ignore Jarvis's own voice coming from the speakers
+      // 1. While Sahayak is actively speaking:
+      if (this.isSpeakingNow) {
+        // If the user explicitly commands STOP / RUKO:
+        if (this.isInterruptPhrase(candidate)) {
+          this.stopSpeaking(true);
+          // STOP speech immediately and do NOT process candidate as a command
+          return;
+        }
+        // If not an explicit interrupt keyword, ANY audio heard while speaking
+        // is acoustic echo from device speakers. Reject it completely!
+        return;
+      }
+
+      // 2. Self-echo guard for delayed transcripts
       if (this.isSelfEcho(candidate)) {
         return;
       }
 
-      // 2. Barge-In Interruption: If Jarvis is currently speaking and a real human interrupts:
-      if (this.isSpeakingNow) {
-        const elapsedSinceSpeakStart = Date.now() - this.speechStartedAt;
-        // Require at least 300ms after TTS start so initial speaker pop doesn't self-cancel
-        if (elapsedSinceSpeakStart > 300 && candidate.split(/\s+/).length >= 1) {
-          this.stopSpeaking(true);
-        } else {
-          return;
-        }
+      // 3. User said STOP while idle/listening:
+      if (this.isInterruptPhrase(candidate)) {
+        this.stopSpeaking(false);
+        return;
       }
 
       if (interimTranscript && this.onTranscriptCb) {
@@ -341,12 +379,6 @@ export class JarvisAudioController {
 
       if (finalTranscript && this.onTranscriptCb) {
         const cleaned = finalTranscript.trim();
-        // If user just said "stop" or "quiet" to interrupt, don't trigger a new response loop
-        const norm = this.normalize(cleaned);
-        if (['stop', 'quiet', 'pause', 'cancel', 'silence', 'shut up'].includes(norm)) {
-          this.stopSpeaking(true);
-          return;
-        }
         this.onTranscriptCb(cleaned, true);
         // In Manual mode, automatically stop mic after one complete command is captured
         if (this.controlMode === 'manual') {
@@ -472,6 +504,7 @@ export class JarvisAudioController {
     }
     this.isSpeakingNow = false;
     this.currentSpokenText = '';
+    this.speechEndedAt = Date.now();
     setGlobalSpeaking(false);
 
     if (wasInterrupted) {
@@ -526,6 +559,7 @@ export class JarvisAudioController {
     utterance.onend = () => {
       this.isSpeakingNow = false;
       this.currentSpokenText = '';
+      this.speechEndedAt = Date.now();
       setGlobalSpeaking(false);
       if (this.isSystemActive && this.controlMode === 'autonomous') {
         this.setState('listening');
@@ -538,6 +572,7 @@ export class JarvisAudioController {
     utterance.onerror = () => {
       this.isSpeakingNow = false;
       this.currentSpokenText = '';
+      this.speechEndedAt = Date.now();
       setGlobalSpeaking(false);
       if (this.isSystemActive && this.controlMode === 'autonomous') {
         this.setState('listening');

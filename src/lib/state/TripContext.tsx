@@ -38,6 +38,7 @@ import {
   stopJarvisSpeech,
   onJarvisSpeechStateChange,
   playJarvisSound,
+  jarvisAudio,
 } from '../audio/jarvisAudio';
 import { useAuth } from '../auth/AuthContext';
 
@@ -977,6 +978,24 @@ export function TripProvider({ children }: { children: React.ReactNode }) {
       if (activePoll) finalizePoll(activePoll.id);
     } else if (res.actionExecuted === 'UPDATE_TRAVEL_STATUS' && res.cardData) {
       updateTravelStatus(currentUser.id, res.cardData.step, res.cardData.text);
+    } else if (res.actionExecuted === 'WEATHER_SWAP') {
+      adaptWeatherIndoor();
+      setWeather('Rainy');
+    } else if (res.actionExecuted === 'HEAL_SCHEDULE') {
+      autoHealSchedule();
+      playJarvisSound('heal', true);
+    } else if (res.actionExecuted === 'COMPLETE_KID_QUEST') {
+      const targetId = itinerary[0]?.id || 'itin-1';
+      toggleKidQuest(targetId);
+      playJarvisSound('xp', true);
+    }
+
+    // Immediate STOP guard
+    if (res.actionExecuted === 'STOP_SPEECH' || res.intent === 'STOP') {
+      stopJarvisSpeech(true);
+      jarvisAudio.stopSpeaking(true);
+      setIsSpeaking(false);
+      return res;
     }
 
     // Run Local Edge SLM analysis to execute deterministic 26-tool actions
@@ -1364,8 +1383,8 @@ export function TripProvider({ children }: { children: React.ReactNode }) {
       setVaultSubTab(res.navigation.subTab);
     }
 
-    // Speak aloud response using British voice cadence if speech wasn't silenced
-    if (shouldSpeak) {
+    // Speak aloud response using natural voice cadence only if speech wasn't silenced and has text
+    if (shouldSpeak && res.spokenResponse && res.spokenResponse.trim().length > 0) {
       speakText(res.spokenResponse);
     }
 

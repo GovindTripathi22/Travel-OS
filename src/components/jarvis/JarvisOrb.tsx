@@ -52,7 +52,15 @@ export default function JarvisOrb() {
           return;
         }
 
+        const isStop = /^(?:stop|ruko|chup|quiet|pause|cancel|bas|silence|mute|band karo)\b/i.test(transcript.trim());
         setLiveTranscript('');
+
+        if (isStop) {
+          executeCmdRef.current(transcript);
+          setJarvisVoiceState('idle');
+          return;
+        }
+
         setJarvisVoiceState('processing');
 
         // Play wake chime

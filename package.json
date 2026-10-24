@@ -8,6 +8,7 @@
     "build": "next build",
     "start": "next start",
     "test": "tsx scripts/test-algorithms.js",
+    "test:voice": "tsx scripts/test-voice-fixes.ts",
     "test:features": "tsx scripts/verify-all-features.js",
     "test:e2e": "tsx scripts/verify-components-e2e.js",
     "test:user-flow": "tsx scripts/verify-user-trip-flow.js"
