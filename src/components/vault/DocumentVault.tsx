@@ -14,12 +14,13 @@ import {
   Square,
   Languages,
   Luggage,
+  Plus,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { LOCAL_PHRASES } from '@/lib/state/mockData';
 
 export default function DocumentVault() {
-  const { documents, users, packingList, togglePackingItem } = useTrip();
+  const { documents, users, packingList, togglePackingItem, setIsUploadDocOpen } = useTrip();
   const { canViewDocument } = useAuth();
   const [selectedDoc, setSelectedDoc] = useState<DocumentItem | null>(null);
   const [vaultView, setVaultView] = useState<'passes' | 'packing' | 'phrases'>('passes');
@@ -49,6 +50,15 @@ export default function DocumentVault() {
         </div>
 
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+          <button
+            onClick={() => setIsUploadDocOpen(true)}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-[#D97746] hover:bg-[#C26333] text-white rounded-xl text-xs font-bold shadow-xs hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 cursor-pointer"
+            aria-label="Upload new travel document"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>+ Upload Document</span>
+          </button>
+
           {/* Sub-View Selector */}
           <div className="flex items-center gap-1 bg-[#F4F1EA] p-1.5 rounded-2xl border border-[#EBE7DF] shadow-2xs">
             <button
@@ -92,62 +102,81 @@ export default function DocumentVault() {
 
       {/* 1. Passes Grid View */}
       {vaultView === 'passes' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {visibleDocuments.map((doc) => {
-            const owner = users.find((u) => u.id === doc.ownerId);
+        visibleDocuments.length === 0 ? (
+          <div className="bg-white border border-dashed border-[#D6D0C5] rounded-2xl p-8 text-center space-y-3">
+            <div className="w-12 h-12 mx-auto rounded-full bg-[#FAF5EE] text-[#D97746] flex items-center justify-center border border-[#E8DFC8]">
+              <FileText className="w-6 h-6" />
+            </div>
+            <h4 className="text-base font-bold text-[#1C1917]">No travel documents uploaded yet</h4>
+            <p className="text-xs text-[#78716C] max-w-sm mx-auto">
+              Store flight tickets, train passes, hotel confirmations, and doctor prescriptions securely for instant offline access.
+            </p>
+            <button
+              onClick={() => setIsUploadDocOpen(true)}
+              className="mt-2 inline-flex items-center gap-2 px-4 py-2 bg-[#D97746] hover:bg-[#C26333] text-white rounded-xl text-xs font-bold shadow-xs hover:shadow-md transition-all cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Upload First Document</span>
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {visibleDocuments.map((doc) => {
+              const owner = users.find((u) => u.id === doc.ownerId);
 
-            return (
-              <div
-                key={doc.id}
-                className="bg-white border border-[#EBE7DF] rounded-2xl p-5 shadow-2xs hover:border-[#D97746]/40 hover:shadow-xs transition-all duration-200 flex flex-col justify-between"
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <span
-                      className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
-                        doc.sharingScope === 'family_all'
-                          ? 'bg-blue-50 text-blue-800 border border-blue-200'
-                          : 'bg-purple-50 text-purple-800 border border-purple-200'
-                      }`}
+              return (
+                <div
+                  key={doc.id}
+                  className="bg-white border border-[#EBE7DF] rounded-2xl p-5 shadow-2xs hover:border-[#D97746]/40 hover:shadow-xs transition-all duration-200 flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <span
+                        className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
+                          doc.sharingScope === 'family_all'
+                            ? 'bg-blue-50 text-blue-800 border border-blue-200'
+                            : 'bg-purple-50 text-purple-800 border border-purple-200'
+                        }`}
+                      >
+                        {doc.sharingScope === 'family_all' ? 'Shared with All Family' : 'Restricted: Planner & Owner Only'}
+                      </span>
+
+                      <span className="text-[11px] font-semibold text-[#A8A29E]">
+                        Ref: {doc.referenceNumber}
+                      </span>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-[#FAF5EE] text-[#D97746] flex items-center justify-center shrink-0 border border-[#E8DFC8]">
+                        <FileText className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h4 className="text-base font-bold text-[#1C1917]">{doc.title}</h4>
+                        <p className="text-xs text-[#78716C] mt-0.5">
+                          Uploaded by <strong>{owner?.name}</strong> &bull; Valid: {doc.validUntil}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-5 pt-3 border-t border-[#EBE7DF] flex items-center justify-between">
+                    <span className="text-xs text-[#4D7C5F] font-semibold flex items-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5" /> Offline Ready
+                    </span>
+
+                    <button
+                      onClick={() => setSelectedDoc(doc)}
+                      className="px-3.5 py-1.5 bg-[#1C1917] hover:bg-[#D97746] text-white rounded-xl text-xs font-bold transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 shadow-2xs hover:shadow-xs flex items-center gap-1.5 cursor-pointer"
                     >
-                      {doc.sharingScope === 'family_all' ? 'Shared with All Family' : 'Restricted: Planner & Owner Only'}
-                    </span>
-
-                    <span className="text-[11px] font-semibold text-[#A8A29E]">
-                      Ref: {doc.referenceNumber}
-                    </span>
-                  </div>
-
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-[#FAF5EE] text-[#D97746] flex items-center justify-center shrink-0 border border-[#E8DFC8]">
-                      <FileText className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h4 className="text-base font-bold text-[#1C1917]">{doc.title}</h4>
-                      <p className="text-xs text-[#78716C] mt-0.5">
-                        Uploaded by <strong>{owner?.name}</strong> &bull; Valid: {doc.validUntil}
-                      </p>
-                    </div>
+                      <Eye className="w-3.5 h-3.5" />
+                      <span>View Pass / QR</span>
+                    </button>
                   </div>
                 </div>
-
-                <div className="mt-5 pt-3 border-t border-[#EBE7DF] flex items-center justify-between">
-                  <span className="text-xs text-[#4D7C5F] font-semibold flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5" /> Offline Ready
-                  </span>
-
-                  <button
-                    onClick={() => setSelectedDoc(doc)}
-                    className="px-3.5 py-1.5 bg-[#1C1917] hover:bg-[#D97746] text-white rounded-xl text-xs font-bold transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 shadow-2xs hover:shadow-xs flex items-center gap-1.5"
-                  >
-                    <Eye className="w-3.5 h-3.5" />
-                    <span>View Pass / QR</span>
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )
       )}
 
       {/* 2. Packing Checklist View */}

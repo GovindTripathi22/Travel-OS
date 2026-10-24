@@ -15,10 +15,40 @@ export default function MechanismPollCard() {
     submitQuadraticVote,
     finalizePoll,
     users,
+    setIsAddPollOpen,
   } = useTrip();
 
-  const poll = polls[0];
-  if (!poll) return null;
+  const [selectedPollIndex, setSelectedPollIndex] = React.useState(0);
+
+  if (!polls || polls.length === 0) {
+    return (
+      <div className="bg-white border border-dashed border-[#D6D0C5] rounded-2xl p-6 sm:p-8 text-center space-y-4">
+        <div className="w-12 h-12 mx-auto rounded-full bg-[#FAF5EE] text-[#D97746] flex items-center justify-center border border-[#E8DFC8]">
+          <Coins className="w-6 h-6" />
+        </div>
+        <div>
+          <span className="text-[10px] font-bold uppercase tracking-wider text-[#D97746] bg-[#FAF5EE] px-2 py-0.5 rounded-full">
+            Fair Group Decision Making
+          </span>
+          <h2 className="text-lg font-bold text-[#1C1917] mt-1.5">No Active Consensus Polls</h2>
+          <p className="text-xs text-[#78716C] max-w-md mx-auto mt-1 leading-relaxed">
+            Avoid endless group chat arguments! Use Quadratic Voting where every traveler receives 100 voice credits to express preference intensity fairly.
+          </p>
+        </div>
+        <button
+          onClick={() => setIsAddPollOpen(true)}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-[#D97746] hover:bg-[#C26333] text-white rounded-xl text-xs font-bold shadow-xs hover:shadow-md transition-all cursor-pointer"
+          aria-label="Create your first consensus poll"
+        >
+          <Sparkles className="w-3.5 h-3.5" />
+          <span>+ Create First Consensus Poll</span>
+        </button>
+      </div>
+    );
+  }
+
+  const pollIndex = Math.min(selectedPollIndex, polls.length - 1);
+  const poll = polls[pollIndex] || polls[0];
 
   const userVotesMap = poll.userVotes[currentUser.id] || {};
 
@@ -44,27 +74,58 @@ export default function MechanismPollCard() {
 
   return (
     <div className="bg-white border border-[#EBE7DF] rounded-2xl p-5 sm:p-6 shadow-2xs space-y-5">
+      {/* Poll Multi-Tab Switcher if multiple polls exist */}
+      {polls.length > 1 && (
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-[#EBE7DF]">
+          {polls.map((p, idx) => (
+            <button
+              key={p.id}
+              onClick={() => setSelectedPollIndex(idx)}
+              className={`px-3 py-1 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+                idx === pollIndex
+                  ? 'bg-[#1C1917] text-white shadow-2xs'
+                  : 'bg-[#F4F1EA] text-[#78716C] hover:bg-[#EBE7DF]'
+              }`}
+              aria-label={`Switch to poll: ${p.title}`}
+            >
+              Poll {idx + 1}: {p.title.length > 20 ? p.title.substring(0, 20) + '...' : p.title}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Poll Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#EBE7DF]">
         <div>
           <span className="text-[10px] font-bold uppercase tracking-wider text-[#D97746] bg-[#FAF5EE] px-2 py-0.5 rounded-full">
-            Quadratic Group Poll
+            {poll.mechanismType === 'quadratic' ? 'Quadratic Group Poll' : `${poll.mechanismType.toUpperCase()} Poll`}
           </span>
           <h2 className="text-lg sm:text-xl font-bold text-[#1C1917] mt-1">
             {poll.title}
           </h2>
           <p className="text-xs text-[#78716C] mt-0.5">
-            Vote cost is quadratic (V² credits) to balance intense preferences without loud voices dominating.
+            {poll.description || 'Vote cost is quadratic (V² credits) to balance intense preferences without loud voices dominating.'}
           </p>
         </div>
 
-        {/* Credit Bank */}
-        <div className="flex items-center gap-2 bg-[#F4F1EA] px-3.5 py-2 rounded-xl shrink-0">
-          <Coins className="w-4 h-4 text-[#D97746]" />
-          <div className="text-xs">
-            <span className="text-[#78716C]">Your Voice Credits: </span>
-            <strong className="text-[#1C1917]">{remainingCredits} / 100</strong>
+        {/* Credit Bank & New Poll CTA */}
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 bg-[#F4F1EA] px-3.5 py-2 rounded-xl shrink-0">
+            <Coins className="w-4 h-4 text-[#D97746]" />
+            <div className="text-xs">
+              <span className="text-[#78716C]">Voice Credits: </span>
+              <strong className="text-[#1C1917]">{remainingCredits} / 100</strong>
+            </div>
           </div>
+
+          <button
+            onClick={() => setIsAddPollOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-2 bg-[#FAF5EE] hover:bg-[#F4F1EA] text-[#D97746] border border-[#E8DFC8] rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer"
+            aria-label="Create new group consensus poll"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>+ New Poll</span>
+          </button>
         </div>
       </div>
 
@@ -133,6 +194,7 @@ export default function MechanismPollCard() {
                     <button
                       onClick={() => submitQuadraticVote(poll.id, opt.id, -1)}
                       disabled={myVotes <= 0}
+                      aria-label={`Decrease vote for ${opt.title}`}
                       className="w-7 h-7 rounded-lg bg-white border border-[#EBE7DF] hover:bg-[#F4F1EA] hover:border-[#D6D0C5] hover:scale-110 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100 font-bold text-xs transition-all duration-150 shadow-2xs"
                     >
                       &minus;
@@ -140,6 +202,7 @@ export default function MechanismPollCard() {
                     <button
                       onClick={() => submitQuadraticVote(poll.id, opt.id, 1)}
                       disabled={remainingCredits < nextCost}
+                      aria-label={`Increase vote for ${opt.title}`}
                       className="w-7 h-7 rounded-lg bg-[#D97746] hover:bg-[#C26333] hover:scale-110 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100 font-bold text-xs text-white transition-all duration-150 shadow-2xs"
                     >
                       +

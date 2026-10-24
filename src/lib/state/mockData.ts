@@ -612,3 +612,14 @@ export const LOCAL_PHRASES: import('@/types').PhraseItem[] = [
   { id: 'lp-3', en: 'Please make low-sodium food for grandfather.', hi: 'Dadaji ke liye kam namak ka bhojan banayein.', badge: 'Senior Health' },
   { id: 'lp-4', en: 'Emergency! Please call SMS Hospital or ambulance.', hi: 'Aapatkaal! Kripya SMS Hospital ya 108 ambulance ko call karein.', badge: 'SOS' },
 ];
+
+export const DEFAULT_DEMO_TRIP: import('@/types').TripInfo = {
+  id: 'trip-rajasthan-demo',
+  title: 'Rajasthan Family Expedition',
+  destination: 'Jaipur, Rajasthan',
+  dates: 'Oct 14 – 18',
+  totalDays: 5,
+  currentDay: 1,
+  isDemo: true,
+};
+

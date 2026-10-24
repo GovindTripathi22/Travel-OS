@@ -25,15 +25,19 @@ export default function ElderlyModeView() {
     stopSpeaking,
     setIsAssistantOpen,
     users,
+    tripInfo,
   } = useTrip();
 
   const planner = users.find((u) => u.role === 'planner') || users[0];
+  const seniorFirstName = currentUser.name.split(' ')[0] || 'Elder';
+  const plannerFirstName = planner?.name.split(' ')[0] || 'Trip Leader';
+  const dest = tripInfo?.destination ? tripInfo.destination.split(',')[0] : 'Jaipur';
 
   const handleAudioBriefing = () => {
     if (isSpeaking) {
       stopSpeaking();
     } else {
-      const summaryText = `Pranam Dadaji. Today is Day 1 in Jaipur. You are staying in Suite 104 on the ground floor at Rambagh Palace. At 1:00 PM, a mild low-sodium Rajasthani lunch is prepared for you at Surya Mahal with zero stairs. From 1:30 to 3:30 PM is your restful nap window. In the evening at 7:30 PM, we visit Chokhi Dhani for the cultural puppet show. A comfortable armchair and tea have been reserved for you. Rohan and Kabir are with you. Have a wonderful and peaceful day!`;
+      const summaryText = `Pranam ${seniorFirstName}. Today is Day ${tripInfo?.currentDay || 1} in ${dest}. Comfortable meals and restful, zero-stair routes are prepared for you. ${plannerFirstName} is with you. Have a wonderful and peaceful day!`;
       speakText(summaryText);
     }
   };
@@ -54,10 +58,10 @@ export default function ElderlyModeView() {
                 <Heart className="w-4 h-4 fill-amber-400" /> Comfort & Care Mode
               </span>
               <h1 className="text-2xl sm:text-3xl font-extrabold text-white mt-0.5">
-                Namaste, Dadaji
+                Namaste, {seniorFirstName}
               </h1>
               <p className="text-slate-300 text-base mt-1">
-                Day 1 in Jaipur &bull; Everything is taken care of
+                Day {tripInfo?.currentDay || 1} in {dest} &bull; Everything is taken care of
               </p>
             </div>
           </div>
@@ -97,7 +101,7 @@ export default function ElderlyModeView() {
             <span className="text-xs font-semibold text-emerald-400 uppercase tracking-wide">
               One-Tap Direct Call
             </span>
-            <h3 className="text-xl font-bold text-white">Call Rohan</h3>
+            <h3 className="text-xl font-bold text-white">Call {plannerFirstName}</h3>
             <p className="text-sm text-emerald-200">{planner.phone}</p>
           </div>
         </a>

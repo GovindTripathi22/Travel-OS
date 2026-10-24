@@ -18,12 +18,41 @@ export default function PreTripRadar() {
   const { users, currentUser, updateWellbeing, addItineraryRestBuffer } = useTrip();
   const [restAdded, setRestAdded] = useState(false);
 
+  const user1 = users[0] || { name: 'Traveler' };
+  const user2 = users[1] || user1;
+  const hasMultiple = users.length > 1;
+
   const radarMetrics = [
-    { axis: 'Pace & Density', groupScore: 'Balanced (3.4 / 5)', mismatch: 'Dadaji prefers slow; Vikram prefers fast.', alignment: 74 },
-    { axis: 'Budget Flexibility', groupScore: 'Generous (4.2 / 5)', mismatch: 'Unanimous alignment on Heritage hotels.', alignment: 96 },
-    { axis: 'Spontaneity vs Structure', groupScore: 'Semi-Structured (3.8 / 5)', mismatch: 'Rohan needs itinerary; Ananya wants photo walks.', alignment: 82 },
-    { axis: 'Food Adventurousness', groupScore: 'Strict Comfort (2.5 / 5)', mismatch: 'Priya & Dadaji have strict dietary boundaries.', alignment: 88 },
-    { axis: 'Morning vs Nightlife', groupScore: 'Early Birds (4.0 / 5)', mismatch: 'Dadaji up at 6 AM; Vikram up till midnight.', alignment: 65 },
+    {
+      axis: 'Pace & Density',
+      groupScore: hasMultiple ? 'Balanced (3.6 / 5)' : `${user1.name.split(' ')[0]} (${user1.preferences?.pacePreference || 'moderate'})`,
+      mismatch: hasMultiple ? `${user1.name.split(' ')[0]} prefers ${user1.preferences?.pacePreference || 'moderate'}; ${user2.name.split(' ')[0]} pacing active.` : 'Single traveler preference configured.',
+      alignment: hasMultiple ? 82 : 100,
+    },
+    {
+      axis: 'Budget Flexibility',
+      groupScore: 'Generous (4.2 / 5)',
+      mismatch: hasMultiple ? `Unanimous agreement across ${users.length} companions.` : 'Individual budget preference active.',
+      alignment: 95,
+    },
+    {
+      axis: 'Spontaneity vs Structure',
+      groupScore: 'Semi-Structured (3.8 / 5)',
+      mismatch: hasMultiple ? `${user1.name.split(' ')[0]} handles schedule checkpoints.` : 'Flexible individual schedule.',
+      alignment: 85,
+    },
+    {
+      axis: 'Dietary Alignment',
+      groupScore: 'Coordinated (4.0 / 5)',
+      mismatch: users.some(u => u.preferences?.dietary?.length) ? `Special boundaries tracked: ${users.flatMap(u => u.preferences?.dietary || []).slice(0, 2).join(', ')}.` : 'Dining preferences aligned.',
+      alignment: 90,
+    },
+    {
+      axis: 'Daily Energy & Rhythm',
+      groupScore: 'Synchronized (4.1 / 5)',
+      mismatch: hasMultiple ? `Mobility tolerance balanced across ${users.length} companions.` : 'Individual walking rhythm active.',
+      alignment: 88,
+    },
   ];
 
   const handleInjectBuffer = () => {

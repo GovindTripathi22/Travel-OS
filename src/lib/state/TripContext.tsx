@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useRef } from 'react';
 import {
   User,
   ItineraryItem,
@@ -12,6 +12,7 @@ import {
   PhotoMemory,
   ConflictAlert,
   JarvisActionResult,
+  TripInfo,
 } from '@/types';
 import {
   INITIAL_USERS,
@@ -23,7 +24,10 @@ import {
   INITIAL_MEMORIES,
   INITIAL_PACKING,
   LOCAL_PHRASES,
+  DEFAULT_DEMO_TRIP,
+  createSvgAvatar,
 } from './mockData';
+
 import { calculateNetBalances, minimizeDebts, recommendNextPayer } from '../algorithms/debtMinimizer';
 import { detectTripConflicts, detectWeatherAndTemporalConflicts, toMinutes, fromMinutes } from '../algorithms/conflictDetector';
 import { resolveQuadraticPoll, resolveBordaCountPoll } from '../algorithms/mechanismVoting';
@@ -41,9 +45,33 @@ interface TripContextType {
   currentUser: User;
   setCurrentUser: (user: User) => void;
   users: User[];
+  tripInfo: TripInfo;
+  setTripInfo: (info: TripInfo) => void;
+  isDemoTrip: boolean;
+  loadDemoTrip: () => void;
+  createCustomTrip: (info: {
+    title: string;
+    destination: string;
+    dates: string;
+    companions?: Array<Partial<User>>;
+  }) => void;
+  addCompanion: (companion: Omit<User, 'id'> | User) => void;
+  addPoll: (poll: MechanismPoll) => void;
+  addDocument: (doc: DocumentItem) => void;
+  isSetupModalOpen: boolean;
+  setIsSetupModalOpen: (open: boolean) => void;
+  isAddCompanionOpen: boolean;
+  setIsAddCompanionOpen: (open: boolean) => void;
+  isAddStopOpen: boolean;
+  setIsAddStopOpen: (open: boolean) => void;
+  isAddPollOpen: boolean;
+  setIsAddPollOpen: (open: boolean) => void;
+  isUploadDocOpen: boolean;
+  setIsUploadDocOpen: (open: boolean) => void;
   itinerary: ItineraryItem[];
   polls: MechanismPoll[];
   expenses: Expense[];
+
   settlements: Settlement[];
   netBalances: Record<string, number>;
   travelStatus: Record<string, TravelStatus>;
@@ -107,14 +135,23 @@ interface TripContextType {
 const TripContext = createContext<TripContextType | undefined>(undefined);
 
 export function TripProvider({ children }: { children: React.ReactNode }) {
-  const { switchQuickCompanion } = useAuth();
+  const { user, activeProfile, switchQuickCompanion } = useAuth();
+
+  const [tripInfo, setTripInfo] = useState<TripInfo>(DEFAULT_DEMO_TRIP);
+  const [isDemoTrip, setIsDemoTrip] = useState(true);
+  const [isSetupModalOpen, setIsSetupModalOpen] = useState(false);
+  const [isAddCompanionOpen, setIsAddCompanionOpen] = useState(false);
+  const [isAddStopOpen, setIsAddStopOpen] = useState(false);
+  const [isAddPollOpen, setIsAddPollOpen] = useState(false);
+  const [isUploadDocOpen, setIsUploadDocOpen] = useState(false);
+
   const [users, setUsers] = useState<User[]>(INITIAL_USERS);
   const [currentUser, setCurrentUser] = useState<User>(INITIAL_USERS[0]); // Rohan by default
   const [itinerary, setItinerary] = useState<ItineraryItem[]>(INITIAL_ITINERARY);
   const [polls, setPolls] = useState<MechanismPoll[]>(INITIAL_POLLS);
   const [expenses, setExpenses] = useState<Expense[]>(INITIAL_EXPENSES);
   const [travelStatus, setTravelStatus] = useState<Record<string, TravelStatus>>(INITIAL_TRAVEL_STATUS);
-  const [documents] = useState<DocumentItem[]>(INITIAL_DOCUMENTS);
+  const [documents, setDocuments] = useState<DocumentItem[]>(INITIAL_DOCUMENTS);
   const [memories, setMemories] = useState<PhotoMemory[]>(INITIAL_MEMORIES);
   const [resolvedConflictIds, setResolvedConflictIds] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<'full' | 'phone_preview'>('full');
@@ -134,42 +171,251 @@ export function TripProvider({ children }: { children: React.ReactNode }) {
   const [isHUDModalOpen, setIsHUDModalOpen] = useState(false);
   const [stateHydrated, setStateHydrated] = useState(false);
 
-  // Keep demo trips usable across refreshes without requiring a backend account.
-  // The versioned envelope lets future releases safely discard incompatible data.
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem('sahyatri_trip_state_v1');
-      if (saved) {
-        const data = JSON.parse(saved);
-        if (Array.isArray(data.users)) setUsers(data.users);
-        if (Array.isArray(data.itinerary)) setItinerary(data.itinerary);
-        if (Array.isArray(data.polls)) setPolls(data.polls);
-        if (Array.isArray(data.expenses)) setExpenses(data.expenses);
-        if (data.travelStatus && typeof data.travelStatus === 'object') setTravelStatus(data.travelStatus);
-        if (Array.isArray(data.memories)) setMemories(data.memories);
-        if (Array.isArray(data.packingList)) setPackingList(data.packingList);
-        if (data.weather === 'Sunny' || data.weather === 'Rainy') setWeather(data.weather);
-        if (['INR', 'USD', 'EUR', 'JPY'].includes(data.currency)) setCurrency(data.currency);
-        if (Array.isArray(data.resolvedConflictIds)) setResolvedConflictIds(new Set(data.resolvedConflictIds));
-      }
-    } catch (error) {
-      console.warn('[Sahyatri] Saved trip state could not be restored; using the sample trip.', error);
-    } finally {
-      setStateHydrated(true);
-    }
-  }, []);
+  const prevUserIdRef = useRef<string | null>(null);
 
+  // Helper to load Rajasthan Demo Trip
+  const applyDemoTripState = (data?: any) => {
+    if (data) {
+      if (Array.isArray(data.users)) setUsers(data.users);
+      else setUsers(INITIAL_USERS);
+      if (Array.isArray(data.itinerary)) setItinerary(data.itinerary);
+      else setItinerary(INITIAL_ITINERARY);
+      if (Array.isArray(data.polls)) setPolls(data.polls);
+      else setPolls(INITIAL_POLLS);
+      if (Array.isArray(data.expenses)) setExpenses(data.expenses);
+      else setExpenses(INITIAL_EXPENSES);
+      if (data.travelStatus && typeof data.travelStatus === 'object') setTravelStatus(data.travelStatus);
+      else setTravelStatus(INITIAL_TRAVEL_STATUS);
+      if (Array.isArray(data.documents)) setDocuments(data.documents);
+      else setDocuments(INITIAL_DOCUMENTS);
+      if (Array.isArray(data.memories)) setMemories(data.memories);
+      else setMemories(INITIAL_MEMORIES);
+      if (Array.isArray(data.packingList)) setPackingList(data.packingList);
+      else setPackingList(INITIAL_PACKING);
+      if (data.weather === 'Sunny' || data.weather === 'Rainy') setWeather(data.weather);
+      if (['INR', 'USD', 'EUR', 'JPY'].includes(data.currency)) setCurrency(data.currency);
+      if (Array.isArray(data.resolvedConflictIds)) setResolvedConflictIds(new Set(data.resolvedConflictIds));
+      if (data.tripInfo) setTripInfo(data.tripInfo);
+      else setTripInfo(DEFAULT_DEMO_TRIP);
+    } else {
+      setUsers(INITIAL_USERS);
+      setItinerary(INITIAL_ITINERARY);
+      setPolls(INITIAL_POLLS);
+      setExpenses(INITIAL_EXPENSES);
+      setDocuments(INITIAL_DOCUMENTS);
+      setMemories(INITIAL_MEMORIES);
+      setTravelStatus(INITIAL_TRAVEL_STATUS);
+      setPackingList(INITIAL_PACKING);
+      setWeather('Sunny');
+      setCurrency('INR');
+      setTripInfo(DEFAULT_DEMO_TRIP);
+    }
+    setIsDemoTrip(true);
+  };
+
+  // Helper to initialize clean fresh user trip with ZERO mock travelers
+  const applyCleanTripState = (traveler: User, openSetup = true) => {
+    setUsers([traveler]);
+    setCurrentUser(traveler);
+    setItinerary([]);
+    setPolls([]);
+    setExpenses([]);
+    setDocuments([]);
+    setMemories([]);
+    setPackingList([]);
+    setTravelStatus({
+      [traveler.id]: {
+        userId: traveler.id,
+        statusText: 'Trip Leader',
+        currentStep: 'booked',
+        lastUpdated: 'Just now',
+      },
+    });
+    const newTripInfo: TripInfo = {
+      id: `trip-${traveler.id}`,
+      title: `${traveler.name.split(' ')[0]}'s Journey`,
+      destination: '',
+      dates: '',
+      totalDays: 3,
+      currentDay: 1,
+      isDemo: false,
+    };
+    setTripInfo(newTripInfo);
+    setIsDemoTrip(false);
+    if (openSetup) {
+      setIsSetupModalOpen(true);
+    }
+
+    try {
+      localStorage.setItem(`sahyatri_user_trip_${traveler.id}`, JSON.stringify({
+        tripInfo: newTripInfo,
+        users: [traveler],
+        itinerary: [],
+        polls: [],
+        expenses: [],
+        documents: [],
+        memories: [],
+        travelStatus: {
+          [traveler.id]: {
+            userId: traveler.id,
+            statusText: 'Trip Leader',
+            currentStep: 'booked',
+            lastUpdated: 'Just now',
+          },
+        },
+        weather: 'Sunny',
+        currency: 'INR',
+      }));
+    } catch {}
+  };
+
+  // Unified Session & State Hydration / Synchronization
   useEffect(() => {
-    if (!stateHydrated) return;
+    if (typeof window === 'undefined') return;
+
+    const currentUid = user?.uid || null;
+    if (currentUid === prevUserIdRef.current && stateHydrated) return;
+    prevUserIdRef.current = currentUid;
+
+    const isMockUser = user ? INITIAL_USERS.some((u) => u.id === user.uid) : false;
+
+    // Case 1: Unauthenticated Guest or Sign-Out
+    if (!user) {
+      try {
+        const savedDemo = localStorage.getItem('sahyatri_trip_state_v1');
+        if (savedDemo) {
+          applyDemoTripState(JSON.parse(savedDemo));
+        } else {
+          applyDemoTripState();
+        }
+      } catch {
+        applyDemoTripState();
+      }
+      setCurrentUser(INITIAL_USERS[0]);
+      setStateHydrated(true);
+      return;
+    }
+
+    // Case 2: Signed in as a Demo Companion (Rohan, Dadaji, Priya, Kabir, etc.)
+    if (isMockUser) {
+      try {
+        const savedDemo = localStorage.getItem('sahyatri_trip_state_v1');
+        if (savedDemo) {
+          applyDemoTripState(JSON.parse(savedDemo));
+        } else {
+          applyDemoTripState();
+        }
+      } catch {
+        applyDemoTripState();
+      }
+      const matched = INITIAL_USERS.find((u) => u.id === user.uid) || INITIAL_USERS[0];
+      setCurrentUser(matched);
+      setStateHydrated(true);
+      return;
+    }
+
+    // Case 3: Real Authenticated Custom User
+    const savedCustomTrip = localStorage.getItem(`sahyatri_user_trip_${user.uid}`);
+    if (savedCustomTrip) {
+      try {
+        const parsed = JSON.parse(savedCustomTrip);
+        if (parsed.tripInfo) setTripInfo(parsed.tripInfo);
+        if (Array.isArray(parsed.users) && parsed.users.length > 0) {
+          setUsers(parsed.users);
+          setCurrentUser(parsed.users[0]);
+        } else {
+          const fallbackUser: User = {
+            id: user.uid,
+            name: user.displayName || 'Trip Leader',
+            role: user.role || 'planner',
+            personaType: user.personaType || 'standard',
+            relationship: 'Trip Leader',
+            age: 28,
+            avatar: user.photoURL || createSvgAvatar((user.displayName || 'TR').slice(0, 2).toUpperCase(), '#0284c7', '#1d4ed8'),
+            phone: '+91 98000 00000',
+            batteryLevel: 90,
+            voiceCredits: 100,
+            preferences: {
+              dietary: ['Vegetarian'],
+              medical: [],
+              mobility: { maxWalkingMeters: 2500, needsRampOrElevator: false, stairTolerance: 'normal' },
+              pacePreference: 'moderate',
+            },
+          };
+          setUsers([fallbackUser]);
+          setCurrentUser(fallbackUser);
+        }
+        if (Array.isArray(parsed.itinerary)) setItinerary(parsed.itinerary);
+        else setItinerary([]);
+        if (Array.isArray(parsed.polls)) setPolls(parsed.polls);
+        else setPolls([]);
+        if (Array.isArray(parsed.expenses)) setExpenses(parsed.expenses);
+        else setExpenses([]);
+        if (Array.isArray(parsed.documents)) setDocuments(parsed.documents);
+        else setDocuments([]);
+        if (Array.isArray(parsed.memories)) setMemories(parsed.memories);
+        else setMemories([]);
+        if (parsed.travelStatus && typeof parsed.travelStatus === 'object') setTravelStatus(parsed.travelStatus);
+        if (parsed.weather === 'Sunny' || parsed.weather === 'Rainy') setWeather(parsed.weather);
+        if (['INR', 'USD', 'EUR', 'JPY'].includes(parsed.currency)) setCurrency(parsed.currency);
+        setIsDemoTrip(false);
+        setStateHydrated(true);
+        return;
+      } catch (e) {
+        console.warn('Failed to parse custom trip', e);
+      }
+    }
+
+    // Case 4: First-time sign-in or newly created account: CLEAN TRIP SETUP!
+    // Absolute guarantee: 0 mock travelers (NO Rohan, Dadaji, Priya, Kabir, Vikram, Ananya)!
+    const freshUser: User = {
+      id: user.uid,
+      name: user.displayName || 'Trip Leader',
+      role: 'planner',
+      personaType: user.personaType || 'standard',
+      relationship: 'Trip Leader',
+      age: user.personaType === 'elderly' ? 70 : user.personaType === 'kid' ? 10 : 28,
+      avatar: user.photoURL || createSvgAvatar((user.displayName || 'TR').slice(0, 2).toUpperCase(), '#0284c7', '#1d4ed8'),
+      phone: '+91 98000 00000',
+      batteryLevel: 90,
+      voiceCredits: 100,
+      preferences: {
+        dietary: ['Vegetarian'],
+        medical: [],
+        mobility: { maxWalkingMeters: 2500, needsRampOrElevator: false, stairTolerance: 'normal' },
+        pacePreference: 'moderate',
+      },
+    };
+
+    applyCleanTripState(freshUser, true);
+    setStateHydrated(true);
+  }, [user, activeProfile]);
+
+  // Save demo trip changes (strictly isolated to demo mode!)
+  useEffect(() => {
+    if (!stateHydrated || !isDemoTrip) return;
     try {
       localStorage.setItem('sahyatri_trip_state_v1', JSON.stringify({
-        users, itinerary, polls, expenses, travelStatus, memories, packingList,
+        tripInfo, users, itinerary, polls, expenses, documents, travelStatus, memories, packingList,
         weather, currency, resolvedConflictIds: [...resolvedConflictIds],
       }));
     } catch (error) {
       console.warn('[Sahyatri] Trip changes could not be saved in this browser.', error);
     }
-  }, [stateHydrated, users, itinerary, polls, expenses, travelStatus, memories, packingList, weather, currency, resolvedConflictIds]);
+  }, [stateHydrated, isDemoTrip, tripInfo, users, itinerary, polls, expenses, documents, travelStatus, memories, packingList, weather, currency, resolvedConflictIds]);
+
+  // Save custom trip changes (strictly isolated to custom user!)
+  useEffect(() => {
+    if (!stateHydrated || isDemoTrip || !user || INITIAL_USERS.some(u => u.id === user.uid)) return;
+    try {
+      localStorage.setItem(`sahyatri_user_trip_${user.uid}`, JSON.stringify({
+        tripInfo, users, itinerary, polls, expenses, documents, memories, travelStatus, weather, currency,
+      }));
+    } catch (error) {
+      console.warn('[Sahyatri] Custom trip could not be saved in this browser.', error);
+    }
+  }, [stateHydrated, isDemoTrip, user, tripInfo, users, itinerary, polls, expenses, documents, memories, travelStatus, weather, currency]);
+
 
   const toggleWeather = () => {
     setWeather((prev) => (prev === 'Sunny' ? 'Rainy' : 'Sunny'));
@@ -486,6 +732,136 @@ export function TripProvider({ children }: { children: React.ReactNode }) {
       },
     ]);
   };
+
+  // Add Companion dynamically
+  const addCompanion = (companionData: Omit<User, 'id'> | User) => {
+    const newId = 'id' in companionData && companionData.id ? companionData.id : `comp-${Date.now()}`;
+    const initials = (companionData.name || 'TR')
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .slice(0, 2)
+      .toUpperCase() || 'TR';
+    const avatar = companionData.avatar || createSvgAvatar(initials, '#ea580c', '#c2410c');
+
+    const newCompanion: User = {
+      ...companionData,
+      id: newId,
+      avatar,
+      voiceCredits: companionData.voiceCredits ?? 100,
+      batteryLevel: companionData.batteryLevel ?? 85,
+    };
+
+    setUsers((prev) => [...prev, newCompanion]);
+    setTravelStatus((prev) => ({
+      ...prev,
+      [newId]: {
+        userId: newId,
+        statusText: 'Joined Trip',
+        currentStep: 'booked',
+        lastUpdated: 'Just now',
+      },
+    }));
+  };
+
+  // Add Poll dynamically
+  const addPoll = (newPoll: MechanismPoll) => {
+    setPolls((prev) => [newPoll, ...prev]);
+    setActiveTab('decisions');
+  };
+
+  // Add Document dynamically
+  const addDocument = (newDoc: DocumentItem) => {
+    setDocuments((prev) => [newDoc, ...prev]);
+    setActiveTab('vault');
+    setVaultSubTab('passes');
+  };
+
+  // Load sample demo trip (Rajasthan Expedition)
+  const loadDemoTrip = () => {
+    try {
+      const saved = localStorage.getItem('sahyatri_trip_state_v1');
+      if (saved) {
+        applyDemoTripState(JSON.parse(saved));
+      } else {
+        applyDemoTripState();
+      }
+    } catch {
+      applyDemoTripState();
+    }
+    setCurrentUser(INITIAL_USERS[0]);
+    setIsDemoTrip(true);
+    setIsSetupModalOpen(false);
+  };
+
+  // Create clean custom trip
+  const createCustomTrip = (info: {
+    title: string;
+    destination: string;
+    dates: string;
+    companions?: Array<Partial<User>>;
+  }) => {
+    const leader = currentUser || activeProfile;
+    const initialTravelers: User[] = [
+      {
+        ...leader,
+        role: 'planner',
+      },
+    ];
+
+    if (info.companions && info.companions.length > 0) {
+      info.companions.forEach((c, idx) => {
+        if (!c.name) return;
+        const cId = `comp-${Date.now()}-${idx}`;
+        const initials = (c.name || 'TR')
+          .split(' ')
+          .map((n) => n[0])
+          .join('')
+          .slice(0, 2)
+          .toUpperCase() || 'TR';
+        initialTravelers.push({
+          id: cId,
+          name: c.name,
+          role: c.role || 'companion',
+          personaType: c.personaType || 'standard',
+          relationship: c.relationship || 'Companion',
+          age: c.age || 28,
+          avatar: c.avatar || createSvgAvatar(initials, '#0284c7', '#2563eb'),
+          phone: c.phone || '+91 98000 00000',
+          batteryLevel: 90,
+          voiceCredits: 100,
+          preferences: c.preferences || {
+            dietary: ['Vegetarian'],
+            medical: [],
+            mobility: { maxWalkingMeters: 2000, needsRampOrElevator: false, stairTolerance: 'normal' },
+            pacePreference: 'moderate',
+          },
+        });
+      });
+    }
+
+    setUsers(initialTravelers);
+    setCurrentUser(initialTravelers[0]);
+    setItinerary([]);
+    setPolls([]);
+    setExpenses([]);
+    setDocuments([]);
+    setMemories([]);
+    setPackingList([]);
+    const customInfo: TripInfo = {
+      id: `trip-${Date.now()}`,
+      title: info.title || 'My New Journey',
+      destination: info.destination || 'Selected Destination',
+      dates: info.dates || 'Upcoming',
+      totalDays: 3,
+      currentDay: 1,
+      isDemo: false,
+    };
+    setTripInfo(customInfo);
+    setIsDemoTrip(false);
+    setIsSetupModalOpen(false);
+  };
+
 
   // Update Current User
   const updateCurrentUser = (patch: Partial<User>) => {
@@ -1002,6 +1378,24 @@ export function TripProvider({ children }: { children: React.ReactNode }) {
         currentUser,
         setCurrentUser,
         users,
+        tripInfo,
+        setTripInfo,
+        isDemoTrip,
+        loadDemoTrip,
+        createCustomTrip,
+        addCompanion,
+        addPoll,
+        addDocument,
+        isSetupModalOpen,
+        setIsSetupModalOpen,
+        isAddCompanionOpen,
+        setIsAddCompanionOpen,
+        isAddStopOpen,
+        setIsAddStopOpen,
+        isAddPollOpen,
+        setIsAddPollOpen,
+        isUploadDocOpen,
+        setIsUploadDocOpen,
         itinerary,
         polls,
         expenses,
@@ -1065,6 +1459,7 @@ export function TripProvider({ children }: { children: React.ReactNode }) {
         setPersonaMode,
       }}
     >
+
       {children}
     </TripContext.Provider>
   );

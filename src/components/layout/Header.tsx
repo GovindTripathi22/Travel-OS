@@ -23,6 +23,8 @@ import {
   ArrowRight,
   Zap,
   User as UserIcon,
+  UserPlus,
+  Compass,
   X,
 } from 'lucide-react';
 import { createSvgAvatar, AVATAR_PRESETS } from '@/lib/state/mockData';
@@ -46,12 +48,17 @@ export default function Header() {
     stopJarvisVoiceNow,
     executeJarvisCommand,
     executeAutonomousJarvis,
+    isDemoTrip,
+    setIsSetupModalOpen,
+    setIsAddCompanionOpen,
   } = useTrip();
+
 
   const {
     user,
     activeProfile,
     isAuthenticated,
+    authHydrated,
     isAdmin,
     setIsAuthModalOpen,
     signOut,
@@ -453,159 +460,189 @@ export default function Header() {
               <span className="hidden sm:inline">Ask AI</span>
             </button>
 
-            {/* Sign In CTA Button (Direct one-click access) */}
-            <button
-              onClick={() => setIsAuthModalOpen(true)}
-              className="px-3 py-1.5 bg-[#1C1917] hover:bg-[#292524] text-white rounded-full text-xs font-bold transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 flex items-center gap-1.5 shadow-2xs hover:shadow-xs"
-              title="Sign In with Firebase or Switch Companion"
-            >
-              <LogIn className="w-3.5 h-3.5 text-[#D97746]" />
-              <span className="hidden sm:inline">Sign In</span>
-            </button>
-
-            {/* Authenticated Traveler Profile Pill & Dropdown */}
-            <div className="relative" ref={dropdownRef}>
+            {/* Auth Session State: Skeleton while hydrating, Sign In when unauth, Profile pill when auth */}
+            {!authHydrated ? (
+              <div className="w-20 h-7 rounded-full bg-[#EBE7DF]/50 animate-pulse" aria-hidden="true" />
+            ) : !isAuthenticated ? (
               <button
-                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="flex items-center gap-2 px-2.5 py-1.5 rounded-full bg-white border border-[#EBE7DF] hover:border-[#D6D0C5] text-xs font-semibold text-[#1C1917] transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 shadow-2xs hover:shadow-xs"
+                onClick={() => setIsAuthModalOpen(true)}
+                className="px-3.5 py-1.5 bg-[#1C1917] hover:bg-[#292524] text-white rounded-full text-xs font-bold transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 flex items-center gap-1.5 shadow-2xs hover:shadow-xs focus-visible:ring-2 focus-visible:ring-[#D97746] focus-visible:outline-none"
+                title="Sign In with Firebase or Switch Companion"
+                aria-label="Sign In to Sahyatri"
               >
-                <img
-                  src={safeAvatarSrc(currentUser)}
-                  alt={currentUser.name}
-                  onError={(e) => {
-                    const initials = (currentUser.name || 'TR').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'TR';
-                    (e.target as HTMLImageElement).src = createSvgAvatar(initials, '#ea580c', '#c2410c');
-                  }}
-                  className="w-5 h-5 rounded-full object-cover"
-                />
-                <span className="max-w-[70px] sm:max-w-none truncate font-semibold">
-                  {currentUser.name.split(' ')[0]}
-                </span>
-                <span
-                  className={`text-[9px] px-1.5 py-0.2 rounded-full font-bold uppercase tracking-wider hidden sm:inline ${
-                    isAdmin
-                      ? 'bg-orange-100 text-[#D97746] border border-orange-200'
-                      : 'bg-stone-100 text-[#78716C] border border-stone-200'
-                  }`}
-                >
-                  {isAdmin ? 'Admin' : 'Companion'}
-                </span>
-                <ChevronDown className="w-3 h-3 text-[#A8A29E]" />
+                <LogIn className="w-3.5 h-3.5 text-[#D97746]" />
+                <span className="hidden sm:inline">Sign In</span>
               </button>
+            ) : (
+              <div className="relative" ref={dropdownRef}>
+                <button
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  aria-expanded={isDropdownOpen}
+                  aria-haspopup="menu"
+                  aria-label={`User profile menu for ${currentUser.name}`}
+                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-full bg-white border border-[#EBE7DF] hover:border-[#D6D0C5] text-xs font-semibold text-[#1C1917] transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 shadow-2xs hover:shadow-xs focus-visible:ring-2 focus-visible:ring-[#D97746] focus-visible:outline-none"
+                >
+                  <img
+                    src={safeAvatarSrc(currentUser)}
+                    alt={currentUser.name}
+                    onError={(e) => {
+                      const initials = (currentUser.name || 'TR').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'TR';
+                      (e.target as HTMLImageElement).src = createSvgAvatar(initials, '#ea580c', '#c2410c');
+                    }}
+                    className="w-5 h-5 rounded-full object-cover"
+                  />
+                  <span className="max-w-[70px] sm:max-w-none truncate font-semibold">
+                    {currentUser.name.split(' ')[0]}
+                  </span>
+                  <span
+                    className={`text-[9px] px-1.5 py-0.2 rounded-full font-bold uppercase tracking-wider hidden sm:inline ${
+                      isAdmin
+                        ? 'bg-orange-100 text-[#D97746] border border-orange-200'
+                        : 'bg-stone-100 text-[#78716C] border border-stone-200'
+                    }`}
+                  >
+                    {isAdmin ? 'Admin' : 'Companion'}
+                  </span>
+                  <ChevronDown className="w-3 h-3 text-[#A8A29E]" />
+                </button>
 
-              {/* Authenticated Account & RBAC Dropdown Menu */}
-              {isDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-72 bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-[#EBE7DF] p-3 z-50 animate-in fade-in zoom-in-95 duration-150 space-y-2.5">
-                  {/* Active Account Identity Card */}
-                  <div className="p-2.5 rounded-xl bg-[#FAF9F6] border border-[#EBE7DF]">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#A8A29E]">
-                        Active Account
-                      </span>
-                      <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-600">
-                        <ShieldCheck className="w-3 h-3" /> Firebase Auth
-                      </span>
+                {/* Authenticated Account & RBAC Dropdown Menu */}
+                {isDropdownOpen && (
+                  <div
+                    role="menu"
+                    aria-label="Account actions"
+                    className="absolute right-0 mt-2 w-72 bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-[#EBE7DF] p-3 z-50 animate-in fade-in zoom-in-95 duration-150 space-y-2.5"
+                  >
+                    {/* Active Account Identity Card */}
+                    <div className="p-2.5 rounded-xl bg-[#FAF9F6] border border-[#EBE7DF]">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#A8A29E]">
+                          Active Account
+                        </span>
+                        <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-600">
+                          <ShieldCheck className="w-3 h-3" /> Firebase Auth
+                        </span>
+                      </div>
+                      <div className="text-xs font-bold text-[#1C1917] mt-1">
+                        {currentUser.name}
+                      </div>
+                      <div className="text-[11px] text-[#78716C] truncate">
+                        {user?.email || `${currentUser.id}@traveler.sahyatri.ai`}
+                      </div>
                     </div>
-                    <div className="text-xs font-bold text-[#1C1917] mt-1">
-                      {currentUser.name}
-                    </div>
-                    <div className="text-[11px] text-[#78716C] truncate">
-                      {user?.email || `${currentUser.id}@traveler.sahyatri.ai`}
-                    </div>
-                  </div>
 
-                  {/* Quick Companion Switchers for Live Evaluation */}
-                  <div>
-                    <div className="px-1 py-1 text-[10px] font-bold uppercase tracking-wider text-[#A8A29E]">
-                      Switch Companion (RBAC)
-                    </div>
-                    <div className="space-y-1">
-                      {users.map((u) => {
-                        const isSelected = u.id === currentUser.id;
-                        return (
-                          <button
-                            key={u.id}
-                            onClick={() => {
-                              switchQuickCompanion(u.id);
-                              setCurrentUser(u);
-                              setIsDropdownOpen(false);
-                            }}
-                            className={`w-full flex items-center justify-between p-2 rounded-xl text-left text-xs transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-98 ${
-                              isSelected
-                                ? 'bg-[#FAF9F6] text-[#1C1917] font-bold border border-[#EBE7DF] shadow-2xs'
-                                : 'text-[#78716C] hover:text-[#1C1917] hover:bg-[#F4F1EA]'
-                            }`}
-                          >
-                            <div className="flex items-center gap-2">
-                              <img
-                                src={safeAvatarSrc(u)}
-                                alt={u.name}
-                                onError={(e) => {
-                                  const initials = (u.name || 'TR').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'TR';
-                                  (e.target as HTMLImageElement).src = createSvgAvatar(initials, '#0284c7', '#1d4ed8');
+                    {/* Quick Companion Switchers for Live Evaluation */}
+                    {users.length > 1 && (
+                      <div>
+                        <div className="px-1 py-1 text-[10px] font-bold uppercase tracking-wider text-[#A8A29E]">
+                          Switch Companion (RBAC)
+                        </div>
+                        <div className="space-y-1 max-h-44 overflow-y-auto">
+                          {users.map((u) => {
+                            const isSelected = u.id === currentUser.id;
+                            return (
+                              <button
+                                key={u.id}
+                                role="menuitem"
+                                onClick={() => {
+                                  switchQuickCompanion(u.id);
+                                  setCurrentUser(u);
+                                  setIsDropdownOpen(false);
                                 }}
-                                className="w-6 h-6 rounded-full object-cover"
-                              />
-                              <div>
-                                <div className="font-semibold">{u.name}</div>
-                                <div className="text-[10px] text-[#A8A29E]">
-                                  {u.role === 'planner'
-                                    ? 'Trip Admin'
-                                    : u.personaType === 'elderly'
-                                    ? 'Senior Mode'
-                                    : u.personaType === 'kid'
-                                    ? 'Kid Mode'
-                                    : 'Companion'}
+                                className={`w-full flex items-center justify-between p-2 rounded-xl text-left text-xs transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-98 focus-visible:ring-2 focus-visible:ring-[#D97746] ${
+                                  isSelected
+                                    ? 'bg-[#FAF9F6] text-[#1C1917] font-bold border border-[#EBE7DF] shadow-2xs'
+                                    : 'text-[#78716C] hover:text-[#1C1917] hover:bg-[#F4F1EA]'
+                                }`}
+                              >
+                                <div className="flex items-center gap-2">
+                                  <img
+                                    src={safeAvatarSrc(u)}
+                                    alt={u.name}
+                                    onError={(e) => {
+                                      const initials = (u.name || 'TR').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'TR';
+                                      (e.target as HTMLImageElement).src = createSvgAvatar(initials, '#0284c7', '#1d4ed8');
+                                    }}
+                                    className="w-6 h-6 rounded-full object-cover"
+                                  />
+                                  <div>
+                                    <div className="font-semibold">{u.name}</div>
+                                    <div className="text-[10px] text-[#A8A29E]">
+                                      {u.role === 'planner'
+                                        ? 'Trip Admin'
+                                        : u.personaType === 'elderly'
+                                        ? 'Senior Mode'
+                                        : u.personaType === 'kid'
+                                        ? 'Kid Mode'
+                                        : 'Companion'}
+                                    </div>
+                                  </div>
                                 </div>
-                              </div>
-                            </div>
-                            {isSelected && <Check className="w-3.5 h-3.5 text-[#D97746]" />}
-                          </button>
-                        );
-                      })}
+                                {isSelected && <Check className="w-3.5 h-3.5 text-[#D97746]" />}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Auth Actions: Add Companion, Trip Setup, Profile Editor & Sign Out */}
+                    <div className="pt-2 border-t border-[#EBE7DF] space-y-1">
+                      <button
+                        role="menuitem"
+                        onClick={() => {
+                          setIsDropdownOpen(false);
+                          setIsAddCompanionOpen(true);
+                        }}
+                        className="w-full flex items-center gap-2 p-2 rounded-xl text-xs font-semibold text-[#1C1917] hover:bg-[#F4F1EA] transition-colors focus-visible:ring-2 focus-visible:ring-[#D97746]"
+                      >
+                        <UserPlus className="w-4 h-4 text-[#D97746]" />
+                        <span>Invite / Add Companion</span>
+                      </button>
+
+                      <button
+                        role="menuitem"
+                        onClick={() => {
+                          setIsDropdownOpen(false);
+                          setIsSetupModalOpen(true);
+                        }}
+                        className="w-full flex items-center gap-2 p-2 rounded-xl text-xs font-semibold text-[#1C1917] hover:bg-[#F4F1EA] transition-colors focus-visible:ring-2 focus-visible:ring-[#D97746]"
+                      >
+                        <Compass className="w-4 h-4 text-[#D97746]" />
+                        <span>{isDemoTrip ? 'Create Clean Trip' : 'Trip Setup / Switch'}</span>
+                      </button>
+
+                      <button
+                        role="menuitem"
+                        onClick={() => {
+                          setIsDropdownOpen(false);
+                          setNameInput(currentUser.name);
+                          setSelectedAvatar(currentUser.avatar);
+                          setIsProfileOpen(true);
+                        }}
+                        className="w-full flex items-center gap-2 p-2 rounded-xl text-xs font-semibold text-[#1C1917] hover:bg-[#F4F1EA] transition-colors focus-visible:ring-2 focus-visible:ring-[#D97746]"
+                      >
+                        <UserIcon className="w-4 h-4 text-[#D97746]" />
+                        <span>Edit Profile &amp; Avatar</span>
+                      </button>
+
+                      <button
+                        role="menuitem"
+                        onClick={() => {
+                          setIsDropdownOpen(false);
+                          signOut();
+                        }}
+                        className="w-full flex items-center gap-2 p-2 rounded-xl text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors focus-visible:ring-2 focus-visible:ring-red-500"
+                      >
+                        <LogOut className="w-4 h-4 text-red-500" />
+                        <span>Sign Out</span>
+                      </button>
                     </div>
                   </div>
+                )}
+              </div>
+            )}
 
-                  {/* Auth Actions: Profile Editor, Switch Account & Sign Out */}
-                  <div className="pt-2 border-t border-[#EBE7DF] space-y-1">
-                    <button
-                      onClick={() => {
-                        setIsDropdownOpen(false);
-                        setNameInput(currentUser.name);
-                        setSelectedAvatar(currentUser.avatar);
-                        setIsProfileOpen(true);
-                      }}
-                      className="w-full flex items-center gap-2 p-2 rounded-xl text-xs font-semibold text-[#1C1917] hover:bg-[#F4F1EA] transition-colors"
-                    >
-                      <UserIcon className="w-4 h-4 text-[#D97746]" />
-                      <span>Edit Profile &amp; Avatar</span>
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        setIsDropdownOpen(false);
-                        setIsAuthModalOpen(true);
-                      }}
-                      className="w-full flex items-center gap-2 p-2 rounded-xl text-xs font-semibold text-[#1C1917] hover:bg-[#F4F1EA] transition-colors"
-                    >
-                      <LogIn className="w-4 h-4 text-[#D97746]" />
-                      <span>Sign In / Create Account</span>
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        setIsDropdownOpen(false);
-                        signOut();
-                      }}
-                      className="w-full flex items-center gap-2 p-2 rounded-xl text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors"
-                    >
-                      <LogOut className="w-4 h-4 text-red-500" />
-                      <span>Sign Out</span>
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
           </div>
         </div>
 

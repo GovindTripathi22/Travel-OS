@@ -76,7 +76,18 @@ export default function PhotoStream() {
 
       {/* Photo Grid View */}
       {activeTab === 'photos' && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        memories.length === 0 ? (
+          <div className="bg-white border border-dashed border-[#D6D0C5] rounded-3xl p-8 text-center space-y-3">
+            <div className="w-12 h-12 mx-auto rounded-full bg-[#FAF5EE] text-[#D97746] flex items-center justify-center border border-[#E8DFC8]">
+              <Camera className="w-6 h-6" />
+            </div>
+            <h4 className="text-base font-bold text-[#1C1917]">No shared photos uploaded yet</h4>
+            <p className="text-xs text-[#78716C] max-w-sm mx-auto">
+              Capture moments during your journey. Shared companion photos are auto-synthesized into your living family travel chronicle.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {memories.map((mem) => {
             const uploader = users.find((u) => u.id === mem.uploaderId);
 
@@ -141,6 +152,7 @@ export default function PhotoStream() {
             );
           })}
         </div>
+        )
       )}
 
       {/* AI Story Recap View */}

@@ -17,10 +17,14 @@ import {
 } from 'lucide-react';
 
 export default function KidModeView() {
-  const { currentUser, setIsAssistantOpen, users, itinerary, toggleKidQuest } = useTrip();
+  const { currentUser, setIsAssistantOpen, users, itinerary, toggleKidQuest, tripInfo } = useTrip();
   const [showLostModal, setShowLostModal] = useState(false);
 
   const planner = users.find((u) => u.role === 'planner') || users[0];
+  const kidFirstName = currentUser.name.split(' ')[0] || 'Explorer';
+  const plannerFirstName = planner?.name.split(' ')[0] || 'Trip Leader';
+  const dest = tripInfo?.destination ? tripInfo.destination.split(',')[0] : 'Expedition';
+
   const questStops = itinerary.filter((item) => item.kidQuest);
   const completedStopsCount = questStops.filter((item) => item.kidQuestCompleted).length;
   const baseXP = 200;
@@ -55,14 +59,14 @@ export default function KidModeView() {
             <div>
               <div className="flex items-center justify-center sm:justify-start gap-2">
                 <span className="px-2.5 py-0.5 rounded-full bg-white/30 backdrop-blur-md text-xs font-black uppercase tracking-wider">
-                  Level 3 Desert Scout
+                  Level 3 Scout
                 </span>
               </div>
               <h1 className="text-3xl font-black tracking-tight mt-0.5">
-                Captain Kabir! 🚀
+                Captain {kidFirstName}! 🚀
               </h1>
               <p className="text-white/90 text-sm font-medium">
-                Rajasthan Royal Explorer &bull; Quest Master
+                {dest} Royal Explorer &bull; Quest Master
               </p>
             </div>
           </div>
@@ -194,10 +198,10 @@ export default function KidModeView() {
                 My Identification
               </div>
               <p className="text-lg font-black text-slate-900 mt-1">
-                My name is Kabir Sharma (Age 9).
+                My name is {currentUser.name} (Age {currentUser.age || 9}).
               </p>
               <p className="text-sm text-slate-700 mt-1">
-                I am traveling with my family at Rambagh Palace / Jaipur.
+                I am traveling with my family in {tripInfo?.destination || 'Jaipur'}.
               </p>
             </div>
 
@@ -207,7 +211,7 @@ export default function KidModeView() {
                 className="w-full bg-emerald-600 hover:bg-emerald-700 text-white p-4 rounded-2xl font-bold flex items-center justify-center gap-3 transition"
               >
                 <PhoneCall className="w-6 h-6" />
-                <span>Call Uncle Rohan ({planner.phone})</span>
+                <span>Call {plannerFirstName} ({planner.phone})</span>
               </a>
 
               <button

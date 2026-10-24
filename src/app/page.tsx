@@ -12,6 +12,11 @@ import JarvisOrb from '@/components/jarvis/JarvisOrb';
 import JarvisHUDModal from '@/components/jarvis/JarvisHUDModal';
 import JarvisSOSModal from '@/components/jarvis/JarvisSOSModal';
 import AuthModal from '@/components/auth/AuthModal';
+import TripSetupModal from '@/components/trip/TripSetupModal';
+import AddCompanionModal from '@/components/trip/AddCompanionModal';
+import AddItineraryModal from '@/components/itinerary/AddItineraryModal';
+import AddPollModal from '@/components/decision/AddPollModal';
+import UploadDocumentModal from '@/components/vault/UploadDocumentModal';
 import { AuthProvider } from '@/lib/auth/AuthContext';
 import { Smartphone, Monitor } from 'lucide-react';
 
@@ -100,6 +105,11 @@ export default function Page() {
       <TripProvider>
         <TripOSApp />
         <AuthModal />
+        <TripSetupModal />
+        <AddCompanionModal />
+        <AddItineraryModal />
+        <AddPollModal />
+        <UploadDocumentModal />
       </TripProvider>
     </AuthProvider>
   );

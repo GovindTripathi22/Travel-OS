@@ -72,7 +72,7 @@ export default function ExpenseLedger() {
             ₹{totalTripSpend.toLocaleString('en-IN')}
           </div>
           <p className="text-xs text-[#78716C]">
-            Split across 6 companions &bull; {settlements.length} transfers needed to settle completely
+            Split across {users.length} {users.length === 1 ? 'traveler' : 'companions'} &bull; {settlements.length} transfers needed to settle completely
           </p>
         </div>
 
@@ -173,26 +173,33 @@ export default function ExpenseLedger() {
           Recent Receipts ({expenses.length})
         </h3>
 
-        <div className="divide-y divide-[#EBE7DF]">
-          {expenses.map((exp) => {
-            const payer = users.find((u) => u.id === exp.paidByUserId);
-            return (
-              <div key={exp.id} className="py-2.5 flex items-center justify-between text-xs">
-                <div>
-                  <div className="font-semibold text-[#1C1917]">{exp.title}</div>
-                  <div className="text-[10px] text-[#A8A29E]">
-                    Paid by {payer?.name.split(' ')[0]} &bull; {exp.date}
+        {expenses.length === 0 ? (
+          <div className="p-6 text-center text-xs text-[#78716C] border border-dashed border-[#D6D0C5] rounded-xl space-y-2">
+            <p>No shared expenses recorded yet.</p>
+            <p className="text-[11px] text-[#A8A29E]">Tap "+ Add Expense" above or simulate a receipt scan to track group spending.</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-[#EBE7DF]">
+            {expenses.map((exp) => {
+              const payer = users.find((u) => u.id === exp.paidByUserId);
+              return (
+                <div key={exp.id} className="py-2.5 flex items-center justify-between text-xs">
+                  <div>
+                    <div className="font-semibold text-[#1C1917]">{exp.title}</div>
+                    <div className="text-[10px] text-[#A8A29E]">
+                      Paid by {payer?.name.split(' ')[0] || 'Companion'} &bull; {exp.date}
+                    </div>
+                  </div>
+
+                  <div className="text-right">
+                    <div className="font-bold text-[#1C1917]">₹{exp.amount.toLocaleString('en-IN')}</div>
+                    <div className="text-[10px] text-[#4D7C5F]">Split {exp.splitWithUserIds?.length || users.length} ways</div>
                   </div>
                 </div>
-
-                <div className="text-right">
-                  <div className="font-bold text-[#1C1917]">₹{exp.amount.toLocaleString('en-IN')}</div>
-                  <div className="text-[10px] text-[#4D7C5F]">Split 6 ways</div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Add Expense Modal */}

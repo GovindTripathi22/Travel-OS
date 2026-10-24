@@ -104,27 +104,48 @@ export async function loginWithEmail(email: string, pass: string): Promise<AuthS
       personaType,
     };
   } catch (error: any) {
-    if (
-      error.code === 'auth/api-key-not-valid' ||
-      error.code === 'auth/invalid-api-key' ||
-      error.code === 'auth/network-request-failed' ||
-      error.message?.includes('API key')
-    ) {
-      console.warn('[Firebase Auth] Operating in local offline simulation mode.');
-      const simulatedUser: AuthSessionUser = {
-        uid: `user-sim-demo`,
-        email,
-        displayName: email.split('@')[0],
-        photoURL: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
-        role: email.includes('admin') || email.includes('planner') ? 'planner' : 'companion',
-        personaType: 'standard',
-      };
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('sahyatri_active_session', JSON.stringify(simulatedUser));
+    console.warn('[Firebase Auth] Operating in local offline simulation mode for email:', email);
+    
+    // Check if email corresponds to a demo user
+    const lowerEmail = email.toLowerCase();
+    const demoMap: Record<string, { uid: string; name: string; role: UserRole; persona: PersonaType }> = {
+      'rohan.sharma@traveler.sahyatri.ai': { uid: 'rohan', name: 'Rohan Sharma', role: 'planner', persona: 'standard' },
+      'dadaji@traveler.sahyatri.ai': { uid: 'dadaji', name: 'Devendra Sharma', role: 'companion', persona: 'elderly' },
+      'priya@traveler.sahyatri.ai': { uid: 'priya', name: 'Priya Sharma', role: 'companion', persona: 'standard' },
+      'kabir@traveler.sahyatri.ai': { uid: 'kabir', name: 'Kabir Sharma', role: 'companion', persona: 'kid' },
+    };
+
+    const matchedDemo = demoMap[lowerEmail];
+    let uid = matchedDemo ? matchedDemo.uid : `user-sim-${email.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase().slice(0, 24)}`;
+    let displayName = matchedDemo ? matchedDemo.name : email.split('@')[0];
+    let role: UserRole = matchedDemo ? matchedDemo.role : (email.includes('admin') || email.includes('planner') ? 'planner' : 'companion');
+    let personaType: PersonaType = matchedDemo ? matchedDemo.persona : 'standard';
+
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem(`sahyatri_profile_${uid}`);
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          displayName = parsed.displayName || displayName;
+          role = parsed.role || role;
+          personaType = parsed.personaType || personaType;
+        } catch {}
       }
-      return simulatedUser;
     }
-    throw error;
+
+    const simulatedUser: AuthSessionUser = {
+      uid,
+      email,
+      displayName,
+      photoURL: null,
+      role,
+      personaType,
+    };
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('sahyatri_active_session', JSON.stringify(simulatedUser));
+      localStorage.setItem(`sahyatri_profile_${uid}`, JSON.stringify(simulatedUser));
+    }
+    return simulatedUser;
   }
 }
 
@@ -143,27 +164,20 @@ export async function loginWithGoogle(): Promise<AuthSessionUser> {
       personaType: 'standard',
     };
   } catch (error: any) {
-    if (
-      error.code === 'auth/api-key-not-valid' ||
-      error.code === 'auth/invalid-api-key' ||
-      error.code === 'auth/unauthorized-domain' ||
-      error.message?.includes('API key')
-    ) {
-      console.warn('[Firebase Auth] Google Auth fallback for local preview.');
-      const googleMockUser: AuthSessionUser = {
-        uid: 'user-google-demo',
-        email: 'traveler.google@example.com',
-        displayName: 'Google Verified Companion',
-        photoURL: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150',
-        role: 'companion',
-        personaType: 'standard',
-      };
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('sahyatri_active_session', JSON.stringify(googleMockUser));
-      }
-      return googleMockUser;
+    console.warn('[Firebase Auth] Google Auth fallback for local preview.');
+    const googleMockUser: AuthSessionUser = {
+      uid: 'user-google-demo',
+      email: 'traveler.google@example.com',
+      displayName: 'Google Verified Companion',
+      photoURL: null,
+      role: 'companion',
+      personaType: 'standard',
+    };
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('sahyatri_active_session', JSON.stringify(googleMockUser));
+      localStorage.setItem(`sahyatri_profile_${googleMockUser.uid}`, JSON.stringify(googleMockUser));
     }
-    throw error;
+    return googleMockUser;
   }
 }
 

@@ -226,4 +226,15 @@ export type JarvisControlMode = 'autonomous' | 'manual';
 export type JarvisVoiceState = 'idle' | 'listening' | 'processing' | 'speaking' | 'interrupted';
 export type TravelerProfile = User;
 
+export interface TripInfo {
+  id: string;
+  title: string;
+  destination: string;
+  dates: string;
+  totalDays: number;
+  currentDay: number;
+  isDemo?: boolean;
+}
+
+
 

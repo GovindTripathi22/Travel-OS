@@ -11,6 +11,7 @@ import {
   CloudRain,
   Wand2,
   AlertTriangle,
+  Plus,
 } from 'lucide-react';
 
 export default function ItineraryTimeline() {
@@ -21,8 +22,14 @@ export default function ItineraryTimeline() {
     weather,
     adaptWeatherIndoor,
     autoHealSchedule,
+    setIsAddStopOpen,
+    tripInfo,
   } = useTrip();
   const [selectedDay, setSelectedDay] = useState(1);
+
+  const availableDays = Array.from(
+    new Set([1, 2, 3, ...(tripInfo ? Array.from({ length: tripInfo.totalDays || 3 }, (_, i) => i + 1) : []), ...itinerary.map((i) => i.day)])
+  ).sort((a, b) => a - b);
 
   const dayEvents = itinerary.filter((item) => item.day === selectedDay);
   const dayConflicts = conflicts.filter(
@@ -33,40 +40,49 @@ export default function ItineraryTimeline() {
     <div className="space-y-4">
       {/* Day Selector & Auto-Heal Quick Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-[#EBE7DF]">
-        <div className="flex items-center gap-1.5 bg-[#F4F1EA] p-1.5 rounded-2xl border border-[#EBE7DF] shadow-2xs">
-          {[1, 2, 3].map((d) => (
+        <div className="flex items-center gap-1.5 bg-[#F4F1EA] p-1.5 rounded-2xl border border-[#EBE7DF] shadow-2xs overflow-x-auto scrollbar-none">
+          {availableDays.map((d) => (
             <button
               key={d}
               onClick={() => setSelectedDay(d)}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 ${
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 whitespace-nowrap focus-visible:ring-2 focus-visible:ring-[#D97746] ${
                 selectedDay === d
                   ? 'bg-white text-[#1C1917] shadow-xs font-bold border border-[#EBE7DF]'
                   : 'text-[#78716C] hover:text-[#1C1917] hover:bg-white/50'
               }`}
             >
-              Day {d} {d === 1 ? '· Arrival' : d === 2 ? '· Amber Fort' : '· Palaces'}
+              Day {d} {d === 1 ? '· Arrival' : d === 2 ? '· Highlights' : '· Explorations'}
             </button>
           ))}
         </div>
 
-        {/* Quick Auto-Healing & Weather Adaptation Actions */}
-        <div className="flex items-center gap-2">
+        {/* Quick Auto-Healing & Actions */}
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={() => setIsAddStopOpen(true)}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#D97746] hover:bg-[#C26333] text-white rounded-xl text-xs font-bold transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 shadow-2xs hover:shadow-xs focus-visible:ring-2 focus-visible:ring-[#D97746]"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Add Stop</span>
+          </button>
+
           {weather === 'Rainy' && (
             <button
               onClick={() => adaptWeatherIndoor(selectedDay)}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 shadow-2xs hover:shadow-xs"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 shadow-2xs hover:shadow-xs focus-visible:ring-2 focus-visible:ring-blue-600"
             >
               <CloudRain className="w-3.5 h-3.5" />
-              <span>Swap Indoor Stops</span>
+              <span>Swap Indoor</span>
             </button>
           )}
 
           <button
             onClick={() => autoHealSchedule(selectedDay)}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#1C1917] hover:bg-[#D97746] text-white rounded-xl text-xs font-bold transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 shadow-2xs hover:shadow-xs"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#1C1917] hover:bg-[#D97746] text-white rounded-xl text-xs font-bold transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 shadow-2xs hover:shadow-xs focus-visible:ring-2 focus-visible:ring-[#D97746]"
           >
             <Wand2 className="w-3.5 h-3.5 text-[#D97746]" />
-            <span>1-Click Auto-Heal</span>
+            <span>Auto-Heal</span>
           </button>
 
           <span className="text-xs text-[#A8A29E] font-medium hidden sm:inline pl-1">
@@ -75,8 +91,30 @@ export default function ItineraryTimeline() {
         </div>
       </div>
 
-      {/* Events List */}
-      <div className="divide-y divide-[#EBE7DF] bg-white rounded-2xl border border-[#EBE7DF] overflow-hidden shadow-2xs">
+      {/* Events List or Empty State */}
+      {dayEvents.length === 0 ? (
+        <div className="bg-white rounded-2xl border border-[#EBE7DF] p-8 text-center shadow-2xs space-y-3">
+          <div className="w-12 h-12 rounded-2xl bg-[#FAF5EE] text-[#D97746] flex items-center justify-center mx-auto">
+            <MapPin className="w-6 h-6" />
+          </div>
+          <div>
+            <h3 className="font-bold text-base text-[#1C1917]">No stops scheduled for Day {selectedDay}</h3>
+            <p className="text-xs text-[#78716C] max-w-sm mx-auto mt-1">
+              Add your first sightseeing spot, authentic dining stop, or relaxed buffer for companions.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsAddStopOpen(true)}
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#D97746] hover:bg-[#C26333] text-white rounded-xl text-xs font-bold shadow-xs hover:shadow-md transition active:scale-95 focus-visible:ring-2 focus-visible:ring-[#D97746]"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Schedule Stop for Day {selectedDay}</span>
+          </button>
+        </div>
+      ) : (
+        <div className="divide-y divide-[#EBE7DF] bg-white rounded-2xl border border-[#EBE7DF] overflow-hidden shadow-2xs">
+
         {dayEvents.map((item) => {
           const itemConflicts = conflicts.filter((c) => c.eventId === item.id && !c.resolved);
           const hasConflict = itemConflicts.length > 0;
@@ -155,7 +193,8 @@ export default function ItineraryTimeline() {
             </div>
           );
         })}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

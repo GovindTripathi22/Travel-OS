@@ -20,6 +20,7 @@ import {
   Sparkles,
   CheckCircle2,
   MapPin,
+  UserPlus,
 } from 'lucide-react';
 
 type Tab = 'timeline' | 'decisions' | 'expenses' | 'vault';
@@ -47,7 +48,20 @@ const NAV: NavItem[] = [
 ];
 
 export default function StandardModeView() {
-  const { conflicts, resolveConflict, users, activeTab, setActiveTab, vaultSubTab, setVaultSubTab } = useTrip();
+  const {
+    conflicts,
+    resolveConflict,
+    users,
+    activeTab,
+    setActiveTab,
+    vaultSubTab,
+    setVaultSubTab,
+    tripInfo,
+    isDemoTrip,
+    loadDemoTrip,
+    setIsSetupModalOpen,
+    setIsAddCompanionOpen,
+  } = useTrip();
 
   const topConflict = conflicts.filter((c) => !c.resolved)[0];
   const current = NAV.find((n) => n.tab === activeTab && (!n.sub || n.sub === vaultSubTab)) ?? NAV[0];
@@ -68,29 +82,77 @@ export default function StandardModeView() {
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-5">
       {/* Trip hero */}
       <section className="hero-card fade-up">
+        {/* Trip Mode Switcher Badge */}
+        <div className="relative z-10 flex flex-wrap items-center justify-between gap-2 pb-4 mb-4 border-b border-white/15">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-white/20 text-white backdrop-blur-md border border-white/25">
+              {isDemoTrip ? '⭐ Sample Demo Expedition' : '✨ Real Custom Journey'}
+            </span>
+            <span className="text-xs text-white/80 hidden sm:inline">
+              {isDemoTrip ? 'Full multi-generational sample data' : 'Your private companion group'}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {isDemoTrip ? (
+              <button
+                type="button"
+                onClick={() => setIsSetupModalOpen(true)}
+                className="text-xs font-bold px-3 py-1 bg-white hover:bg-amber-50 text-[#1C1917] rounded-xl shadow-xs transition hover:scale-105 active:scale-95 flex items-center gap-1.5 focus-visible:ring-2 focus-visible:ring-white"
+              >
+                <Compass className="w-3.5 h-3.5 text-[#D97746]" />
+                <span>Create Clean Trip</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={loadDemoTrip}
+                className="text-xs font-bold px-3 py-1 bg-white/20 hover:bg-white/30 text-white rounded-xl transition hover:scale-105 active:scale-95 flex items-center gap-1.5 border border-white/30 focus-visible:ring-2 focus-visible:ring-white"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                <span>Explore Rajasthan Demo</span>
+              </button>
+            )}
+          </div>
+        </div>
+
         <div className="relative z-10 flex flex-col sm:flex-row sm:items-end justify-between gap-5">
           <div>
             <span className="chip-glass">
-              <MapPin className="w-3.5 h-3.5" /> Jaipur, Rajasthan &bull; Day 1 of 5
+              <MapPin className="w-3.5 h-3.5" /> {tripInfo.destination || 'Destination not set'} &bull; Day {tripInfo.currentDay} of {tripInfo.totalDays}
             </span>
             <h1 className="font-serif-title text-3xl sm:text-5xl font-bold mt-3 leading-[1.05] tracking-tight">
-              Rajasthan Family Expedition
+              {tripInfo.title}
             </h1>
-            <p className="mt-2 text-sm text-white/80">Oct 14 &ndash; 18 &bull; {users.length} companions</p>
+            <p className="mt-2 text-sm text-white/80">
+              {tripInfo.dates ? `${tripInfo.dates} • ` : ''}{users.length} {users.length === 1 ? 'traveler' : 'companions'}
+            </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             <div className="flex -space-x-2">
               {users.map((u) => (
                 <img
                   key={u.id}
                   src={u.avatar}
                   alt={u.name}
-                  title={u.name}
+                  title={`${u.name} (${u.role})`}
                   className="w-9 h-9 rounded-full object-cover border-2 border-white/90 hover:scale-110 hover:z-10 transition-transform"
                 />
               ))}
             </div>
-            <span className="chip-glass">
+
+            {/* Quick Add Companion Button in Hero */}
+            <button
+              type="button"
+              onClick={() => setIsAddCompanionOpen(true)}
+              title="Add companion to this trip"
+              aria-label="Add companion to this trip"
+              className="w-9 h-9 rounded-full bg-white/20 hover:bg-white text-white hover:text-[#1C1917] border border-white/40 flex items-center justify-center transition-all hover:scale-110 active:scale-95 focus-visible:ring-2 focus-visible:ring-white"
+            >
+              <UserPlus className="w-4 h-4" />
+            </button>
+
+            <span className="chip-glass hidden sm:inline-flex">
               <CheckCircle2 className="w-3.5 h-3.5" /> {users.length} aligned
             </span>
           </div>
@@ -98,13 +160,17 @@ export default function StandardModeView() {
         <div className="relative z-10 mt-6">
           <div className="flex justify-between text-[11px] font-semibold text-white/80 mb-1.5">
             <span>Trip progress</span>
-            <span>Day 1 / 5</span>
+            <span>Day {tripInfo.currentDay} / {tripInfo.totalDays}</span>
           </div>
           <div className="h-1.5 rounded-full bg-white/25">
-            <div className="h-full w-1/5 rounded-full bg-white" />
+            <div
+              className="h-full rounded-full bg-white transition-all duration-300"
+              style={{ width: `${Math.min(100, (tripInfo.currentDay / tripInfo.totalDays) * 100)}%` }}
+            />
           </div>
         </div>
       </section>
+
 
       {/* Proactive suggestion */}
       {topConflict && (

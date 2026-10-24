@@ -20,10 +20,13 @@ import { LiveWeatherTelemetry, LiveForexRates } from '@/lib/api/liveDataService'
 import { useTrip } from '@/lib/state/TripContext';
 
 export default function TravelStatusHUD() {
-  const { travelStatus, users, updateTravelStatus } = useTrip();
+  const { travelStatus, users, updateTravelStatus, tripInfo } = useTrip();
   const [weather, setWeather] = useState<LiveWeatherTelemetry | null>(null);
   const [forex, setForex] = useState<LiveForexRates | null>(null);
   const [isLive, setIsLive] = useState(false);
+
+  const rendezvousCompanions = users.filter((u) => travelStatus[u.id]?.currentStep === 'at_rendezvous');
+  const gatheredCount = rendezvousCompanions.length;
 
   useEffect(() => {
     async function loadTelemetry() {
@@ -55,7 +58,7 @@ export default function TravelStatusHUD() {
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-bold text-white text-sm sm:text-base">
-                  {weather?.destination || 'Kyoto, Japan'}
+                  {weather?.destination || tripInfo?.destination || 'Jaipur, Rajasthan'}
                 </span>
                 <span
                   className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1.5 ${
@@ -114,10 +117,10 @@ export default function TravelStatusHUD() {
                 Designated Group Rendezvous Point
               </span>
               <h2 className="text-xl sm:text-2xl font-bold mt-1">
-                Jaipur Airport T2 &bull; Arrival Gate 4 (Pillar 12)
+                {tripInfo?.destination ? `${tripInfo.destination.split(',')[0]} Rendezvous` : 'Airport Arrival & Meeting Point'} &bull; Main Gate
               </h2>
               <p className="text-xs sm:text-sm text-indigo-200/80 mt-0.5">
-                Next to Costa Coffee. Chartered Tempo Traveler (RJ-14-PA-8821) parked in lane 2.
+                Central meeting point. Group vehicle and airport transfer rendezvous coordinates active.
               </p>
             </div>
           </div>
@@ -127,7 +130,7 @@ export default function TravelStatusHUD() {
               Companions at Rendezvous
             </span>
             <div className="text-xl font-black text-white mt-0.5">
-              4 of 6 Gathered
+              {gatheredCount} of {users.length} Gathered
             </div>
           </div>
         </div>
