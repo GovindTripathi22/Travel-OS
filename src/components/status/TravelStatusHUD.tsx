@@ -95,10 +95,10 @@ export default function TravelStatusHUD() {
             <ArrowRightLeft className="w-5 h-5 text-emerald-400 shrink-0" />
             <div>
               <div className="text-xs font-bold text-white">
-                {forex ? `1 INR = ¥${forex.rates.JPY} JPY` : 'Loading Exchange Rate...'}
+                {forex ? `1 INR = ¥${(forex.rates?.JPY ?? (forex as any).JPY ?? 1.82)} JPY` : 'Loading Exchange Rate...'}
               </div>
               <div className="text-[10px] text-slate-400">
-                Interbank Rates: $1 USD = ₹{(1 / (forex?.rates.USD || 0.012)).toFixed(1)} • €1 EUR = ₹{(1 / (forex?.rates.EUR || 0.011)).toFixed(1)}
+                Interbank Rates: $1 USD = ₹{(1 / (forex?.rates?.USD ?? (forex as any)?.USD ?? 0.012)).toFixed(1)} • €1 EUR = ₹{(1 / (forex?.rates?.EUR ?? (forex as any)?.EUR ?? 0.011)).toFixed(1)}
               </div>
             </div>
           </div>

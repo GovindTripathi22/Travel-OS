@@ -16,12 +16,24 @@ export async function GET(req: NextRequest) {
     const currency = searchParams.get('currency') || 'INR';
 
     // Parallel fetch across live providers
-    const [weather, forex, placesTourism, placesHealth] = await Promise.all([
+    const [weather, forexRaw, placesTourism, placesHealth] = await Promise.all([
       fetchLiveWeatherByKey(city, lat, lng),
       fetchLiveForexByKey(currency),
       fetchLiveNearbyPlaces(lat, lng, 'tourism'),
       fetchLiveNearbyPlaces(lat, lng, 'healthcare'),
     ]);
+
+    // Provide normalized forex structure supporting both forex.rates and forex flat properties
+    const forex = forexRaw
+      ? {
+          ...forexRaw,
+          rates: {
+            JPY: forexRaw.JPY ?? 1.82,
+            USD: forexRaw.USD ?? 0.012,
+            EUR: forexRaw.EUR ?? 0.011,
+          },
+        }
+      : null;
 
     // Active key status for observability
     const groqKey = process.env.GROQ_API_KEY;
