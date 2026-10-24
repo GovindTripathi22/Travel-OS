@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useTrip } from '@/lib/state/TripContext';
 import ItineraryTimeline from '../itinerary/ItineraryTimeline';
 import MechanismPollCard from '../decision/MechanismPollCard';
@@ -15,37 +15,15 @@ import {
   CreditCard,
   FolderLock,
   Plane,
-  Compass,
   Camera,
   Sparkles,
   CheckCircle2,
   MapPin,
   UserPlus,
+  Compass,
+  ArrowRight,
+  Shield,
 } from 'lucide-react';
-
-type Tab = 'timeline' | 'decisions' | 'expenses' | 'vault';
-type Sub = 'passes' | 'rendezvous' | 'alignment' | 'photos';
-
-interface NavItem {
-  id: string;
-  label: string;
-  desc: string;
-  group: string;
-  icon: React.ElementType;
-  tab: Tab;
-  sub?: Sub;
-}
-
-// Every section is now one tap away (the vault sub-tabs used to be buried).
-const NAV: NavItem[] = [
-  { id: 'timeline', label: 'Timeline', group: 'Plan', icon: Calendar, tab: 'timeline', desc: 'Your day-by-day plan, adapted to how everyone is feeling.' },
-  { id: 'decisions', label: 'Decisions', group: 'Plan', icon: Vote, tab: 'decisions', desc: 'Spend voice credits on what matters most. No deadlocks.' },
-  { id: 'expenses', label: 'Expenses', group: 'Plan', icon: CreditCard, tab: 'expenses', desc: 'Shared costs settled in the fewest possible transfers.' },
-  { id: 'passes', label: 'Passes', group: 'Travel', icon: FolderLock, tab: 'vault', sub: 'passes', desc: 'Boarding passes and QR codes, available offline.' },
-  { id: 'rendezvous', label: 'Rendezvous', group: 'Travel', icon: Plane, tab: 'vault', sub: 'rendezvous', desc: 'Where everyone is, and where to meet at the airport.' },
-  { id: 'alignment', label: 'Alignment', group: 'Together', icon: Compass, tab: 'vault', sub: 'alignment', desc: 'Pace, diet and energy: see where the group differs.' },
-  { id: 'photos', label: 'Photos', group: 'Together', icon: Camera, tab: 'vault', sub: 'photos', desc: 'A shared stream that becomes your trip story.' },
-];
 
 export default function StandardModeView() {
   const {
@@ -64,32 +42,19 @@ export default function StandardModeView() {
   } = useTrip();
 
   const topConflict = conflicts.filter((c) => !c.resolved)[0];
-  const current = NAV.find((n) => n.tab === activeTab && (!n.sub || n.sub === vaultSubTab)) ?? NAV[0];
-
-  const go = (n: NavItem) => {
-    setActiveTab(n.tab);
-    if (n.sub) setVaultSubTab(n.sub);
-  };
-
-  // Keep the active pill visible on small screens
-  useEffect(() => {
-    document
-      .querySelector('[data-nav-active="true"]')
-      ?.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
-  }, [current.id]);
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-5">
-      {/* Trip hero */}
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
+      {/* 1. Atelier Magazine Hero Card */}
       <section className="hero-card fade-up">
-        {/* Trip Mode Switcher Badge */}
-        <div className="relative z-10 flex flex-wrap items-center justify-between gap-2 pb-4 mb-4 border-b border-white/15">
+        {/* Subtle Trip Mode Header */}
+        <div className="relative z-10 flex flex-wrap items-center justify-between gap-2 pb-4 mb-4 border-b border-white/20">
           <div className="flex items-center gap-2">
             <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-white/20 text-white backdrop-blur-md border border-white/25">
-              {isDemoTrip ? '⭐ Sample Demo Expedition' : '✨ Real Custom Journey'}
+              {isDemoTrip ? '⭐ Sample Demo Expedition' : '✨ Custom Group Journey'}
             </span>
             <span className="text-xs text-white/80 hidden sm:inline">
-              {isDemoTrip ? 'Full multi-generational sample data' : 'Your private companion group'}
+              {isDemoTrip ? 'Interactive Rajasthan family expedition' : 'Your private companion group'}
             </span>
           </div>
 
@@ -101,7 +66,7 @@ export default function StandardModeView() {
                 className="text-xs font-bold px-3 py-1 bg-white hover:bg-amber-50 text-[#1C1917] rounded-xl shadow-xs transition hover:scale-105 active:scale-95 flex items-center gap-1.5 focus-visible:ring-2 focus-visible:ring-white"
               >
                 <Compass className="w-3.5 h-3.5 text-[#D97746]" />
-                <span>Create Clean Trip</span>
+                <span>Plan Clean Trip</span>
               </button>
             ) : (
               <button
@@ -110,25 +75,27 @@ export default function StandardModeView() {
                 className="text-xs font-bold px-3 py-1 bg-white/20 hover:bg-white/30 text-white rounded-xl transition hover:scale-105 active:scale-95 flex items-center gap-1.5 border border-white/30 focus-visible:ring-2 focus-visible:ring-white"
               >
                 <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                <span>Explore Rajasthan Demo</span>
+                <span>Load Demo Trip</span>
               </button>
             )}
           </div>
         </div>
 
+        {/* Hero Title & Companion Avatars */}
         <div className="relative z-10 flex flex-col sm:flex-row sm:items-end justify-between gap-5">
           <div>
             <span className="chip-glass">
-              <MapPin className="w-3.5 h-3.5" /> {tripInfo.destination || 'Destination not set'} &bull; Day {tripInfo.currentDay} of {tripInfo.totalDays}
+              <MapPin className="w-3.5 h-3.5" /> {tripInfo.destination || 'Jaipur, Rajasthan'} &bull; Day {tripInfo.currentDay} of {tripInfo.totalDays}
             </span>
-            <h1 className="font-serif-title text-3xl sm:text-5xl font-bold mt-3 leading-[1.05] tracking-tight">
+            <h1 className="font-serif-title text-3xl sm:text-5xl font-bold mt-2.5 leading-[1.08] tracking-tight">
               {tripInfo.title}
             </h1>
-            <p className="mt-2 text-sm text-white/80">
-              {tripInfo.dates ? `${tripInfo.dates} • ` : ''}{users.length} {users.length === 1 ? 'traveler' : 'companions'}
+            <p className="mt-2 text-sm text-white/85">
+              {tripInfo.dates ? `${tripInfo.dates} • ` : ''}{users.length} {users.length === 1 ? 'traveler' : 'companions'} aligned
             </p>
           </div>
-          <div className="flex items-center gap-2.5">
+
+          <div className="flex items-center gap-2.5 shrink-0">
             <div className="flex -space-x-2">
               {users.map((u) => (
                 <img
@@ -136,33 +103,31 @@ export default function StandardModeView() {
                   src={u.avatar}
                   alt={u.name}
                   title={`${u.name} (${u.role})`}
-                  className="w-9 h-9 rounded-full object-cover border-2 border-white/90 hover:scale-110 hover:z-10 transition-transform"
+                  className="w-9 h-9 rounded-full object-cover border-2 border-white/90 hover:scale-110 hover:z-10 transition-transform shadow-xs"
                 />
               ))}
             </div>
 
-            {/* Quick Add Companion Button in Hero */}
+            {/* Quick Add Companion Button */}
             <button
               type="button"
               onClick={() => setIsAddCompanionOpen(true)}
               title="Add companion to this trip"
               aria-label="Add companion to this trip"
-              className="w-9 h-9 rounded-full bg-white/20 hover:bg-white text-white hover:text-[#1C1917] border border-white/40 flex items-center justify-center transition-all hover:scale-110 active:scale-95 focus-visible:ring-2 focus-visible:ring-white"
+              className="w-9 h-9 rounded-full bg-white/25 hover:bg-white text-white hover:text-[#1C1917] border border-white/40 flex items-center justify-center transition-all hover:scale-110 active:scale-95 focus-visible:ring-2 focus-visible:ring-white shadow-xs"
             >
               <UserPlus className="w-4 h-4" />
             </button>
-
-            <span className="chip-glass hidden sm:inline-flex">
-              <CheckCircle2 className="w-3.5 h-3.5" /> {users.length} aligned
-            </span>
           </div>
         </div>
+
+        {/* Progress Bar */}
         <div className="relative z-10 mt-6">
           <div className="flex justify-between text-[11px] font-semibold text-white/80 mb-1.5">
-            <span>Trip progress</span>
-            <span>Day {tripInfo.currentDay} / {tripInfo.totalDays}</span>
+            <span>Trip timeline progress</span>
+            <span>Day {tripInfo.currentDay} of {tripInfo.totalDays}</span>
           </div>
-          <div className="h-1.5 rounded-full bg-white/25">
+          <div className="h-1.5 rounded-full bg-white/25 overflow-hidden">
             <div
               className="h-full rounded-full bg-white transition-all duration-300"
               style={{ width: `${Math.min(100, (tripInfo.currentDay / tripInfo.totalDays) * 100)}%` }}
@@ -171,16 +136,15 @@ export default function StandardModeView() {
         </div>
       </section>
 
-
-      {/* Proactive suggestion */}
+      {/* 2. Proactive Alert: Only Shown if There's an Actionable Conflict */}
       {topConflict && (
-        <section className="fade-up flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-amber-200/70 bg-gradient-to-r from-amber-50 to-orange-50 p-4 shadow-[var(--shadow-soft)]">
+        <section className="fade-up flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-amber-200/80 bg-gradient-to-r from-amber-50 to-orange-50 p-4 shadow-2xs">
           <div className="flex items-start gap-3">
-            <div className="w-9 h-9 rounded-full bg-white text-[#D97746] flex items-center justify-center shrink-0 shadow-sm">
+            <div className="w-9 h-9 rounded-full bg-white text-[#D97746] flex items-center justify-center shrink-0 shadow-xs">
               <Sparkles className="w-4 h-4" />
             </div>
             <div>
-              <p className="text-xs font-bold text-amber-900">Suggested schedule change</p>
+              <p className="text-xs font-bold text-amber-950">Proactive Schedule Adaptation</p>
               <p className="text-xs text-amber-900/80 mt-0.5 leading-relaxed">
                 {topConflict.description} &bull; <em>{topConflict.suggestedAction.details}</em>
               </p>
@@ -188,51 +152,157 @@ export default function StandardModeView() {
           </div>
           <button
             onClick={() => resolveConflict(topConflict.id)}
-            className="btn-hover-lift shrink-0 inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#D97746] px-4 py-2 text-xs font-bold text-white hover:bg-[#C26333]"
+            className="btn-hover-lift shrink-0 inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#D97746] hover:bg-[#C26333] px-4 py-2 text-xs font-bold text-white shadow-xs"
           >
-            <CheckCircle2 className="w-3.5 h-3.5" /> Apply 1-click fix
+            <CheckCircle2 className="w-3.5 h-3.5" /> Apply 1-Click Fix
           </button>
         </section>
       )}
 
-      {/* One flat navigation: every section, grouped */}
-      <nav aria-label="Trip sections" className="nav-rail scrollbar-none">
-        {NAV.map((n, i) => {
-          const Icon = n.icon;
-          const active = n.id === current.id;
-          return (
-            <React.Fragment key={n.id}>
-              {i > 0 && NAV[i - 1].group !== n.group && <span className="nav-divider" aria-hidden />}
-              <button
-                onClick={() => go(n)}
-                data-nav-active={active}
-                aria-current={active ? 'page' : undefined}
-                className={`nav-pill ${active ? 'is-active' : ''}`}
-              >
-                <Icon className="w-4 h-4" />
-                <span>{n.label}</span>
-              </button>
-            </React.Fragment>
-          );
-        })}
-      </nav>
+      {/* 3. Ultra-Simple 3-Pillar Navigator */}
+      <div className="flex justify-center">
+        <nav aria-label="Trip Main Sections" className="nav-pillar-bar">
+          <button
+            onClick={() => setActiveTab('timeline')}
+            className={`nav-pillar-item ${activeTab === 'timeline' ? 'is-active' : ''}`}
+          >
+            <Calendar className="w-4 h-4" />
+            <span>Day Plan &amp; Timeline</span>
+          </button>
 
-      {/* Section heading + content */}
-      <main key={current.id} className="fade-up space-y-5 pt-1">
-        <header>
-          <p className="eyebrow">{current.group}</p>
-          <h2 className="font-serif-title text-2xl sm:text-3xl font-bold tracking-tight">{current.label}</h2>
-          <p className="text-sm text-[var(--text-muted)] mt-0.5">{current.desc}</p>
-        </header>
+          <button
+            onClick={() => setActiveTab('decisions')}
+            className={`nav-pillar-item ${activeTab === 'decisions' ? 'is-active' : ''}`}
+          >
+            <Vote className="w-4 h-4" />
+            <span>Group Decisions</span>
+          </button>
 
-        {current.id === 'timeline' && <ItineraryTimeline />}
-        {current.id === 'decisions' && <MechanismPollCard />}
-        {current.id === 'expenses' && <ExpenseLedger />}
-        {current.id === 'passes' && <DocumentVault />}
-        {current.id === 'rendezvous' && <TravelStatusHUD />}
-        {current.id === 'alignment' && <PreTripRadar />}
-        {current.id === 'photos' && <PhotoStream />}
+          <button
+            onClick={() => setActiveTab('expenses')}
+            className={`nav-pillar-item ${activeTab === 'expenses' ? 'is-active' : ''}`}
+          >
+            <CreditCard className="w-4 h-4" />
+            <span>Expenses &amp; Splits</span>
+          </button>
+        </nav>
+      </div>
+
+      {/* 4. Active Primary View */}
+      <main className="fade-up pt-1">
+        {activeTab === 'timeline' && <ItineraryTimeline />}
+        {activeTab === 'decisions' && <MechanismPollCard />}
+        {activeTab === 'expenses' && <ExpenseLedger />}
       </main>
+
+      {/* 5. Clean Quick-Access Drawer Cards (Passes, Rendezvous & Memories) */}
+      <section className="pt-4 border-t border-[#EBE6DE]">
+        <div className="flex items-center justify-between mb-3 px-1">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-stone-500">
+            Quick Travel Utilities &bull; Offline Ready
+          </span>
+          <span className="text-[11px] text-[#D97746] font-medium">1-Tap Access</span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {/* Card A: Boarding Passes & Tickets */}
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('vault');
+              setVaultSubTab('passes');
+            }}
+            className={`p-4 rounded-2xl border text-left transition card-hover-tactile flex items-start gap-3 ${
+              activeTab === 'vault' && vaultSubTab === 'passes'
+                ? 'bg-white border-[#D97746] ring-1 ring-[#D97746]'
+                : 'bg-white border-[#EBE6DE]'
+            }`}
+          >
+            <div className="p-2.5 rounded-xl bg-orange-50 text-[#D97746] shrink-0">
+              <FolderLock className="w-4 h-4" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h4 className="text-xs font-bold text-[#1C1917] truncate">Boarding Passes &amp; QR</h4>
+              <p className="text-[11px] text-stone-500 mt-0.5 leading-tight">Cached offline gate scanning</p>
+            </div>
+            <ArrowRight className="w-3.5 h-3.5 text-stone-400 shrink-0 self-center" />
+          </button>
+
+          {/* Card B: Airport Rendezvous HUD */}
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('vault');
+              setVaultSubTab('rendezvous');
+            }}
+            className={`p-4 rounded-2xl border text-left transition card-hover-tactile flex items-start gap-3 ${
+              activeTab === 'vault' && vaultSubTab === 'rendezvous'
+                ? 'bg-white border-[#D97746] ring-1 ring-[#D97746]'
+                : 'bg-white border-[#EBE6DE]'
+            }`}
+          >
+            <div className="p-2.5 rounded-xl bg-indigo-50 text-indigo-600 shrink-0">
+              <Plane className="w-4 h-4" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h4 className="text-xs font-bold text-[#1C1917] truncate">Airport Rendezvous</h4>
+              <p className="text-[11px] text-stone-500 mt-0.5 leading-tight">Live checkpoints &amp; gate meeting</p>
+            </div>
+            <ArrowRight className="w-3.5 h-3.5 text-stone-400 shrink-0 self-center" />
+          </button>
+
+          {/* Card C: Shared Photos & Story */}
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('vault');
+              setVaultSubTab('photos');
+            }}
+            className={`p-4 rounded-2xl border text-left transition card-hover-tactile flex items-start gap-3 ${
+              activeTab === 'vault' && vaultSubTab === 'photos'
+                ? 'bg-white border-[#D97746] ring-1 ring-[#D97746]'
+                : 'bg-white border-[#EBE6DE]'
+            }`}
+          >
+            <div className="p-2.5 rounded-xl bg-emerald-50 text-emerald-600 shrink-0">
+              <Camera className="w-4 h-4" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h4 className="text-xs font-bold text-[#1C1917] truncate">Photos &amp; Story</h4>
+              <p className="text-[11px] text-stone-500 mt-0.5 leading-tight">AI synthesized trip diary</p>
+            </div>
+            <ArrowRight className="w-3.5 h-3.5 text-stone-400 shrink-0 self-center" />
+          </button>
+        </div>
+
+        {/* Selected Drawer View when clicking any utility card */}
+        {activeTab === 'vault' && (
+          <div className="mt-4 p-5 rounded-3xl bg-white border border-[#EBE6DE] shadow-xs fade-up">
+            <div className="flex items-center justify-between pb-3 mb-4 border-b border-[#EBE6DE]">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#D97746]">
+                  Active Utility View
+                </span>
+                <span className="text-xs text-stone-400">&bull;</span>
+                <span className="text-xs font-bold text-[#1C1917]">
+                  {vaultSubTab === 'passes' ? 'Document Vault & Passes' : vaultSubTab === 'rendezvous' ? 'Airport Rendezvous HUD' : 'Shared Photo Stream'}
+                </span>
+              </div>
+              <button
+                onClick={() => setActiveTab('timeline')}
+                className="text-xs font-semibold text-stone-500 hover:text-[#1C1917] px-2.5 py-1 rounded-lg bg-[#FAF8F5] hover:bg-[#F5F2EB] border border-[#EBE6DE]"
+              >
+                Close View &times;
+              </button>
+            </div>
+
+            {vaultSubTab === 'passes' && <DocumentVault />}
+            {vaultSubTab === 'rendezvous' && <TravelStatusHUD />}
+            {vaultSubTab === 'alignment' && <PreTripRadar />}
+            {vaultSubTab === 'photos' && <PhotoStream />}
+          </div>
+        )}
+      </section>
     </div>
   );
 }

@@ -168,39 +168,66 @@ export default function JarvisOrb() {
         </div>
       )}
 
-      {/* 3. Main Floating Jarvis Control Dock */}
-      <div className="flex items-center gap-1.5 bg-[#141210]/95 border border-[#2E2822] hover:border-[#D97746]/60 backdrop-blur-2xl p-1.5 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.65)] transition-all duration-300">
-        {/* Autonomous vs Manual Mode Segmented Switch */}
-        <div className="flex items-center bg-black/40 p-1 rounded-xl border border-white/5">
+      {/* 3. Main Floating Sahayak Luxury Capsule Dock */}
+      <div className="flex items-center gap-2 bg-[#1C1917]/90 hover:bg-[#1C1917] border border-white/10 hover:border-[#D97746]/50 backdrop-blur-xl px-2.5 py-1.5 rounded-full shadow-[0_10px_35px_rgba(28,25,23,0.35)] transition-all duration-300">
+        {/* Master Power & Brand Capsule */}
+        <button
+          type="button"
+          onClick={handleTogglePower}
+          className={`group flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold transition-all duration-200 ${
+            isSystemActive
+              ? 'bg-[#D97746] text-white shadow-xs'
+              : 'text-[#FAF8F5]/80 hover:text-white hover:bg-white/10'
+          }`}
+          title={isSystemActive ? 'Sahayak Voice Active — Click to turn off' : 'Click to activate Sahayak Voice Assistant'}
+        >
+          <span className="relative flex h-2 w-2">
+            {isSystemActive && (
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+            )}
+            <span
+              className={`relative inline-flex rounded-full h-2 w-2 ${
+                isSystemActive ? 'bg-emerald-400' : 'bg-stone-500'
+              }`}
+            />
+          </span>
+          <span className="tracking-tight">
+            {isSystemActive ? 'Sahayak On' : 'Sahayak'}
+          </span>
+          <span className="text-[10px] opacity-60 font-serif italic hidden sm:inline">
+            सहायक
+          </span>
+        </button>
+
+        {/* Mode Toggle (Auto / Manual) */}
+        <div className="flex items-center bg-white/5 p-0.5 rounded-full border border-white/5">
           <button
             type="button"
             onClick={() => handleSwitchMode('autonomous')}
-            className={`px-2 py-1 rounded-lg text-[11px] font-semibold flex items-center gap-1 transition-all ${
+            className={`px-2 py-1 rounded-full text-[10px] font-semibold transition-all ${
               jarvisControlMode === 'autonomous'
-                ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-xs'
+                ? 'bg-white/20 text-white'
                 : 'text-stone-400 hover:text-stone-200'
             }`}
-            title="Full Autonomous Mode: Continuous listening + acoustic echo suppression & barge-in"
+            title="Auto: Continuous speech recognition"
           >
-            <Radio className="w-3 h-3" />
-            <span>Auto</span>
+            Auto
           </button>
           <button
             type="button"
             onClick={() => handleSwitchMode('manual')}
-            className={`px-2 py-1 rounded-lg text-[11px] font-semibold flex items-center gap-1 transition-all ${
+            className={`px-2 py-1 rounded-full text-[10px] font-semibold transition-all ${
               jarvisControlMode === 'manual'
-                ? 'bg-[#D97746]/20 text-[#E68A57] border border-[#D97746]/40 shadow-xs'
+                ? 'bg-white/20 text-white'
                 : 'text-stone-400 hover:text-stone-200'
             }`}
-            title="Manual Mode: Push-to-Talk Mic button or Alt+J shortcut"
+            title="Manual: Push-to-Talk"
           >
-            <Hand className="w-3 h-3" />
-            <span>Manual</span>
+            Manual
           </button>
         </div>
 
-        {/* Dedicated Push-to-Talk / Mic Control Button */}
+        {/* Dedicated Push-to-Talk Mic Button */}
         <button
           type="button"
           onClick={() => {
@@ -210,64 +237,49 @@ export default function JarvisOrb() {
             }
             jarvisAudio.toggleManualMic();
           }}
-          className={`p-2 rounded-xl border font-medium text-xs flex items-center gap-1.5 transition-all ${
+          className={`p-2 rounded-full transition-all duration-200 ${
             jarvisVoiceState === 'listening'
-              ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300 animate-pulse'
+              ? 'bg-emerald-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.5)] scale-105'
               : jarvisVoiceState === 'speaking' || isSpeaking
-              ? 'bg-amber-500/20 border-amber-500/50 text-amber-300'
-              : 'bg-white/5 hover:bg-white/10 border-white/10 text-stone-300'
+              ? 'bg-amber-500 text-white animate-pulse'
+              : 'text-stone-300 hover:text-white hover:bg-white/10'
           }`}
-          title="Toggle Microphone / Interrupt Speech (Shortcut: Alt + J)"
+          title="Toggle Mic / Speak (Alt + J)"
+          aria-label="Microphone"
         >
           {jarvisVoiceState === 'listening' ? (
-            <Mic className="w-3.5 h-3.5 text-emerald-400" />
+            <Mic className="w-4 h-4" />
           ) : (
-            <MicOff className="w-3.5 h-3.5 text-stone-400" />
+            <MicOff className="w-4 h-4" />
           )}
-          <span className="hidden md:inline text-[11px]">
-            {jarvisVoiceState === 'listening'
-              ? 'Listening'
-              : jarvisVoiceState === 'speaking' || isSpeaking
-              ? 'Interrupt'
-              : 'Mic'}
-          </span>
         </button>
 
-        {/* Open Jarvis Command HUD Modal */}
+        {/* Divider */}
+        <div className="w-[1px] h-4 bg-white/10" />
+
+        {/* Command HUD Modal Trigger */}
         <button
           type="button"
           onClick={() => {
             setIsHUDModalOpen(true);
             setIsJarvisOpen(true);
           }}
-          className="p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-cyan-300 transition-all hover:scale-105 active:scale-95"
-          title="Open Sahayak Voice HUD"
+          className="p-1.5 text-stone-400 hover:text-white rounded-full hover:bg-white/10 transition-colors"
+          title="Open Sahayak Command HUD"
+          aria-label="Open Command HUD"
         >
           <Terminal className="w-3.5 h-3.5" />
         </button>
 
-        {/* Quick Emergency SOS Trigger */}
+        {/* Emergency SOS Button */}
         <button
           type="button"
           onClick={() => setIsSosModalOpen(true)}
-          className="p-2 rounded-xl bg-rose-950/70 hover:bg-rose-900 border border-rose-500/40 text-rose-300 transition-all hover:scale-105 active:scale-95"
+          className="p-1.5 text-rose-400 hover:text-rose-300 rounded-full hover:bg-rose-500/20 transition-colors"
           title="Emergency SOS Broadcast"
+          aria-label="Emergency SOS"
         >
           <ShieldAlert className="w-3.5 h-3.5" />
-        </button>
-
-        {/* Master Sahayak Orb Power Button */}
-        <button
-          type="button"
-          onClick={handleTogglePower}
-          className={`relative h-9 px-3 rounded-xl font-bold text-[11px] tracking-wider uppercase flex items-center gap-1.5 transition-all hover:scale-102 active:scale-98 ${
-            isSystemActive
-              ? 'bg-gradient-to-r from-emerald-500 to-[#D97746] text-white shadow-[0_0_20px_rgba(217,119,70,0.4)]'
-              : 'bg-white/10 hover:bg-white/15 text-stone-300 border border-white/10'
-          }`}
-        >
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>{isSystemActive ? 'SAHAYAK ON' : 'SAHAYAK'}</span>
         </button>
       </div>
     </div>

@@ -14,14 +14,6 @@ import {
   LogIn,
   CloudRain,
   Sun,
-  Mic,
-  MicOff,
-  Square,
-  Wand2,
-  Bot,
-  SlidersHorizontal,
-  ArrowRight,
-  Zap,
   User as UserIcon,
   UserPlus,
   Compass,
@@ -46,13 +38,10 @@ export default function Header() {
     isJarvisSpeaking,
     stopSpeaking,
     stopJarvisVoiceNow,
-    executeJarvisCommand,
-    executeAutonomousJarvis,
     isDemoTrip,
     setIsSetupModalOpen,
     setIsAddCompanionOpen,
   } = useTrip();
-
 
   const {
     user,
@@ -67,9 +56,6 @@ export default function Header() {
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isEnvOpen, setIsEnvOpen] = useState(false);
-  const [showQuickChips, setShowQuickChips] = useState(false);
-  const [quickCmd, setQuickCmd] = useState('');
-  const [listening, setListening] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [nameInput, setNameInput] = useState(currentUser.name);
   const [selectedAvatar, setSelectedAvatar] = useState(currentUser.avatar);
@@ -99,10 +85,8 @@ export default function Header() {
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const envRef = useRef<HTMLDivElement>(null);
-  const chipsRef = useRef<HTMLDivElement>(null);
-  const recognitionRef = useRef<any>(null);
 
-  // Sync active profile from Auth into TripContext only when activeProfile genuinely changes
+  // Sync active profile from Auth into TripContext
   const prevActiveProfileIdRef = useRef(activeProfile?.id);
   useEffect(() => {
     if (activeProfile && activeProfile.id !== prevActiveProfileIdRef.current) {
@@ -123,346 +107,155 @@ export default function Header() {
       if (envRef.current && !envRef.current.contains(target)) {
         setIsEnvOpen(false);
       }
-      if (chipsRef.current && !chipsRef.current.contains(target)) {
-        setShowQuickChips(false);
-      }
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleVoiceInput = () => {
-    if (stopJarvisVoiceNow) stopJarvisVoiceNow();
-    else if (stopSpeaking) stopSpeaking();
-
-    if (listening && recognitionRef.current) {
-      try {
-        recognitionRef.current.stop();
-      } catch {}
-      setListening(false);
-      return;
-    }
-
-    if (typeof window === 'undefined') return;
-
-    const SpeechRec = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRec) {
-      setListening(true);
-      setTimeout(() => {
-        setListening(false);
-        const demoCmd = 'Jarvis, fix all schedule conflicts';
-        setQuickCmd(demoCmd);
-        if (executeAutonomousJarvis) executeAutonomousJarvis(demoCmd);
-        else executeJarvisCommand(demoCmd);
-      }, 1000);
-      return;
-    }
-
-    try {
-      const rec = new SpeechRec();
-      recognitionRef.current = rec;
-      rec.lang = 'en-US';
-      rec.continuous = false; // Single-shot prevents browser hanging
-      rec.interimResults = false;
-      setListening(true);
-
-      rec.onresult = (e: any) => {
-        const transcript = e.results?.[0]?.[0]?.transcript || '';
-        setListening(false);
-        if (transcript.trim()) {
-          setQuickCmd(transcript);
-          if (executeAutonomousJarvis) executeAutonomousJarvis(transcript);
-          else executeJarvisCommand(transcript);
-        }
-      };
-      rec.onerror = () => {
-        setListening(false);
-      };
-      rec.onend = () => {
-        setListening(false);
-      };
-      rec.start();
-    } catch {
-      setListening(false);
-    }
-  };
-
-  const handleCommandSubmit = () => {
-    if (!quickCmd.trim()) return;
-    if (executeAutonomousJarvis) executeAutonomousJarvis(quickCmd);
-    else executeJarvisCommand(quickCmd);
-    setQuickCmd('');
-    setShowQuickChips(false);
-  };
-
-  const handleChipClick = (cmd: string) => {
-    if (executeAutonomousJarvis) executeAutonomousJarvis(cmd);
-    else executeJarvisCommand(cmd);
-    setShowQuickChips(false);
-  };
-
-  const QUICK_ACTION_CHIPS = [
-    { label: '⚡ Fix Overlaps', cmd: 'Sahayak, fix all schedule conflicts' },
-    { label: '🕒 Move Amber Fort → 10:00', cmd: 'Sahayak, move Amber Fort to 10:00' },
-    { label: '🌧️ Rain Swap', cmd: 'Sahayak, it is raining, swap outdoor stops to indoor' },
-    { label: '👴 Switch to Dadaji', cmd: 'Sahayak, switch to Dadaji' },
-    { label: '💴 Currency → JPY', cmd: 'Sahayak, change currency to JPY' },
-    { label: '🗳️ Lock Poll Winner', cmd: 'Sahayak, commit poll winner to itinerary' },
-  ];
-
   return (
-    <header className="sticky top-0 z-40 bg-[#FAF9F6]/90 backdrop-blur-md border-b border-[#EBE7DF] transition-all">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6">
+    <header className="sticky top-0 z-40 bg-[#FAF8F5]/90 backdrop-blur-md border-b border-[#EBE6DE] transition-all">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6">
         <div className="flex items-center justify-between h-16 gap-3">
-          {/* Brand Logo & Editorial Wordmark */}
+          {/* 1. Brand Logo & Clean Monograph */}
           <div className="flex items-center gap-3 shrink-0">
             <img
               src="/logo.jpg"
               alt="Sahyatri Logo"
-              className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl object-contain shadow-2xs border border-[#EBE7DF] transition-transform duration-300 hover:scale-105"
+              className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl object-contain shadow-2xs border border-[#EBE6DE] transition-transform duration-300 hover:scale-105"
             />
             <div className="flex items-baseline gap-2">
-              <span className="font-serif-title text-lg sm:text-xl font-bold tracking-tight text-[#1C1917]">
+              <span className="font-serif-title text-xl font-bold tracking-tight text-[#1C1917]">
                 Sahyatri
               </span>
-              <span className="text-[10px] font-bold tracking-widest text-[#D97746] uppercase hidden sm:inline px-2 py-0.5 rounded-full bg-[#FAF5EE] border border-[#E8DFC8]/60">
+              <span className="text-[10px] font-bold tracking-wider text-[#D97746] uppercase px-2 py-0.5 rounded-full bg-[#F5F2EB] border border-[#EBE6DE]">
                 AI Travel OS
               </span>
             </div>
           </div>
 
-          {/* Center: Autonomous Omni-Voice & Command Capsule */}
-          <div className="relative flex-1 max-w-lg hidden md:block" ref={chipsRef}>
-            <div className="bg-white hover:bg-[#FAF9F6]/60 focus-within:bg-white border border-[#EBE7DF] hover:border-[#D6D0C5] focus-within:border-[#D97746] rounded-full px-3.5 py-1.5 shadow-2xs hover:shadow-xs transition-all duration-300 flex items-center gap-2">
-              <Bot className="w-4 h-4 text-[#D97746] shrink-0" />
-              <input
-                type="text"
-                value={quickCmd}
-                onChange={(e) => setQuickCmd(e.target.value)}
-                onFocus={() => setShowQuickChips(true)}
-                onKeyDown={(e) => e.key === 'Enter' && handleCommandSubmit()}
-                placeholder='Ask Sahayak (सहायक) or type: "switch to Dadaji", "fix overlaps"...'
-                className="w-full bg-transparent text-xs text-[#1C1917] placeholder-[#A8A29E] focus:outline-none"
-              />
+          {/* 2. Center: Ambient Weather & Currency Pill */}
+          <div className="relative" ref={envRef}>
+            <button
+              onClick={() => setIsEnvOpen(!isEnvOpen)}
+              title="Click to view destination weather, switch currency, or toggle simulation"
+              aria-expanded={isEnvOpen}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white hover:bg-[#F5F2EB] border border-[#EBE6DE] hover:border-[#D6CFBE] text-xs font-semibold text-[#1C1917] shadow-2xs hover:shadow-xs transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-95"
+            >
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+              <span className="truncate max-w-[90px] sm:max-w-none text-stone-700">
+                {(liveWeather?.city || liveWeather?.destination || 'Jaipur').split(',')[0]}
+              </span>
+              <span className="text-[#9C948A]">&bull;</span>
+              <span className="flex items-center gap-1 font-medium text-stone-600">
+                {weather === 'Rainy' ? (
+                  <CloudRain className="w-3.5 h-3.5 text-blue-500" />
+                ) : (
+                  <Sun className="w-3.5 h-3.5 text-amber-500" />
+                )}
+                <span>{liveWeather?.tempC ?? liveWeather?.temperatureC ?? 22}°C</span>
+              </span>
+              <span className="text-[#9C948A] hidden sm:inline">&bull;</span>
+              <span className="font-mono text-[11px] font-bold text-[#D97746] hidden sm:inline">
+                {currency}
+              </span>
+              <ChevronDown className="w-3 h-3 text-[#9C948A]" />
+            </button>
 
-              {/* Quick Actions Trigger Button */}
-              <button
-                type="button"
-                onClick={() => setShowQuickChips(!showQuickChips)}
-                title="View quick autonomous voice prompts"
-                className={`p-1.5 rounded-full text-xs transition-all duration-200 ${
-                  showQuickChips
-                    ? 'bg-[#FAF5EE] text-[#D97746]'
-                    : 'text-[#A8A29E] hover:text-[#1C1917] hover:bg-[#F4F1EA]'
-                }`}
-              >
-                <Zap className="w-3.5 h-3.5" />
-              </button>
-
-              {/* Microphone Voice Button */}
-              <button
-                type="button"
-                onClick={handleVoiceInput}
-                title={listening ? 'Stop voice recognition' : 'Speak voice command to Sahayak'}
-                className={`p-1.5 rounded-full text-xs font-semibold flex items-center justify-center transition-all duration-200 ${
-                  listening
-                    ? 'bg-rose-500 text-white animate-pulse scale-110 shadow-sm'
-                    : 'bg-[#F4F1EA] hover:bg-[#EBE7DF] text-[#1C1917] hover:scale-105 active:scale-95'
-                }`}
-              >
-                {listening ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
-              </button>
-
-              {/* Execute Arrow Button */}
-              {quickCmd.trim() && (
-                <button
-                  type="button"
-                  onClick={handleCommandSubmit}
-                  className="p-1.5 rounded-full bg-[#1C1917] hover:bg-[#D97746] text-white hover:scale-105 active:scale-95 transition-all duration-200 shadow-2xs"
-                  title="Execute command"
-                >
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
-
-            {/* Quick Action Suggestion Chips Popover (Appears gracefully on focus/toggle) */}
-            {showQuickChips && (
-              <div className="absolute top-full left-0 right-0 mt-2 bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-[#EBE7DF] p-3 z-50 animate-in fade-in zoom-in-95 duration-150">
-                <div className="flex items-center justify-between mb-2 px-1">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#A8A29E]">
-                    ⚡ Quick Autonomous Actions
-                  </span>
-                  <span className="text-[10px] text-[#78716C]">Sub-5ms Edge SLM</span>
+            {/* Context Environment Popover */}
+            {isEnvOpen && (
+              <div className="absolute left-1/2 -translate-x-1/2 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-[#EBE6DE] p-3.5 z-50 animate-in fade-in zoom-in-95 duration-150 space-y-3">
+                {/* Currency Switcher */}
+                <div>
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-[#9C948A] mb-1.5">
+                    Settlement Currency
+                  </div>
+                  <div className="grid grid-cols-4 gap-1">
+                    {(['INR', 'USD', 'EUR', 'JPY'] as const).map((c) => (
+                      <button
+                        key={c}
+                        onClick={() => {
+                          setCurrency(c);
+                          setIsEnvOpen(false);
+                        }}
+                        className={`py-1 text-center rounded-lg font-mono text-xs font-bold transition ${
+                          currency === c
+                            ? 'bg-[#1C1917] text-white shadow-xs'
+                            : 'bg-[#FAF8F5] text-stone-600 hover:text-[#1C1917] border border-[#EBE6DE]'
+                        }`}
+                      >
+                        {c}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {QUICK_ACTION_CHIPS.map((chip, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => handleChipClick(chip.cmd)}
-                      className="px-2.5 py-1 rounded-lg text-[11px] font-medium bg-[#FAF9F6] hover:bg-[#FAF5EE] text-[#44403C] hover:text-[#D97746] border border-[#EBE7DF] hover:border-[#E8DFC8] transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-95"
-                    >
-                      {chip.label}
-                    </button>
-                  ))}
+
+                {/* Weather Toggle */}
+                <div>
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-[#9C948A] mb-1.5">
+                    Weather Simulator (Conflict Testing)
+                  </div>
+                  <button
+                    onClick={() => {
+                      toggleWeather();
+                      setIsEnvOpen(false);
+                    }}
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold border transition ${
+                      weather === 'Rainy'
+                        ? 'bg-blue-50 text-blue-700 border-blue-200'
+                        : 'bg-amber-50 text-amber-700 border-amber-200'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      {weather === 'Rainy' ? (
+                        <CloudRain className="w-4 h-4 text-blue-600" />
+                      ) : (
+                        <Sun className="w-4 h-4 text-amber-500" />
+                      )}
+                      <span>{weather === 'Rainy' ? 'Rainy Mode (Sim)' : 'Sunny Mode (Sim)'}</span>
+                    </div>
+                    <span className="text-[10px] font-bold underline">Click to Flip</span>
+                  </button>
+                </div>
+
+                {/* Device Viewport Toggle */}
+                <div className="pt-2 border-t border-[#EBE6DE]">
+                  <button
+                    onClick={() => {
+                      setViewMode(viewMode === 'full' ? 'phone_preview' : 'full');
+                      setIsEnvOpen(false);
+                    }}
+                    className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-semibold text-stone-600 hover:text-[#1C1917] hover:bg-[#F5F2EB] transition"
+                  >
+                    <div className="flex items-center gap-2">
+                      {viewMode === 'full' ? (
+                        <Smartphone className="w-4 h-4 text-[#D97746]" />
+                      ) : (
+                        <Monitor className="w-4 h-4 text-[#D97746]" />
+                      )}
+                      <span>{viewMode === 'full' ? 'Mobile Phone Frame' : 'Full Screen View'}</span>
+                    </div>
+                    <span className="text-[10px] text-[#9C948A]">Toggle</span>
+                  </button>
                 </div>
               </div>
             )}
           </div>
 
-          {/* Right Section: Minimum, High-Value Relevant Controls */}
+          {/* 3. Right Section: Ask AI & Authenticated Profile Menu */}
           <div className="flex items-center gap-2 shrink-0">
-            {/* Hard-Stop Voice Button (Only appears when Sahayak is actively speaking) */}
-            {(isSpeaking || isJarvisSpeaking) && (
-              <button
-                onClick={() => {
-                  if (stopJarvisVoiceNow) stopJarvisVoiceNow();
-                  else if (stopSpeaking) stopSpeaking();
-                }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold shadow-md shadow-rose-600/30 animate-pulse hover:scale-105 active:scale-95 transition-all duration-200"
-                title="Hard interrupt Sahayak speech immediately"
-              >
-                <Square className="w-3.5 h-3.5 fill-white" />
-                <span>Ruko / Stop</span>
-              </button>
-            )}
-
-            {/* Contextual Trip Environment Pill (Weather · Currency · Viewport) */}
-            <div className="relative" ref={envRef}>
-              <button
-                onClick={() => setIsEnvOpen(!isEnvOpen)}
-                title="Trip Simulator & Settings (Currency, Weather, Viewport)"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white hover:bg-[#F5F2EB] border border-[#EBE7DF] hover:border-[#D6D0C5] text-xs font-semibold text-[#1C1917] shadow-2xs hover:shadow-xs transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-95"
-              >
-                {weather === 'Rainy' ? (
-                  <CloudRain className="w-3.5 h-3.5 text-blue-600 animate-pulse" />
-                ) : (
-                  <Sun className="w-3.5 h-3.5 text-amber-500" />
-                )}
-                <span className="hidden sm:inline">{weather}</span>
-                <span className="text-[#A8A29E]">·</span>
-                <span className="font-mono text-[11px] font-bold text-[#D97746]">{currency}</span>
-                <ChevronDown className="w-3 h-3 text-[#A8A29E]" />
-              </button>
-
-              {/* Environment Popover Menu */}
-              {isEnvOpen && (
-                <div className="absolute right-0 mt-2 w-64 bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-[#EBE7DF] p-3 z-50 animate-in fade-in zoom-in-95 duration-150 space-y-3">
-                  {/* Currency Selector */}
-                  <div>
-                    <div className="text-[10px] font-bold uppercase tracking-wider text-[#A8A29E] mb-1.5 px-1">
-                      Active Currency
-                    </div>
-                    <div className="grid grid-cols-4 gap-1">
-                      {(['INR', 'USD', 'EUR', 'JPY'] as const).map((c) => (
-                        <button
-                          key={c}
-                          onClick={() => {
-                            setCurrency(c);
-                            setIsEnvOpen(false);
-                          }}
-                          className={`py-1 text-center rounded-lg font-mono text-xs font-bold transition-all duration-200 hover:scale-105 active:scale-95 ${
-                            currency === c
-                              ? 'bg-[#1C1917] text-white shadow-xs'
-                              : 'bg-[#FAF9F6] text-[#78716C] hover:text-[#1C1917] border border-[#EBE7DF]'
-                          }`}
-                        >
-                          {c}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Weather Simulator */}
-                  <div>
-                    <div className="text-[10px] font-bold uppercase tracking-wider text-[#A8A29E] mb-1.5 px-1">
-                      Weather Simulator
-                    </div>
-                    <button
-                      onClick={() => {
-                        toggleWeather();
-                        setIsEnvOpen(false);
-                      }}
-                      className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-all duration-200 hover:scale-[1.02] active:scale-95 ${
-                        weather === 'Rainy'
-                          ? 'bg-blue-50 text-blue-700 border-blue-200'
-                          : 'bg-amber-50 text-amber-700 border-amber-200'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        {weather === 'Rainy' ? (
-                          <CloudRain className="w-4 h-4 text-blue-600" />
-                        ) : (
-                          <Sun className="w-4 h-4 text-amber-500" />
-                        )}
-                        <span>{weather === 'Rainy' ? 'Rainy Mode (Sim)' : 'Sunny Mode (Sim)'}</span>
-                      </div>
-                      <span className="text-[10px] text-[#A8A29E]">Toggle</span>
-                    </button>
-                  </div>
-
-                  {/* Live Real-Time Telemetry Badge */}
-                  {liveWeather && (
-                    <div className="p-2.5 rounded-xl bg-[#FAF9F6] border border-[#EBE7DF] text-[11px] space-y-1">
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold flex items-center gap-1.5 text-[#D97746]">
-                          <Sun className="w-3.5 h-3.5" /> Live {(liveWeather.city || liveWeather.destination || 'Destination').split(',')[0]} Telemetry
-                        </span>
-                        <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 border border-emerald-200 px-1.5 py-0.2 rounded-full">
-                          ● Live
-                        </span>
-                      </div>
-                      <div className="text-[#1C1917] font-semibold text-xs">
-                        {liveWeather.tempC ?? liveWeather.temperatureC ?? 22}°C &bull; {liveWeather.description || liveWeather.condition || 'Clear'}
-                      </div>
-                      <div className="text-[10px] text-[#78716C]">
-                        Feels like {liveWeather.feelsLikeC ?? liveWeather.apparentTempC ?? 22}°C &bull; Wind {liveWeather.windKmh ?? liveWeather.windSpeedKmh ?? 10} km/h
-                      </div>
-                      {liveForex && (
-                        <div className="text-[10px] text-[#D97746] font-medium pt-0.5 border-t border-[#EBE7DF]/80">
-                          Forex: 1 INR = ¥{liveForex.rates.JPY} JPY ($1 = ₹{(1 / (liveForex.rates.USD || 0.012)).toFixed(1)})
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Viewport Frame Toggle */}
-                  <div className="pt-2 border-t border-[#EBE7DF]">
-                    <button
-                      onClick={() => {
-                        setViewMode(viewMode === 'full' ? 'phone_preview' : 'full');
-                        setIsEnvOpen(false);
-                      }}
-                      className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-semibold text-[#78716C] hover:text-[#1C1917] hover:bg-[#F4F1EA] transition"
-                    >
-                      <div className="flex items-center gap-2">
-                        {viewMode === 'full' ? (
-                          <Smartphone className="w-4 h-4 text-[#D97746]" />
-                        ) : (
-                          <Monitor className="w-4 h-4 text-[#D97746]" />
-                        )}
-                        <span>{viewMode === 'full' ? 'Simulate Mobile Frame' : 'Full Screen View'}</span>
-                      </div>
-                      <span className="text-[10px] text-[#A8A29E]">Switch</span>
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-
             {/* Ask AI Assistant Button */}
             <button
               onClick={() => setIsAssistantOpen(true)}
-              className="px-3 py-1.5 bg-[#FAF5EE] hover:bg-[#F4ECE0] border border-[#E8DFC8] text-[#D97746] hover:text-[#C26333] rounded-full text-xs font-bold transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 flex items-center gap-1.5 shadow-2xs hover:shadow-xs"
+              className="px-3 py-1.5 bg-[#F5F2EB] hover:bg-[#EBE6DE] border border-[#EBE6DE] text-[#D97746] hover:text-[#C26333] rounded-full text-xs font-bold transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 flex items-center gap-1.5 shadow-2xs hover:shadow-xs"
               title="Open Personal Assistant Drawer"
             >
               <Sparkles className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Ask AI</span>
             </button>
 
-            {/* Auth Session State: Skeleton while hydrating, Sign In when unauth, Profile pill when auth */}
+            {/* Auth Session State */}
             {!authHydrated ? (
-              <div className="w-20 h-7 rounded-full bg-[#EBE7DF]/50 animate-pulse" aria-hidden="true" />
+              <div className="w-20 h-7 rounded-full bg-[#EBE6DE]/50 animate-pulse" aria-hidden="true" />
             ) : !isAuthenticated ? (
               <button
                 onClick={() => setIsAuthModalOpen(true)}
@@ -480,7 +273,7 @@ export default function Header() {
                   aria-expanded={isDropdownOpen}
                   aria-haspopup="menu"
                   aria-label={`User profile menu for ${currentUser.name}`}
-                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-full bg-white border border-[#EBE7DF] hover:border-[#D6D0C5] text-xs font-semibold text-[#1C1917] transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 shadow-2xs hover:shadow-xs focus-visible:ring-2 focus-visible:ring-[#D97746] focus-visible:outline-none"
+                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-full bg-white border border-[#EBE6DE] hover:border-[#D6CFBE] text-xs font-semibold text-[#1C1917] transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 shadow-2xs hover:shadow-xs focus-visible:ring-2 focus-visible:ring-[#D97746] focus-visible:outline-none"
                 >
                   <img
                     src={safeAvatarSrc(currentUser)}
@@ -498,25 +291,25 @@ export default function Header() {
                     className={`text-[9px] px-1.5 py-0.2 rounded-full font-bold uppercase tracking-wider hidden sm:inline ${
                       isAdmin
                         ? 'bg-orange-100 text-[#D97746] border border-orange-200'
-                        : 'bg-stone-100 text-[#78716C] border border-stone-200'
+                        : 'bg-stone-100 text-stone-600 border border-stone-200'
                     }`}
                   >
                     {isAdmin ? 'Admin' : 'Companion'}
                   </span>
-                  <ChevronDown className="w-3 h-3 text-[#A8A29E]" />
+                  <ChevronDown className="w-3 h-3 text-[#9C948A]" />
                 </button>
 
-                {/* Authenticated Account & RBAC Dropdown Menu */}
+                {/* Profile & Switcher Dropdown */}
                 {isDropdownOpen && (
                   <div
                     role="menu"
                     aria-label="Account actions"
-                    className="absolute right-0 mt-2 w-72 bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-[#EBE7DF] p-3 z-50 animate-in fade-in zoom-in-95 duration-150 space-y-2.5"
+                    className="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-[#EBE6DE] p-3 z-50 animate-in fade-in zoom-in-95 duration-150 space-y-2.5"
                   >
                     {/* Active Account Identity Card */}
-                    <div className="p-2.5 rounded-xl bg-[#FAF9F6] border border-[#EBE7DF]">
+                    <div className="p-2.5 rounded-xl bg-[#FAF8F5] border border-[#EBE6DE]">
                       <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#A8A29E]">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#9C948A]">
                           Active Account
                         </span>
                         <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-600">
@@ -526,15 +319,15 @@ export default function Header() {
                       <div className="text-xs font-bold text-[#1C1917] mt-1">
                         {currentUser.name}
                       </div>
-                      <div className="text-[11px] text-[#78716C] truncate">
+                      <div className="text-[11px] text-stone-500 truncate">
                         {user?.email || `${currentUser.id}@traveler.sahyatri.ai`}
                       </div>
                     </div>
 
-                    {/* Quick Companion Switchers for Live Evaluation */}
+                    {/* Quick Companion Switchers */}
                     {users.length > 1 && (
                       <div>
-                        <div className="px-1 py-1 text-[10px] font-bold uppercase tracking-wider text-[#A8A29E]">
+                        <div className="px-1 py-1 text-[10px] font-bold uppercase tracking-wider text-[#9C948A]">
                           Switch Companion (RBAC)
                         </div>
                         <div className="space-y-1 max-h-44 overflow-y-auto">
@@ -551,8 +344,8 @@ export default function Header() {
                                 }}
                                 className={`w-full flex items-center justify-between p-2 rounded-xl text-left text-xs transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-98 focus-visible:ring-2 focus-visible:ring-[#D97746] ${
                                   isSelected
-                                    ? 'bg-[#FAF9F6] text-[#1C1917] font-bold border border-[#EBE7DF] shadow-2xs'
-                                    : 'text-[#78716C] hover:text-[#1C1917] hover:bg-[#F4F1EA]'
+                                    ? 'bg-[#FAF8F5] text-[#1C1917] font-bold border border-[#EBE6DE] shadow-2xs'
+                                    : 'text-stone-600 hover:text-[#1C1917] hover:bg-[#F5F2EB]'
                                 }`}
                               >
                                 <div className="flex items-center gap-2">
@@ -567,7 +360,7 @@ export default function Header() {
                                   />
                                   <div>
                                     <div className="font-semibold">{u.name}</div>
-                                    <div className="text-[10px] text-[#A8A29E]">
+                                    <div className="text-[10px] text-[#9C948A]">
                                       {u.role === 'planner'
                                         ? 'Trip Admin'
                                         : u.personaType === 'elderly'
@@ -586,30 +379,30 @@ export default function Header() {
                       </div>
                     )}
 
-                    {/* Auth Actions: Add Companion, Trip Setup, Profile Editor & Sign Out */}
-                    <div className="pt-2 border-t border-[#EBE7DF] space-y-1">
+                    {/* Trip Actions */}
+                    <div className="pt-2 border-t border-[#EBE6DE] space-y-1">
                       <button
                         role="menuitem"
                         onClick={() => {
                           setIsDropdownOpen(false);
-                          setIsAddCompanionOpen(true);
+                          if (setIsAddCompanionOpen) setIsAddCompanionOpen(true);
                         }}
-                        className="w-full flex items-center gap-2 p-2 rounded-xl text-xs font-semibold text-[#1C1917] hover:bg-[#F4F1EA] transition-colors focus-visible:ring-2 focus-visible:ring-[#D97746]"
+                        className="w-full flex items-center gap-2 p-2 rounded-xl text-xs font-semibold text-stone-700 hover:bg-[#F5F2EB] transition-colors focus-visible:ring-2 focus-visible:ring-[#D97746]"
                       >
                         <UserPlus className="w-4 h-4 text-[#D97746]" />
-                        <span>Invite / Add Companion</span>
+                        <span>Add / Invite Traveler</span>
                       </button>
 
                       <button
                         role="menuitem"
                         onClick={() => {
                           setIsDropdownOpen(false);
-                          setIsSetupModalOpen(true);
+                          if (setIsSetupModalOpen) setIsSetupModalOpen(true);
                         }}
-                        className="w-full flex items-center gap-2 p-2 rounded-xl text-xs font-semibold text-[#1C1917] hover:bg-[#F4F1EA] transition-colors focus-visible:ring-2 focus-visible:ring-[#D97746]"
+                        className="w-full flex items-center gap-2 p-2 rounded-xl text-xs font-semibold text-stone-700 hover:bg-[#F5F2EB] transition-colors focus-visible:ring-2 focus-visible:ring-[#D97746]"
                       >
                         <Compass className="w-4 h-4 text-[#D97746]" />
-                        <span>{isDemoTrip ? 'Create Clean Trip' : 'Trip Setup / Switch'}</span>
+                        <span>Create / Switch Trip</span>
                       </button>
 
                       <button
@@ -620,7 +413,7 @@ export default function Header() {
                           setSelectedAvatar(currentUser.avatar);
                           setIsProfileOpen(true);
                         }}
-                        className="w-full flex items-center gap-2 p-2 rounded-xl text-xs font-semibold text-[#1C1917] hover:bg-[#F4F1EA] transition-colors focus-visible:ring-2 focus-visible:ring-[#D97746]"
+                        className="w-full flex items-center gap-2 p-2 rounded-xl text-xs font-semibold text-stone-700 hover:bg-[#F5F2EB] transition-colors focus-visible:ring-2 focus-visible:ring-[#D97746]"
                       >
                         <UserIcon className="w-4 h-4 text-[#D97746]" />
                         <span>Edit Profile &amp; Avatar</span>
@@ -642,40 +435,6 @@ export default function Header() {
                 )}
               </div>
             )}
-
-          </div>
-        </div>
-
-        {/* Mobile Omni-Search Bar (Only visible on small screens so mobile users also get Sahayak) */}
-        <div className="block md:hidden pb-2.5">
-          <div className="bg-white border border-[#EBE7DF] focus-within:border-[#D97746] rounded-full px-3 py-1.5 shadow-2xs flex items-center gap-2">
-            <Bot className="w-4 h-4 text-[#D97746] shrink-0" />
-            <input
-              type="text"
-              value={quickCmd}
-              onChange={(e) => setQuickCmd(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleCommandSubmit()}
-              placeholder='Command Sahayak: "switch to Dadaji"...'
-              className="w-full bg-transparent text-xs text-[#1C1917] placeholder-[#A8A29E] focus:outline-none"
-            />
-            <button
-              type="button"
-              onClick={handleVoiceInput}
-              className={`p-1.5 rounded-full text-xs font-semibold flex items-center justify-center transition-all ${
-                listening ? 'bg-rose-500 text-white animate-pulse' : 'bg-[#F4F1EA] text-[#1C1917]'
-              }`}
-            >
-              {listening ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
-            </button>
-            {quickCmd.trim() && (
-              <button
-                type="button"
-                onClick={handleCommandSubmit}
-                className="p-1.5 rounded-full bg-[#1C1917] text-white"
-              >
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            )}
           </div>
         </div>
       </div>
@@ -694,14 +453,14 @@ export default function Header() {
               }
               setIsProfileOpen(false);
             }}
-            className="w-full max-w-md bg-white border border-[#EBE7DF] rounded-3xl p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-150"
+            className="w-full max-w-md bg-white border border-[#EBE6DE] rounded-3xl p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-150"
           >
-            <div className="flex items-center justify-between border-b border-[#EBE7DF] pb-3">
+            <div className="flex items-center justify-between border-b border-[#EBE6DE] pb-3">
               <h3 className="text-base font-bold text-[#1C1917]">Traveler Profile &amp; Avatar</h3>
               <button
                 type="button"
                 onClick={() => setIsProfileOpen(false)}
-                className="p-1.5 rounded-xl bg-[#FAF9F6] text-stone-400 hover:text-[#1C1917]"
+                className="p-1.5 rounded-xl bg-[#FAF8F5] text-stone-400 hover:text-[#1C1917]"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -719,7 +478,7 @@ export default function Header() {
                   type="text"
                   value={nameInput}
                   onChange={(e) => setNameInput(e.target.value)}
-                  className="w-full bg-[#FAF9F6] border border-[#EBE7DF] rounded-xl px-3 py-2 text-sm text-[#1C1917] outline-none focus:border-[#D97746]"
+                  className="w-full bg-[#FAF8F5] border border-[#EBE6DE] rounded-xl px-3 py-2 text-sm text-[#1C1917] outline-none focus:border-[#D97746]"
                 />
               </div>
             </div>
@@ -751,7 +510,7 @@ export default function Header() {
               <button
                 type="button"
                 onClick={() => setIsProfileOpen(false)}
-                className="px-4 py-2 rounded-xl bg-[#FAF9F6] text-stone-600 text-xs font-semibold hover:bg-stone-100"
+                className="px-4 py-2 rounded-xl bg-[#FAF8F5] text-stone-600 text-xs font-semibold hover:bg-stone-100"
               >
                 Cancel
               </button>
