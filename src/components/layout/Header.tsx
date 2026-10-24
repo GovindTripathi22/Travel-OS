@@ -399,17 +399,17 @@ export default function Header() {
                     <div className="p-2.5 rounded-xl bg-[#FAF9F6] border border-[#EBE7DF] text-[11px] space-y-1">
                       <div className="flex items-center justify-between">
                         <span className="font-bold flex items-center gap-1.5 text-[#D97746]">
-                          <Sun className="w-3.5 h-3.5" /> Live {liveWeather.destination.split(',')[0]} Telemetry
+                          <Sun className="w-3.5 h-3.5" /> Live {(liveWeather.city || liveWeather.destination || 'Destination').split(',')[0]} Telemetry
                         </span>
                         <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 border border-emerald-200 px-1.5 py-0.2 rounded-full">
                           ● Live
                         </span>
                       </div>
                       <div className="text-[#1C1917] font-semibold text-xs">
-                        {liveWeather.temperatureC}°C &bull; {liveWeather.condition}
+                        {liveWeather.tempC ?? liveWeather.temperatureC ?? 22}°C &bull; {liveWeather.description || liveWeather.condition || 'Clear'}
                       </div>
                       <div className="text-[10px] text-[#78716C]">
-                        Feels like {liveWeather.apparentTempC}°C &bull; Wind {liveWeather.windSpeedKmh} km/h
+                        Feels like {liveWeather.feelsLikeC ?? liveWeather.apparentTempC ?? 22}°C &bull; Wind {liveWeather.windKmh ?? liveWeather.windSpeedKmh ?? 10} km/h
                       </div>
                       {liveForex && (
                         <div className="text-[10px] text-[#D97746] font-medium pt-0.5 border-t border-[#EBE7DF]/80">
