@@ -139,3 +139,35 @@ export async function searchLiveLocation(query: string): Promise<LivePlaceResult
     return [];
   }
 }
+
+/**
+ * 4. Client-side deduplicating telemetry cache (60s TTL)
+ * Prevents multiple components from firing simultaneous duplicate requests to /api/live-data.
+ */
+let clientLiveDataPromise: Promise<any> | null = null;
+let lastTelemetryFetch = 0;
+
+export async function getClientLiveData(): Promise<{
+  weather?: LiveWeatherTelemetry;
+  forex?: LiveForexRates;
+  places?: any;
+}> {
+  const now = Date.now();
+  if (clientLiveDataPromise && now - lastTelemetryFetch < 60000) {
+    return clientLiveDataPromise;
+  }
+
+  lastTelemetryFetch = now;
+  clientLiveDataPromise = fetch('/api/live-data')
+    .then(async (res) => {
+      if (!res.ok) throw new Error('Live data request failed');
+      return await res.json();
+    })
+    .catch((err) => {
+      clientLiveDataPromise = null;
+      throw err;
+    });
+
+  return clientLiveDataPromise;
+}
+

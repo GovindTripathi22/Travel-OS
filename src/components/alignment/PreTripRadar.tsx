@@ -100,7 +100,7 @@ export default function PreTripRadar() {
               </div>
               <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden mb-2">
                 <div
-                  className="bg-gradient-to-r from-orange-500 to-amber-500 h-full rounded-full transition-all duration-500"
+                  className="bg-gradient-to-r from-orange-500 to-amber-500 h-full rounded-full transition-[width] duration-500 will-change-[width]"
                   style={{ width: `${m.alignment}%` }}
                 />
               </div>

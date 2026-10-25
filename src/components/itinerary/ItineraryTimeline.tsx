@@ -40,7 +40,7 @@ export default function ItineraryTimeline() {
     <div className="space-y-4">
       {/* Day Selector & Auto-Heal Quick Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-[#EBE7DF]">
-        <div className="flex items-center gap-1.5 bg-[#F4F1EA] p-1.5 rounded-2xl border border-[#EBE7DF] shadow-2xs overflow-x-auto scrollbar-none">
+        <div className="flex items-center gap-1.5 bg-[#F4F1EA] p-1.5 rounded-2xl border border-[#EBE7DF] shadow-2xs overflow-x-auto scrollbar-none max-w-full">
           {availableDays.map((d) => (
             <button
               key={d}
@@ -57,11 +57,11 @@ export default function ItineraryTimeline() {
         </div>
 
         {/* Quick Auto-Healing & Actions */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2 flex-wrap">
           <button
             type="button"
             onClick={() => setIsAddStopOpen(true)}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#D97746] hover:bg-[#C26333] text-white rounded-xl text-xs font-bold transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 shadow-2xs hover:shadow-xs focus-visible:ring-2 focus-visible:ring-[#D97746]"
+            className="flex items-center justify-center gap-1.5 px-3.5 py-2 min-h-[38px] sm:min-h-[40px] bg-[#D97746] hover:bg-[#C26333] text-white rounded-xl text-xs font-bold transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 shadow-2xs hover:shadow-xs focus-visible:ring-2 focus-visible:ring-[#D97746]"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Add Stop</span>
@@ -70,7 +70,7 @@ export default function ItineraryTimeline() {
           {weather === 'Rainy' && (
             <button
               onClick={() => adaptWeatherIndoor(selectedDay)}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 shadow-2xs hover:shadow-xs focus-visible:ring-2 focus-visible:ring-blue-600"
+              className="flex items-center justify-center gap-1.5 px-3.5 py-2 min-h-[38px] sm:min-h-[40px] bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 shadow-2xs hover:shadow-xs focus-visible:ring-2 focus-visible:ring-blue-600"
             >
               <CloudRain className="w-3.5 h-3.5" />
               <span>Swap Indoor</span>
@@ -79,7 +79,7 @@ export default function ItineraryTimeline() {
 
           <button
             onClick={() => autoHealSchedule(selectedDay)}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#2D2723] hover:bg-[#D97746] text-white rounded-xl text-xs font-bold transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 shadow-2xs hover:shadow-xs focus-visible:ring-2 focus-visible:ring-[#D97746]"
+            className="flex items-center justify-center gap-1.5 px-3.5 py-2 min-h-[38px] sm:min-h-[40px] bg-[#2D2723] hover:bg-[#D97746] text-white rounded-xl text-xs font-bold transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 shadow-2xs hover:shadow-xs focus-visible:ring-2 focus-visible:ring-[#D97746]"
           >
             <Wand2 className="w-3.5 h-3.5 text-[#D97746]" />
             <span>Auto-Heal</span>

@@ -37,30 +37,30 @@ function TripOSApp() {
 
   if (viewMode === 'phone_preview') {
     return (
-      <div className="min-h-screen bg-[#1F2530] py-8 px-4 flex flex-col items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-[#F5F2EB] via-[#EBE5DA] to-[#DFD8CC] py-8 px-4 flex flex-col items-center justify-center">
         {/* Device Switcher Header */}
-        <div className="mb-4 flex items-center justify-between w-full max-w-sm px-2 text-white">
+        <div className="mb-4 flex items-center justify-between w-full max-w-sm px-2 text-stone-800">
           <div className="flex items-center gap-2 text-xs font-semibold">
-            <Smartphone className="w-4 h-4 text-orange-400" />
+            <Smartphone className="w-4 h-4 text-orange-600" />
             <span>Mobile Device Simulation</span>
           </div>
           <button
             onClick={() => setViewMode('full')}
-            className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg transition border border-slate-700 flex items-center gap-1.5"
+            className="text-xs bg-white hover:bg-stone-50 text-stone-800 px-3 py-1.5 rounded-lg transition border border-stone-300 shadow-xs flex items-center gap-1.5 font-medium"
           >
-            <Monitor className="w-3.5 h-3.5" /> Full Width View
+            <Monitor className="w-3.5 h-3.5 text-stone-600" /> Full Width View
           </button>
         </div>
 
         {/* Realistic Smartphone Frame */}
-        <div className="w-full max-w-[410px] h-[860px] bg-[#161B22] rounded-[48px] p-3 shadow-2xl border-4 border-slate-700/80 relative flex flex-col">
+        <div className="w-full max-w-[410px] h-[860px] bg-[#1E232D] rounded-[48px] p-3 shadow-2xl border-4 border-slate-400/40 relative flex flex-col">
           {/* Dynamic Island / Speaker Pill */}
-          <div className="absolute top-5 left-1/2 -translate-x-1/2 w-28 h-5 bg-black rounded-full z-50 flex items-center justify-center">
-            <div className="w-2.5 h-2.5 rounded-full bg-slate-900 ml-auto mr-2" />
+          <div className="absolute top-5 left-1/2 -translate-x-1/2 w-28 h-5 bg-black/80 rounded-full z-50 flex items-center justify-center">
+            <div className="w-2.5 h-2.5 rounded-full bg-slate-800 ml-auto mr-2" />
           </div>
 
           {/* Screen Content */}
-          <div className="w-full h-full bg-slate-50 rounded-[38px] overflow-hidden flex flex-col relative pt-5">
+          <div className="w-full h-full bg-[#FCFAF6] rounded-[38px] overflow-hidden flex flex-col relative pt-5">
             <Header />
             <ModeBanner />
             <div className="flex-1 overflow-y-auto">
@@ -73,14 +73,14 @@ function TripOSApp() {
           </div>
 
           {/* Home Indicator Bar */}
-          <div className="w-32 h-1 bg-slate-600 rounded-full mx-auto mt-2" />
+          <div className="w-32 h-1 bg-slate-500 rounded-full mx-auto mt-2" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#FAF9F6]">
+    <div className="min-h-screen flex flex-col bg-transparent">
       <Header />
       <ModeBanner />
       <main className="flex-1">

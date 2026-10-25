@@ -178,16 +178,16 @@ export default function JarvisHUDModal() {
   ];
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-black/45 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200">
-      <div className="w-full max-w-2xl bg-[#24201D] border border-[#3C352E] rounded-3xl shadow-2xl text-white flex flex-col max-h-[92vh] overflow-hidden">
+    <div className="fixed inset-0 z-50 overflow-hidden bg-black/20 backdrop-blur-[2px] flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200">
+      <div className="w-full max-w-2xl bg-[#36302B] border border-[#4D433A] rounded-3xl shadow-2xl text-white flex flex-col max-h-[92vh] overflow-hidden">
         {/* Top Arc Reactor Header */}
-        <div className="p-4 sm:p-5 border-b border-[#3C352E] flex items-center justify-between bg-[#2B2622]">
+        <div className="p-4 sm:p-5 border-b border-[#4D433A] flex items-center justify-between bg-[#403833]">
           <div className="flex items-center gap-3">
             <div className="relative">
               <div className="w-10 h-10 rounded-2xl bg-[#D97746] flex items-center justify-center text-white shadow-lg shadow-[#D97746]/20">
                 <Sparkles className="w-5 h-5" />
               </div>
-              <span className="absolute -bottom-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full border-2 border-[#24201D]" />
+              <span className="absolute -bottom-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full border-2 border-[#2B2623]" />
             </div>
 
             <div>
@@ -248,7 +248,7 @@ export default function JarvisHUDModal() {
         </div>
 
         {/* Holographic Wave Visualizer & Status */}
-        <div className="px-5 py-4 bg-gradient-to-b from-[#1C1814] to-[#141210] border-b border-[#2E2822] flex items-center justify-between">
+        <div className="px-5 py-4 bg-gradient-to-b from-[#2D2620] to-[#241F1A] border-b border-[#3D352E] flex items-center justify-between">
           <div className="flex items-center gap-3">
             {/* Audio Wave Bars */}
             <div className="flex items-end gap-1 h-6">
@@ -299,7 +299,7 @@ export default function JarvisHUDModal() {
         <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
           {/* Active Result Card if triggered */}
           {lastJarvisResult && (
-            <div className="bg-[#2B2622] border border-[#443C34] rounded-2xl p-4 sm:p-5 shadow-inner space-y-3 animate-in zoom-in-95 duration-200">
+            <div className="bg-[#332C27] border border-[#4D433A] rounded-2xl p-4 sm:p-5 shadow-inner space-y-3 animate-in zoom-in-95 duration-200">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
@@ -316,7 +316,7 @@ export default function JarvisHUDModal() {
                 {lastJarvisResult.summary}
               </div>
 
-              <p className="text-xs sm:text-sm text-[#C4BCB3] leading-relaxed bg-[#201D1A] p-3 rounded-xl border border-[#3C352E]">
+              <p className="text-xs sm:text-sm text-[#C4BCB3] leading-relaxed bg-[#2B2521] p-3 rounded-xl border border-[#443B33]">
                 &ldquo;{lastJarvisResult.spokenResponse}&rdquo;
               </p>
 
@@ -423,7 +423,7 @@ export default function JarvisHUDModal() {
                   <button
                     key={i}
                     onClick={() => handleExecute(item.cmd)}
-                    className="flex items-center gap-3 p-3 rounded-2xl bg-[#191613] hover:bg-[#24201C] border border-[#2E2822] hover:border-[#D97746]/50 text-left transition group"
+                    className="flex items-center gap-3 p-3 rounded-2xl bg-[#25201C] hover:bg-[#2D2723] border border-[#3A332C] hover:border-[#D97746]/50 text-left transition group"
                   >
                     <div className={`p-2 rounded-xl bg-white/5 group-hover:scale-105 transition ${item.color}`}>
                       <Icon className="w-4 h-4" />
@@ -445,7 +445,7 @@ export default function JarvisHUDModal() {
         </div>
 
         {/* Input & Voice Controls Footer */}
-        <div className="p-4 bg-[#191613] border-t border-[#2E2822]">
+        <div className="p-4 bg-[#25201C] border-t border-[#3A332C]">
           <form
             onSubmit={(e) => {
               e.preventDefault();

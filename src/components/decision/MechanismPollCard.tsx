@@ -190,12 +190,12 @@ export default function MechanismPollCard() {
                 </div>
 
                 {poll.status === 'active' && (
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-2">
                     <button
                       onClick={() => submitQuadraticVote(poll.id, opt.id, -1)}
                       disabled={myVotes <= 0}
                       aria-label={`Decrease vote for ${opt.title}`}
-                      className="w-7 h-7 rounded-lg bg-white border border-[#EBE7DF] hover:bg-[#F4F1EA] hover:border-[#D6D0C5] hover:scale-110 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100 font-bold text-xs transition-all duration-150 shadow-2xs"
+                      className="w-9 h-9 sm:w-10 sm:h-10 min-w-[36px] min-h-[36px] rounded-lg bg-white border border-[#EBE7DF] hover:bg-[#F4F1EA] hover:border-[#D6D0C5] hover:scale-110 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100 font-bold text-sm transition-all duration-150 shadow-2xs flex items-center justify-center"
                     >
                       &minus;
                     </button>
@@ -203,7 +203,7 @@ export default function MechanismPollCard() {
                       onClick={() => submitQuadraticVote(poll.id, opt.id, 1)}
                       disabled={remainingCredits < nextCost}
                       aria-label={`Increase vote for ${opt.title}`}
-                      className="w-7 h-7 rounded-lg bg-[#D97746] hover:bg-[#C26333] hover:scale-110 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100 font-bold text-xs text-white transition-all duration-150 shadow-2xs"
+                      className="w-9 h-9 sm:w-10 sm:h-10 min-w-[36px] min-h-[36px] rounded-lg bg-[#D97746] hover:bg-[#C26333] hover:scale-110 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100 font-bold text-sm text-white transition-all duration-150 shadow-2xs flex items-center justify-center"
                     >
                       +
                     </button>

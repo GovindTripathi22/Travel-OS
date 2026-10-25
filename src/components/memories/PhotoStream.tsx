@@ -101,9 +101,11 @@ export default function PhotoStream() {
                     <img
                       src={mem.imageUrl}
                       alt={mem.caption}
+                      loading="lazy"
+                      decoding="async"
                       className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
                     />
-                    <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-xs text-white text-[11px] font-semibold px-2.5 py-1 rounded-full flex items-center gap-1">
+                    <div className="absolute top-3 left-3 bg-black/25 backdrop-blur-[2px] text-white text-[11px] font-semibold px-2.5 py-1 rounded-full flex items-center gap-1">
                       <MapPin className="w-3 h-3 text-orange-400" /> {mem.location}
                     </div>
                   </div>

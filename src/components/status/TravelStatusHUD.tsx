@@ -16,7 +16,7 @@ import {
   Luggage,
   Users
 } from 'lucide-react';
-import { LiveWeatherTelemetry, LiveForexRates } from '@/lib/api/liveDataService';
+import { LiveWeatherTelemetry, LiveForexRates, getClientLiveData } from '@/lib/api/liveDataService';
 import { useTrip } from '@/lib/state/TripContext';
 
 export default function TravelStatusHUD() {
@@ -31,9 +31,8 @@ export default function TravelStatusHUD() {
   useEffect(() => {
     async function loadTelemetry() {
       try {
-        const res = await fetch('/api/live-data');
-        if (res.ok) {
-          const data = await res.json();
+        const data = await getClientLiveData();
+        if (data) {
           if (data.weather) setWeather(data.weather);
           if (data.forex) setForex(data.forex);
           setIsLive(true);
@@ -48,56 +47,56 @@ export default function TravelStatusHUD() {
   return (
     <div className="space-y-6">
       {/* 1. Live Weather & Forex Real-Time Telemetry Banner */}
-      <div className="w-full bg-[#202632]/95 border border-slate-700/60 rounded-3xl p-5 shadow-lg backdrop-blur-md">
+      <div className="w-full bg-white border border-[#EBE6DE] rounded-3xl p-5 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-4">
           {/* Destination & Live Indicator */}
           <div className="flex items-center gap-3">
-            <div className="h-11 w-11 rounded-2xl bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-400 shrink-0">
+            <div className="h-11 w-11 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center text-[#D97746] shrink-0 shadow-2xs">
               <MapPin className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-bold text-white text-sm sm:text-base">
+                <span className="font-bold text-[#1C1917] text-sm sm:text-base">
                   {weather?.destination || tripInfo?.destination || 'Jaipur, Rajasthan'}
                 </span>
                 <span
                   className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1.5 ${
                     isLive
-                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                      : 'bg-slate-700/80 text-slate-300'
+                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-300'
+                      : 'bg-stone-100 text-stone-600 border border-stone-200'
                   }`}
                 >
-                  <Radio className={`w-3 h-3 ${isLive ? 'animate-pulse text-emerald-400' : ''}`} />
+                  <Radio className={`w-3 h-3 ${isLive ? 'animate-pulse text-emerald-600' : ''}`} />
                   {isLive ? 'LIVE DATA' : 'OFFLINE'}
                 </span>
               </div>
-              <p className="text-xs text-slate-300/80">
+              <p className="text-xs text-stone-500">
                 Expedition Coordinates: 35.0116° N, 135.7681° E • Updated {weather?.updatedAt || 'Recently'}
               </p>
             </div>
           </div>
 
           {/* Live Weather Widget */}
-          <div className="flex items-center gap-3 bg-[#171C25]/90 border border-slate-700/60 px-4 py-2.5 rounded-2xl">
-            <CloudSun className="w-5 h-5 text-amber-400 shrink-0" />
+          <div className="flex items-center gap-3 bg-[#FAF8F5] border border-amber-200/80 px-4 py-2.5 rounded-2xl shadow-2xs">
+            <CloudSun className="w-5 h-5 text-amber-500 shrink-0" />
             <div>
-              <div className="text-xs font-bold text-white">
+              <div className="text-xs font-bold text-[#1C1917]">
                 {weather ? `${weather.temperatureC}°C (${weather.condition})` : 'Loading Weather...'}
               </div>
-              <div className="text-[10px] text-slate-300">
+              <div className="text-[10px] text-stone-500">
                 Feels like {weather?.apparentTempC || '--'}°C • Wind: {weather?.windSpeedKmh || '--'} km/h • Humidity: {weather?.humidity || '--'}%
               </div>
             </div>
           </div>
 
           {/* Live Currency Forex Widget */}
-          <div className="flex items-center gap-3 bg-[#171C25]/90 border border-slate-700/60 px-4 py-2.5 rounded-2xl">
-            <ArrowRightLeft className="w-5 h-5 text-emerald-400 shrink-0" />
+          <div className="flex items-center gap-3 bg-[#FAF8F5] border border-emerald-200/80 px-4 py-2.5 rounded-2xl shadow-2xs">
+            <ArrowRightLeft className="w-5 h-5 text-emerald-600 shrink-0" />
             <div>
-              <div className="text-xs font-bold text-white">
+              <div className="text-xs font-bold text-[#1C1917]">
                 {forex ? `1 INR = ¥${(forex.rates?.JPY ?? (forex as any).JPY ?? 1.82)} JPY` : 'Loading Exchange Rate...'}
               </div>
-              <div className="text-[10px] text-slate-300">
+              <div className="text-[10px] text-stone-500">
                 Interbank Rates: $1 USD = ₹{(1 / (forex?.rates?.USD ?? (forex as any)?.USD ?? 0.012)).toFixed(1)} • €1 EUR = ₹{(1 / (forex?.rates?.EUR ?? (forex as any)?.EUR ?? 0.011)).toFixed(1)}
               </div>
             </div>
@@ -106,7 +105,7 @@ export default function TravelStatusHUD() {
       </div>
 
       {/* 2. Airport Rendezvous Master Card */}
-      <div className="bg-gradient-to-r from-[#222838] via-[#2D354B] to-[#222838] rounded-3xl p-6 text-white shadow-md border border-indigo-700/50">
+      <div className="bg-gradient-to-r from-[#344059] via-[#435273] to-[#344059] rounded-3xl p-6 text-white shadow-md border border-indigo-400/30">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 rounded-2xl bg-indigo-600/40 border border-indigo-400/30 flex items-center justify-center text-indigo-300 shrink-0">
@@ -158,6 +157,8 @@ export default function TravelStatusHUD() {
                   <img
                     src={u.avatar}
                     alt={u.name}
+                    loading="lazy"
+                    decoding="async"
                     className="w-10 h-10 rounded-full object-cover border border-slate-200"
                   />
                   <div>

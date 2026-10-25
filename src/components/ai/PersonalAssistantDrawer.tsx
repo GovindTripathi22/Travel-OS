@@ -127,10 +127,10 @@ export default function PersonalAssistantDrawer() {
   if (!isAssistantOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-black/40 backdrop-blur-xs flex justify-end">
+    <div className="fixed inset-0 z-50 overflow-hidden bg-black/20 backdrop-blur-[2px] flex justify-end">
       <div className="w-full max-w-lg bg-white h-full shadow-2xl flex flex-col border-l border-slate-200 animate-in slide-in-from-right duration-300">
         {/* Header */}
-        <div className="p-4 sm:p-5 border-b border-[#EBE6DE] bg-[#28231F] text-white flex items-center justify-between">
+        <div className="p-4 sm:p-5 border-b border-[#EBE6DE] bg-[#3A332C] text-white flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-[#D97746] flex items-center justify-center text-white shrink-0 shadow-2xs">
               <Bot className="w-4 h-4" />

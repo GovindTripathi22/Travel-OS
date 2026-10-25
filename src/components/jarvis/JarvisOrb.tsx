@@ -177,7 +177,7 @@ export default function JarvisOrb() {
       )}
 
       {/* 3. Main Floating Sahayak Luxury Capsule Dock */}
-      <div className="flex items-center gap-2 bg-[#2B2622]/95 hover:bg-[#342E29] border border-white/15 hover:border-[#D97746]/50 backdrop-blur-xl px-2.5 py-1.5 rounded-full shadow-[0_10px_35px_rgba(28,25,23,0.35)] transition-all duration-300">
+      <div className="flex items-center gap-1.5 sm:gap-2 bg-[#38322B]/90 hover:bg-[#433B32] border border-white/20 hover:border-[#D97746]/50 backdrop-blur-xl px-2 sm:px-2.5 py-1.5 rounded-full shadow-[0_10px_35px_rgba(28,25,23,0.30)] transition-all duration-300 max-w-[calc(100vw-24px)] overflow-x-auto scrollbar-none">
         {/* Master Power & Brand Capsule */}
         <button
           type="button"

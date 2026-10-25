@@ -38,10 +38,10 @@ Travelers:
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-black/50 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200">
-      <div className="w-full max-w-lg bg-[#241A1A] border border-red-800/40 rounded-3xl shadow-2xl text-white flex flex-col max-h-[90vh] overflow-hidden">
+    <div className="fixed inset-0 z-50 overflow-hidden bg-black/20 backdrop-blur-[2px] flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200">
+      <div className="w-full max-w-lg bg-[#382828] border border-red-700/40 rounded-3xl shadow-2xl text-white flex flex-col max-h-[90vh] overflow-hidden">
         {/* Header */}
-        <div className="p-4 sm:p-5 bg-red-950/70 border-b border-red-800/40 flex items-center justify-between">
+        <div className="p-4 sm:p-5 bg-red-900/60 border-b border-red-700/40 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-red-600 flex items-center justify-center text-white shadow-lg shadow-red-600/30">
               <ShieldAlert className="w-5 h-5 animate-pulse" />

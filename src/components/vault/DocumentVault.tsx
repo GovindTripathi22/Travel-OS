@@ -255,7 +255,7 @@ export default function DocumentVault() {
 
       {/* Document Quick View / QR Modal */}
       {selectedDoc && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 bg-black/20 backdrop-blur-[2px] flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl max-w-sm w-full p-6 text-center shadow-2xl relative border border-[#EBE7DF] animate-in zoom-in-95 duration-150">
             <button
               onClick={() => setSelectedDoc(null)}

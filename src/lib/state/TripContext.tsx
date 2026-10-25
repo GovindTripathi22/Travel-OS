@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useMemo, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import {
   User,
   ItineraryItem,
@@ -437,7 +437,7 @@ export function TripProvider({ children }: { children: React.ReactNode }) {
   };
 
   // Weather Adaptation: Swaps outdoor stops to verified indoor fallbacks
-  const adaptWeatherIndoor = (dayTarget?: number) => {
+  const adaptWeatherIndoor = useCallback((dayTarget?: number) => {
     setItinerary((prev) =>
       prev.map((item) => {
         if ((!dayTarget || item.day === dayTarget) && item.isOutdoor && item.indoorFallback) {
@@ -451,10 +451,10 @@ export function TripProvider({ children }: { children: React.ReactNode }) {
         return item;
       })
     );
-  };
+  }, []);
 
   // 1-Click Auto-Heal: Resolves temporal overlaps and adds 15m safety buffers between consecutive stops
-  const autoHealSchedule = (dayTarget?: number) => {
+  const autoHealSchedule = useCallback((dayTarget?: number) => {
     setItinerary((prev) => {
       const days = Array.from(new Set(prev.map((i) => i.day)));
       let updated = [...prev];
@@ -490,17 +490,19 @@ export function TripProvider({ children }: { children: React.ReactNode }) {
 
       return updated;
     });
-  };
+  }, []);
 
-  const triggerJarvisVoice = () => {
+  const triggerJarvisVoice = useCallback(() => {
     setVoiceTriggerCount((prev) => prev + 1);
-  };
+  }, []);
 
   // Synchronize current user with updated users list (e.g. voice credits or battery)
   useEffect(() => {
     const fresh = users.find((u) => u.id === currentUser.id);
-    if (fresh) setCurrentUser(fresh);
-  }, [users]);
+    if (fresh && (fresh.voiceCredits !== currentUser.voiceCredits || fresh.batteryLevel !== currentUser.batteryLevel || fresh.name !== currentUser.name || fresh.avatar !== currentUser.avatar)) {
+      setCurrentUser(fresh);
+    }
+  }, [users, currentUser]);
 
   // Connect speech state listener
   useEffect(() => {
@@ -540,17 +542,17 @@ export function TripProvider({ children }: { children: React.ReactNode }) {
   }, [netBalances, users]);
 
   // Speech synthesis using natural British J.A.R.V.I.S. neural voice cadence
-  const speakText = (text: string) => {
+  const speakText = useCallback((text: string) => {
     speakWithJarvisVoice(text, 'en-GB', true);
-  };
+  }, []);
 
-  const stopSpeaking = () => {
+  const stopSpeaking = useCallback(() => {
     stopJarvisSpeech();
     setIsSpeaking(false);
-  };
+  }, []);
 
   // Resolve Conflict Handler
-  const resolveConflict = (conflictId: string) => {
+  const resolveConflict = useCallback((conflictId: string) => {
     setResolvedConflictIds((prev) => new Set([...Array.from(prev), conflictId]));
 
     const conflict = conflicts.find((c) => c.id === conflictId);
@@ -585,7 +587,7 @@ export function TripProvider({ children }: { children: React.ReactNode }) {
         )
       );
     }
-  };
+  }, [conflicts]);
 
   // Quadratic Vote Submitter
   const submitQuadraticVote = (pollId: string, optionId: string, delta: number): boolean => {
@@ -1391,94 +1393,129 @@ export function TripProvider({ children }: { children: React.ReactNode }) {
     return res;
   };
 
-  return (
-    <TripContext.Provider
-      value={{
-        currentUser,
-        setCurrentUser,
-        users,
-        tripInfo,
-        setTripInfo,
-        isDemoTrip,
-        loadDemoTrip,
-        createCustomTrip,
-        addCompanion,
-        addPoll,
-        addDocument,
-        isSetupModalOpen,
-        setIsSetupModalOpen,
-        isAddCompanionOpen,
-        setIsAddCompanionOpen,
-        isAddStopOpen,
-        setIsAddStopOpen,
-        isAddPollOpen,
-        setIsAddPollOpen,
-        isUploadDocOpen,
-        setIsUploadDocOpen,
-        itinerary,
-        polls,
-        expenses,
-        settlements,
-        netBalances,
-        travelStatus,
-        documents,
-        memories,
-        conflicts,
-        viewMode,
-        setViewMode,
-        isAssistantOpen,
-        setIsAssistantOpen,
-        isSpeaking,
-        isJarvisSpeaking: isSpeaking,
-        speakText,
-        stopSpeaking,
-        stopJarvisVoiceNow: stopSpeaking,
-        isJarvisOpen,
-        setIsJarvisOpen,
-        isSosModalOpen,
-        setIsSosModalOpen,
-        lastJarvisResult,
-        executeJarvisCommand,
-        executeAutonomousJarvis: executeJarvisCommand,
-        resolveConflict,
-        submitQuadraticVote,
-        finalizePoll,
-        addExpense,
-        updateTravelStatus,
-        updateWellbeing,
-        addItineraryRestBuffer,
-        weather,
-        toggleWeather,
-        currency,
-        setCurrency,
-        packingList,
-        togglePackingItem,
-        autoHealSchedule,
-        adaptWeatherIndoor,
-        toggleKidQuest,
-        nextPayerInfo,
-        activeTab,
-        setActiveTab,
-        vaultSubTab,
-        setVaultSubTab,
-        voiceTriggerCount,
-        triggerJarvisVoice,
-        jarvisControlMode,
-        setJarvisControlMode,
-        jarvisVoiceState,
-        setJarvisVoiceState,
-        isHUDModalOpen,
-        setIsHUDModalOpen,
-        resolveAllConflicts,
-        settleAllDebts,
-        resolvePollAndCommit,
-        addItineraryItem,
-        updateCurrentUser,
-        personaMode,
-        setPersonaMode,
-      }}
-    >
+  const contextValue = useMemo<TripContextType>(() => ({
+    currentUser,
+    setCurrentUser,
+    users,
+    tripInfo,
+    setTripInfo,
+    isDemoTrip,
+    loadDemoTrip,
+    createCustomTrip,
+    addCompanion,
+    addPoll,
+    addDocument,
+    isSetupModalOpen,
+    setIsSetupModalOpen,
+    isAddCompanionOpen,
+    setIsAddCompanionOpen,
+    isAddStopOpen,
+    setIsAddStopOpen,
+    isAddPollOpen,
+    setIsAddPollOpen,
+    isUploadDocOpen,
+    setIsUploadDocOpen,
+    itinerary,
+    polls,
+    expenses,
+    settlements,
+    netBalances,
+    travelStatus,
+    documents,
+    memories,
+    conflicts,
+    viewMode,
+    setViewMode,
+    isAssistantOpen,
+    setIsAssistantOpen,
+    isSpeaking,
+    isJarvisSpeaking: isSpeaking,
+    speakText,
+    stopSpeaking,
+    stopJarvisVoiceNow: stopSpeaking,
+    isJarvisOpen,
+    setIsJarvisOpen,
+    isSosModalOpen,
+    setIsSosModalOpen,
+    lastJarvisResult,
+    executeJarvisCommand,
+    executeAutonomousJarvis: executeJarvisCommand,
+    resolveConflict,
+    submitQuadraticVote,
+    finalizePoll,
+    addExpense,
+    updateTravelStatus,
+    updateWellbeing,
+    addItineraryRestBuffer,
+    weather,
+    toggleWeather,
+    currency,
+    setCurrency,
+    packingList,
+    togglePackingItem,
+    autoHealSchedule,
+    adaptWeatherIndoor,
+    toggleKidQuest,
+    nextPayerInfo,
+    activeTab,
+    setActiveTab,
+    vaultSubTab,
+    setVaultSubTab,
+    voiceTriggerCount,
+    triggerJarvisVoice,
+    jarvisControlMode,
+    setJarvisControlMode,
+    jarvisVoiceState,
+    setJarvisVoiceState,
+    isHUDModalOpen,
+    setIsHUDModalOpen,
+    resolveAllConflicts,
+    settleAllDebts,
+    resolvePollAndCommit,
+    addItineraryItem,
+    updateCurrentUser,
+    personaMode,
+    setPersonaMode,
+  }), [
+    currentUser,
+    users,
+    tripInfo,
+    isDemoTrip,
+    isSetupModalOpen,
+    isAddCompanionOpen,
+    isAddStopOpen,
+    isAddPollOpen,
+    isUploadDocOpen,
+    itinerary,
+    polls,
+    expenses,
+    settlements,
+    netBalances,
+    travelStatus,
+    documents,
+    memories,
+    conflicts,
+    viewMode,
+    isAssistantOpen,
+    isSpeaking,
+    isJarvisOpen,
+    isSosModalOpen,
+    lastJarvisResult,
+    weather,
+    currency,
+    packingList,
+    nextPayerInfo,
+    activeTab,
+    vaultSubTab,
+    voiceTriggerCount,
+    jarvisControlMode,
+    jarvisVoiceState,
+    isHUDModalOpen,
+    personaMode,
+  ]);
 
+  return (
+    <TripContext.Provider value={contextValue}>
       {children}
     </TripContext.Provider>
   );

@@ -87,7 +87,7 @@ export default function StandardModeView() {
             <span className="chip-glass">
               <MapPin className="w-3.5 h-3.5" /> {tripInfo.destination || 'Jaipur, Rajasthan'} &bull; Day {tripInfo.currentDay} of {tripInfo.totalDays}
             </span>
-            <h1 className="font-serif-title text-3xl sm:text-5xl font-bold mt-2.5 leading-[1.08] tracking-tight">
+            <h1 className="font-serif-title text-2xl sm:text-4xl md:text-5xl font-bold mt-2.5 leading-[1.08] tracking-tight">
               {tripInfo.title}
             </h1>
             <p className="mt-2 text-sm text-white/85">
@@ -102,6 +102,8 @@ export default function StandardModeView() {
                   key={u.id}
                   src={u.avatar}
                   alt={u.name}
+                  loading="lazy"
+                  decoding="async"
                   title={`${u.name} (${u.role})`}
                   className="w-9 h-9 rounded-full object-cover border-2 border-white/90 hover:scale-110 hover:z-10 transition-transform shadow-xs"
                 />
@@ -160,30 +162,30 @@ export default function StandardModeView() {
       )}
 
       {/* 3. Ultra-Simple 3-Pillar Navigator */}
-      <div className="flex justify-center">
+      <div className="flex justify-center max-w-full overflow-hidden">
         <nav aria-label="Trip Main Sections" className="nav-pillar-bar">
           <button
             onClick={() => setActiveTab('timeline')}
             className={`nav-pillar-item ${activeTab === 'timeline' ? 'is-active' : ''}`}
           >
-            <Calendar className="w-4 h-4" />
-            <span>Day Plan &amp; Timeline</span>
+            <Calendar className="w-4 h-4 shrink-0" />
+            <span><span className="hidden sm:inline">Day Plan &amp; </span>Timeline</span>
           </button>
 
           <button
             onClick={() => setActiveTab('decisions')}
             className={`nav-pillar-item ${activeTab === 'decisions' ? 'is-active' : ''}`}
           >
-            <Vote className="w-4 h-4" />
-            <span>Group Decisions</span>
+            <Vote className="w-4 h-4 shrink-0" />
+            <span><span className="hidden sm:inline">Group </span>Decisions</span>
           </button>
 
           <button
             onClick={() => setActiveTab('expenses')}
             className={`nav-pillar-item ${activeTab === 'expenses' ? 'is-active' : ''}`}
           >
-            <CreditCard className="w-4 h-4" />
-            <span>Expenses &amp; Splits</span>
+            <CreditCard className="w-4 h-4 shrink-0" />
+            <span>Expenses<span className="hidden sm:inline"> &amp; Splits</span></span>
           </button>
         </nav>
       </div>

@@ -87,7 +87,7 @@ export default function ExpenseLedger() {
 
       {/* Smart Fairness Recommender: Who Pays Next? */}
       {nextPayerInfo && (
-        <div className="bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-rose-500/10 border border-orange-200/80 rounded-2xl p-4 flex items-center justify-between gap-4 shadow-2xs">
+        <div className="bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-rose-500/10 border border-orange-200/80 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center shrink-0">
               <Scale className="w-5 h-5" />
@@ -112,7 +112,7 @@ export default function ExpenseLedger() {
               setPayerId(nextPayerInfo.nextPayer.id);
               setShowAddModal(true);
             }}
-            className="px-3.5 py-1.5 bg-white border border-orange-200 hover:border-orange-400 text-orange-700 hover:text-orange-800 rounded-xl text-xs font-bold shadow-2xs hover:shadow-xs transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 shrink-0"
+            className="px-3.5 py-1.5 bg-white border border-orange-200 hover:border-orange-400 text-orange-700 hover:text-orange-800 rounded-xl text-xs font-bold shadow-2xs hover:shadow-xs transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 shrink-0 self-start sm:self-auto min-h-[38px] flex items-center justify-center"
           >
             Assign Next
           </button>
@@ -121,14 +121,14 @@ export default function ExpenseLedger() {
 
       {/* Settlements Directed Transfer List */}
       <div className="bg-white border border-[#EBE7DF] rounded-2xl p-5 shadow-2xs space-y-3">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <h3 className="text-sm font-bold text-[#1C1917]">
             Simplified Debt Settlements ({settlements.length} transfers)
           </h3>
           {settlements.length > 0 && settleAllDebts && (
             <button
               onClick={settleAllDebts}
-              className="px-3 py-1 bg-[#2D2723] hover:bg-[#D97746] text-white rounded-xl text-xs font-semibold shadow-2xs transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-95"
+              className="px-3 py-1.5 bg-[#2D2723] hover:bg-[#D97746] text-white rounded-xl text-xs font-semibold shadow-2xs transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 min-h-[36px] flex items-center justify-center"
             >
               1-Click Settle All
             </button>
@@ -141,7 +141,7 @@ export default function ExpenseLedger() {
             const toUser = users.find((u) => u.id === s.toUserId);
 
             return (
-              <div key={idx} className="py-2.5 flex items-center justify-between text-xs">
+              <div key={idx} className="py-2.5 flex flex-wrap items-center justify-between gap-2 text-xs">
                 <div className="flex items-center gap-2">
                   <img
                     src={fromUser?.avatar}
@@ -204,7 +204,7 @@ export default function ExpenseLedger() {
 
       {/* Add Expense Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-black/20 backdrop-blur-[2px] flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-sm w-full p-5 shadow-2xl border border-[#EBE7DF] relative">
             <button
               onClick={() => setShowAddModal(false)}

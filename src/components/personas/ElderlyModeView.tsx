@@ -43,24 +43,25 @@ export default function ElderlyModeView() {
   };
 
   return (
-    <div className="min-h-screen bg-[#181E26] text-slate-100 p-4 sm:p-6 lg:p-8 elderly-theme max-w-4xl mx-auto">
+    <div className="min-h-screen bg-[#FAF7F2] text-[#1C1917] p-4 sm:p-6 lg:p-8 elderly-theme max-w-4xl mx-auto">
       {/* Top Welcome Bar */}
-      <div className="bg-[#232A36] border-2 border-amber-500/40 rounded-3xl p-6 mb-6 shadow-xl">
+      <div className="bg-white border-2 border-amber-400/80 rounded-3xl p-6 mb-6 shadow-sm">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <img
               src={currentUser.avatar}
               alt={currentUser.name}
-              className="w-20 h-20 rounded-2xl object-cover border-2 border-amber-400"
+              decoding="async"
+              className="w-20 h-20 rounded-2xl object-cover border-2 border-amber-500 shadow-xs"
             />
             <div>
-              <span className="text-amber-400 text-sm font-semibold tracking-wider uppercase flex items-center gap-1.5">
-                <Heart className="w-4 h-4 fill-amber-400" /> Comfort & Care Mode
+              <span className="text-[#D97746] text-sm font-bold tracking-wider uppercase flex items-center gap-1.5">
+                <Heart className="w-4 h-4 fill-amber-500 text-amber-500" /> Comfort & Care Mode
               </span>
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-white mt-0.5">
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-[#1C1917] mt-0.5">
                 Namaste, {seniorFirstName}
               </h1>
-              <p className="text-slate-300 text-base mt-1">
+              <p className="text-stone-600 text-base mt-1">
                 Day {tripInfo?.currentDay || 1} in {dest} &bull; Everything is taken care of
               </p>
             </div>
@@ -69,7 +70,7 @@ export default function ElderlyModeView() {
           {/* Quick Voice Briefing Button */}
           <button
             onClick={handleAudioBriefing}
-            className={`w-full sm:w-auto px-6 py-4 rounded-2xl font-bold flex items-center justify-center gap-3 text-lg transition-all shadow-lg active:scale-95 ${
+            className={`w-full sm:w-auto px-6 py-4 rounded-2xl font-bold flex items-center justify-center gap-3 text-lg transition-all shadow-md active:scale-95 ${
               isSpeaking
                 ? 'bg-rose-600 hover:bg-rose-700 text-white animate-pulse'
                 : 'bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold'
@@ -92,68 +93,68 @@ export default function ElderlyModeView() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
         <a
           href={`tel:${planner.phone}`}
-          className="bg-emerald-950/70 border-2 border-emerald-500/50 hover:border-emerald-400 p-5 rounded-2xl flex items-center gap-4 transition active:scale-95"
+          className="bg-emerald-50 border-2 border-emerald-400 hover:border-emerald-500 p-5 rounded-2xl flex items-center gap-4 transition active:scale-95 shadow-2xs"
         >
           <div className="w-14 h-14 rounded-2xl bg-emerald-600 flex items-center justify-center text-white shrink-0 shadow-md">
             <PhoneCall className="w-7 h-7" />
           </div>
           <div>
-            <span className="text-xs font-semibold text-emerald-400 uppercase tracking-wide">
+            <span className="text-xs font-bold text-emerald-800 uppercase tracking-wide">
               One-Tap Direct Call
             </span>
-            <h3 className="text-xl font-bold text-white">Call {plannerFirstName}</h3>
-            <p className="text-sm text-emerald-200">{planner.phone}</p>
+            <h3 className="text-xl font-bold text-emerald-950">Call {plannerFirstName}</h3>
+            <p className="text-sm text-emerald-700 font-medium">{planner.phone}</p>
           </div>
         </a>
 
-        <div className="bg-[#232A36] border-2 border-slate-700/80 p-5 rounded-2xl flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-amber-600/30 border border-amber-500/40 flex items-center justify-center text-amber-400 shrink-0">
+        <div className="bg-white border-2 border-stone-200 p-5 rounded-2xl flex items-center gap-4 shadow-2xs">
+          <div className="w-14 h-14 rounded-2xl bg-amber-100 border border-amber-300 flex items-center justify-center text-amber-700 shrink-0">
             <MapPin className="w-7 h-7" />
           </div>
           <div>
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
+            <span className="text-xs font-bold text-stone-500 uppercase tracking-wide">
               Hotel & Room Details
             </span>
-            <h3 className="text-lg font-bold text-white">Rambagh Palace</h3>
-            <p className="text-sm text-amber-300 font-medium">Suite 104 &bull; Ground Floor (No Stairs)</p>
+            <h3 className="text-lg font-bold text-[#1C1917]">Rambagh Palace</h3>
+            <p className="text-sm text-amber-800 font-semibold">Suite 104 &bull; Ground Floor (No Stairs)</p>
           </div>
         </div>
       </div>
 
       {/* Medication Alarms Card */}
-      <div className="bg-[#232A36] border-2 border-slate-700/80 rounded-3xl p-6 mb-6">
+      <div className="bg-white border-2 border-stone-200 rounded-3xl p-6 mb-6 shadow-sm">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-purple-900/60 border border-purple-500/40 flex items-center justify-center text-purple-300">
+            <div className="w-10 h-10 rounded-xl bg-purple-100 border border-purple-300 flex items-center justify-center text-purple-700">
               <Pill className="w-6 h-6" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-white">Daily Medication Reminders</h2>
-              <p className="text-sm text-slate-400">Coordinated with today's meal schedule</p>
+              <h2 className="text-xl font-bold text-[#1C1917]">Daily Medication Reminders</h2>
+              <p className="text-sm text-stone-600">Coordinated with today's meal schedule</p>
             </div>
           </div>
-          <span className="text-xs bg-purple-950 text-purple-300 border border-purple-800 px-3 py-1 rounded-full font-semibold">
+          <span className="text-xs bg-purple-100 text-purple-800 border border-purple-300 px-3 py-1 rounded-full font-bold">
             Tracked by Rohan
           </span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div className="bg-[#1C222B] border border-emerald-500/40 p-4 rounded-2xl flex items-center justify-between">
+          <div className="bg-stone-50 border border-emerald-300 p-4 rounded-2xl flex items-center justify-between">
             <div>
-              <span className="text-xs text-emerald-400 font-semibold">08:00 AM &bull; With Breakfast</span>
-              <p className="text-base font-bold text-white">Morning BP & Sugar Tablet</p>
+              <span className="text-xs text-emerald-700 font-semibold">08:00 AM &bull; With Breakfast</span>
+              <p className="text-base font-bold text-[#1C1917]">Morning BP & Sugar Tablet</p>
             </div>
-            <span className="px-3 py-1 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-600 text-xs font-bold">
+            <span className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold">
               ✓ Taken
             </span>
           </div>
 
-          <div className="bg-[#1C222B] border border-amber-500/40 p-4 rounded-2xl flex items-center justify-between">
+          <div className="bg-stone-50 border border-amber-300 p-4 rounded-2xl flex items-center justify-between">
             <div>
-              <span className="text-xs text-amber-400 font-semibold">08:00 PM (20:00) &bull; Evening Tea/Dinner</span>
-              <p className="text-base font-bold text-white">Evening BP Tablet</p>
+              <span className="text-xs text-amber-700 font-semibold">08:00 PM (20:00) &bull; Evening Tea/Dinner</span>
+              <p className="text-base font-bold text-[#1C1917]">Evening BP Tablet</p>
             </div>
-            <span className="px-3 py-1 rounded-full bg-amber-950 text-amber-300 border border-amber-600 text-xs font-bold">
+            <span className="px-3 py-1 rounded-full bg-amber-100 text-amber-800 border border-amber-300 text-xs font-bold">
               ⏰ Scheduled
             </span>
           </div>
@@ -161,66 +162,66 @@ export default function ElderlyModeView() {
       </div>
 
       {/* Today's Schedule - Large Glanceable Format */}
-      <div className="bg-[#232A36] border-2 border-slate-700/80 rounded-3xl p-6 mb-6">
+      <div className="bg-white border-2 border-stone-200 rounded-3xl p-6 mb-6 shadow-sm">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <Clock className="w-6 h-6 text-amber-400" />
-            <h2 className="text-2xl font-bold text-white">Today's Schedule</h2>
+            <Clock className="w-6 h-6 text-amber-600" />
+            <h2 className="text-2xl font-bold text-[#1C1917]">Today's Schedule</h2>
           </div>
-          <span className="text-sm text-slate-400 font-medium">Gentle Pace</span>
+          <span className="text-sm text-stone-600 font-semibold">Gentle Pace</span>
         </div>
 
         <div className="space-y-4">
           {/* Item 1 */}
-          <div className="bg-[#1C222B] border-2 border-slate-700/60 p-5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="bg-stone-50 border border-stone-200 p-5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <span className="text-amber-400 font-extrabold text-lg">01:00 PM</span>
-                <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-800 font-semibold">
+                <span className="text-[#D97746] font-extrabold text-lg">01:00 PM</span>
+                <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold">
                   Zero Stairs &bull; Ground Floor
                 </span>
               </div>
-              <h3 className="text-xl font-bold text-white">Lunch at Surya Mahal</h3>
-              <p className="text-base text-slate-300">
+              <h3 className="text-xl font-bold text-[#1C1917]">Lunch at Surya Mahal</h3>
+              <p className="text-base text-stone-600">
                 Low-salt authentic vegetarian thali pre-ordered. Driver drops directly at verandah doors.
               </p>
             </div>
-            <span className="shrink-0 text-emerald-400 text-sm font-semibold flex items-center gap-1">
+            <span className="shrink-0 text-emerald-700 text-sm font-bold flex items-center gap-1">
               <ShieldCheck className="w-5 h-5" /> Food Approved
             </span>
           </div>
 
           {/* Rest Window */}
-          <div className="bg-amber-950/25 border-2 border-amber-600/40 p-5 rounded-2xl flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-amber-600/30 flex items-center justify-center text-amber-300 shrink-0">
+          <div className="bg-amber-50 border-2 border-amber-300/80 p-5 rounded-2xl flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-amber-200/80 flex items-center justify-center text-amber-800 shrink-0">
               <Clock className="w-6 h-6" />
             </div>
             <div>
-              <span className="text-xs text-amber-400 font-bold uppercase tracking-wider">
+              <span className="text-xs text-amber-800 font-bold uppercase tracking-wider">
                 Rest & Recovery Window
               </span>
-              <h3 className="text-lg font-bold text-white">01:30 PM &ndash; 03:30 PM: Hotel Afternoon Rest</h3>
-              <p className="text-sm text-amber-200/80">
+              <h3 className="text-lg font-bold text-amber-950">01:30 PM &ndash; 03:30 PM: Hotel Afternoon Rest</h3>
+              <p className="text-sm text-amber-800/90 font-medium">
                 Quiet time in air-conditioned room. No activities scheduled for you.
               </p>
             </div>
           </div>
 
           {/* Item 2 */}
-          <div className="bg-[#1C222B] border-2 border-slate-700/60 p-5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="bg-stone-50 border border-stone-200 p-5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <span className="text-amber-400 font-extrabold text-lg">07:30 PM</span>
-                <span className="text-xs px-2.5 py-0.5 rounded-full bg-blue-950 text-blue-300 border border-blue-800 font-semibold">
+                <span className="text-[#D97746] font-extrabold text-lg">07:30 PM</span>
+                <span className="text-xs px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 border border-blue-300 font-bold">
                   Chokhi Dhani Cultural Show
                 </span>
               </div>
-              <h3 className="text-xl font-bold text-white">Folk Dance & Puppet Show</h3>
-              <p className="text-base text-slate-300">
+              <h3 className="text-xl font-bold text-[#1C1917]">Folk Dance & Puppet Show</h3>
+              <p className="text-base text-stone-600">
                 Front-row cushioned seating reserved for you so Kabir can watch the puppets with you.
               </p>
             </div>
-            <span className="shrink-0 text-amber-400 text-sm font-semibold flex items-center gap-1">
+            <span className="shrink-0 text-amber-700 text-sm font-bold flex items-center gap-1">
               <ShieldCheck className="w-5 h-5" /> Armchair Reserved
             </span>
           </div>
@@ -228,15 +229,15 @@ export default function ElderlyModeView() {
       </div>
 
       {/* Voice Assistant Trigger */}
-      <div className="bg-gradient-to-r from-amber-600/20 via-orange-600/20 to-amber-600/20 border-2 border-amber-500/50 rounded-3xl p-6 text-center">
-        <Sparkles className="w-8 h-8 text-amber-400 mx-auto mb-2" />
-        <h3 className="text-2xl font-bold text-white">Have Any Question?</h3>
-        <p className="text-slate-300 text-base max-w-md mx-auto mt-1 mb-5">
+      <div className="bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 border-2 border-amber-300 rounded-3xl p-6 text-center shadow-sm">
+        <Sparkles className="w-8 h-8 text-[#D97746] mx-auto mb-2" />
+        <h3 className="text-2xl font-bold text-[#1C1917]">Have Any Question?</h3>
+        <p className="text-stone-600 text-base max-w-md mx-auto mt-1 mb-5">
           Ask your personal assistant about food, stairs, medicines, or timing anytime.
         </p>
         <button
           onClick={() => setIsAssistantOpen(true)}
-          className="w-full sm:w-auto px-8 py-4 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xl rounded-2xl shadow-xl transition-all active:scale-95 inline-flex items-center justify-center gap-3"
+          className="w-full sm:w-auto px-8 py-4 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xl rounded-2xl shadow-md transition-all active:scale-95 inline-flex items-center justify-center gap-3"
         >
           <Sparkles className="w-6 h-6 text-slate-950" />
           Talk with My Assistant

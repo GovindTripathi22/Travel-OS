@@ -52,6 +52,7 @@ export default function KidModeView() {
               <img
                 src={currentUser.avatar}
                 alt={currentUser.name}
+                decoding="async"
                 className="w-20 h-20 rounded-full object-cover border-4 border-white shadow-md"
               />
               <span className="absolute -bottom-2 -right-1 text-2xl">🦁</span>
@@ -173,7 +174,7 @@ export default function KidModeView() {
 
       {/* Emergency Beacon Modal */}
       {showLostModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-black/20 backdrop-blur-[2px] flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-md w-full p-6 text-center border-4 border-rose-500 shadow-2xl relative">
             <button
               onClick={() => setShowLostModal(false)}

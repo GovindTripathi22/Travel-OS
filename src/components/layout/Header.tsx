@@ -20,6 +20,7 @@ import {
   X,
 } from 'lucide-react';
 import { createSvgAvatar, AVATAR_PRESETS } from '@/lib/state/mockData';
+import { getClientLiveData } from '@/lib/api/liveDataService';
 
 export default function Header() {
   const {
@@ -63,14 +64,14 @@ export default function Header() {
   const [liveForex, setLiveForex] = useState<any>(null);
 
   useEffect(() => {
-    fetch('/api/live-data')
-      .then((r) => r.json())
+    getClientLiveData()
       .then((d) => {
-        if (d.weather) setLiveWeather(d.weather);
-        if (d.forex) setLiveForex(d.forex);
+        if (d?.weather) setLiveWeather(d.weather);
+        if (d?.forex) setLiveForex(d.forex);
       })
       .catch(() => {});
   }, []);
+
 
   const safeAvatarSrc = (u: { name: string; avatar?: string }) => {
     if (u.avatar && u.avatar.startsWith('data:image/svg+xml')) return u.avatar;
@@ -113,7 +114,7 @@ export default function Header() {
   }, []);
 
   return (
-    <header className="sticky top-0 z-40 bg-[#FAF8F5]/90 backdrop-blur-md border-b border-[#EBE6DE] transition-all">
+    <header className="sticky top-0 z-40 bg-[#FCFAF6]/90 backdrop-blur-md border-b border-[#EBE6DE] transition-colors">
       <div className="max-w-5xl mx-auto px-4 sm:px-6">
         <div className="flex items-center justify-between h-16 gap-3">
           {/* 1. Brand Logo & Clean Monograph */}
@@ -121,13 +122,14 @@ export default function Header() {
             <img
               src="/logo.jpg"
               alt="Sahyatri Logo"
+              decoding="async"
               className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl object-contain shadow-2xs border border-[#EBE6DE] transition-transform duration-300 hover:scale-105"
             />
             <div className="flex items-baseline gap-2">
               <span className="font-serif-title text-xl font-bold tracking-tight text-[#1C1917]">
                 Sahyatri
               </span>
-              <span className="text-[10px] font-bold tracking-wider text-[#D97746] uppercase px-2 py-0.5 rounded-full bg-[#F5F2EB] border border-[#EBE6DE]">
+              <span className="text-[10px] font-bold tracking-wider text-[#D97746] uppercase px-2 py-0.5 rounded-full bg-[#F5F2EB] border border-[#EBE6DE] hidden sm:inline-flex">
                 AI Travel OS
               </span>
             </div>
@@ -441,7 +443,7 @@ export default function Header() {
 
       {/* Profile & Avatar Customizer Modal */}
       {isProfileOpen && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-black/20 backdrop-blur-[2px] flex items-center justify-center p-4">
           <form
             onSubmit={(e) => {
               e.preventDefault();
