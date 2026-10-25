@@ -128,7 +128,7 @@ export default function TripSetupModal() {
 
   return (
     <div
-      className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 overflow-y-auto bg-black/40 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200"
       role="dialog"
       aria-modal="true"
       aria-labelledby="trip-setup-title"
@@ -373,7 +373,7 @@ export default function TripSetupModal() {
                       type="button"
                       onClick={handleAddCompanionDraft}
                       disabled={!newCompName.trim()}
-                      className="px-3 py-1.5 bg-[#1C1917] hover:bg-[#D97746] disabled:opacity-40 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 focus-visible:ring-2 focus-visible:ring-[#D97746]"
+                      className="px-3 py-1.5 bg-[#2D2723] hover:bg-[#D97746] disabled:opacity-40 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 focus-visible:ring-2 focus-visible:ring-[#D97746]"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       <span>Add to List</span>
@@ -430,7 +430,7 @@ export default function TripSetupModal() {
               <button
                 type="button"
                 onClick={handleLoadDemo}
-                className="w-full py-3 bg-[#1C1917] hover:bg-[#292524] text-white font-bold text-sm rounded-xl shadow-xs transition active:scale-98 flex items-center justify-center gap-2 focus-visible:ring-2 focus-visible:ring-[#D97746] focus-visible:outline-none"
+                className="w-full py-3 bg-[#2D2723] hover:bg-[#3D352F] text-white font-bold text-sm rounded-xl shadow-xs transition active:scale-98 flex items-center justify-center gap-2 focus-visible:ring-2 focus-visible:ring-[#D97746] focus-visible:outline-none"
               >
                 <Sparkles className="w-4 h-4 text-[#D97746]" />
                 <span>Load Rajasthan Expedition Demo Data</span>

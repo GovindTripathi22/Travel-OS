@@ -48,7 +48,7 @@ export default function TravelStatusHUD() {
   return (
     <div className="space-y-6">
       {/* 1. Live Weather & Forex Real-Time Telemetry Banner */}
-      <div className="w-full bg-slate-900/95 border border-slate-800 rounded-3xl p-5 shadow-xl backdrop-blur-md">
+      <div className="w-full bg-[#202632]/95 border border-slate-700/60 rounded-3xl p-5 shadow-lg backdrop-blur-md">
         <div className="flex flex-wrap items-center justify-between gap-4">
           {/* Destination & Live Indicator */}
           <div className="flex items-center gap-3">
@@ -64,40 +64,40 @@ export default function TravelStatusHUD() {
                   className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1.5 ${
                     isLive
                       ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                      : 'bg-slate-800 text-slate-400'
+                      : 'bg-slate-700/80 text-slate-300'
                   }`}
                 >
                   <Radio className={`w-3 h-3 ${isLive ? 'animate-pulse text-emerald-400' : ''}`} />
                   {isLive ? 'LIVE DATA' : 'OFFLINE'}
                 </span>
               </div>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-300/80">
                 Expedition Coordinates: 35.0116° N, 135.7681° E • Updated {weather?.updatedAt || 'Recently'}
               </p>
             </div>
           </div>
 
           {/* Live Weather Widget */}
-          <div className="flex items-center gap-3 bg-slate-950/70 border border-slate-800 px-4 py-2.5 rounded-2xl">
+          <div className="flex items-center gap-3 bg-[#171C25]/90 border border-slate-700/60 px-4 py-2.5 rounded-2xl">
             <CloudSun className="w-5 h-5 text-amber-400 shrink-0" />
             <div>
               <div className="text-xs font-bold text-white">
                 {weather ? `${weather.temperatureC}°C (${weather.condition})` : 'Loading Weather...'}
               </div>
-              <div className="text-[10px] text-slate-400">
+              <div className="text-[10px] text-slate-300">
                 Feels like {weather?.apparentTempC || '--'}°C • Wind: {weather?.windSpeedKmh || '--'} km/h • Humidity: {weather?.humidity || '--'}%
               </div>
             </div>
           </div>
 
           {/* Live Currency Forex Widget */}
-          <div className="flex items-center gap-3 bg-slate-950/70 border border-slate-800 px-4 py-2.5 rounded-2xl">
+          <div className="flex items-center gap-3 bg-[#171C25]/90 border border-slate-700/60 px-4 py-2.5 rounded-2xl">
             <ArrowRightLeft className="w-5 h-5 text-emerald-400 shrink-0" />
             <div>
               <div className="text-xs font-bold text-white">
                 {forex ? `1 INR = ¥${(forex.rates?.JPY ?? (forex as any).JPY ?? 1.82)} JPY` : 'Loading Exchange Rate...'}
               </div>
-              <div className="text-[10px] text-slate-400">
+              <div className="text-[10px] text-slate-300">
                 Interbank Rates: $1 USD = ₹{(1 / (forex?.rates?.USD ?? (forex as any)?.USD ?? 0.012)).toFixed(1)} • €1 EUR = ₹{(1 / (forex?.rates?.EUR ?? (forex as any)?.EUR ?? 0.011)).toFixed(1)}
               </div>
             </div>
@@ -106,7 +106,7 @@ export default function TravelStatusHUD() {
       </div>
 
       {/* 2. Airport Rendezvous Master Card */}
-      <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-3xl p-6 text-white shadow-md border border-indigo-800/40">
+      <div className="bg-gradient-to-r from-[#222838] via-[#2D354B] to-[#222838] rounded-3xl p-6 text-white shadow-md border border-indigo-700/50">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 rounded-2xl bg-indigo-600/40 border border-indigo-400/30 flex items-center justify-center text-indigo-300 shrink-0">
@@ -125,8 +125,8 @@ export default function TravelStatusHUD() {
             </div>
           </div>
 
-          <div className="bg-indigo-900/60 border border-indigo-700/60 px-4 py-3 rounded-2xl text-center shrink-0 w-full sm:w-auto">
-            <span className="text-[10px] uppercase font-bold text-indigo-300 tracking-wider">
+          <div className="bg-indigo-900/50 border border-indigo-600/50 px-4 py-3 rounded-2xl text-center shrink-0 w-full sm:w-auto">
+            <span className="text-[10px] uppercase font-bold text-indigo-200 tracking-wider">
               Companions at Rendezvous
             </span>
             <div className="text-xl font-black text-white mt-0.5">

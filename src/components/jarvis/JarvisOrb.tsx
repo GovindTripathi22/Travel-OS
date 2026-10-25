@@ -142,7 +142,7 @@ export default function JarvisOrb() {
     <div className="fixed bottom-6 right-6 z-40 flex flex-col items-end gap-2.5 pointer-events-auto">
       {/* 1. Live Transcript / Barge-In Banner */}
       {(liveTranscript || jarvisVoiceState === 'speaking' || isSpeaking || jarvisVoiceState === 'interrupted') && (
-        <div className="max-w-xs sm:max-w-sm bg-[#141210]/95 border border-[#D97746]/50 backdrop-blur-xl px-4 py-2.5 rounded-2xl shadow-2xl text-xs text-[#FAF9F6] flex items-center justify-between gap-3 animate-in slide-in-from-bottom-2 duration-150">
+        <div className="max-w-xs sm:max-w-sm bg-[#26221E]/95 border border-[#D97746]/50 backdrop-blur-xl px-4 py-2.5 rounded-2xl shadow-2xl text-xs text-[#FAF9F6] flex items-center justify-between gap-3 animate-in slide-in-from-bottom-2 duration-150">
           <div className="flex items-center gap-2 truncate">
             <span className="h-2 w-2 rounded-full bg-[#D97746] animate-ping shrink-0" />
             <span className="truncate">
@@ -177,7 +177,7 @@ export default function JarvisOrb() {
       )}
 
       {/* 3. Main Floating Sahayak Luxury Capsule Dock */}
-      <div className="flex items-center gap-2 bg-[#1C1917]/90 hover:bg-[#1C1917] border border-white/10 hover:border-[#D97746]/50 backdrop-blur-xl px-2.5 py-1.5 rounded-full shadow-[0_10px_35px_rgba(28,25,23,0.35)] transition-all duration-300">
+      <div className="flex items-center gap-2 bg-[#2B2622]/95 hover:bg-[#342E29] border border-white/15 hover:border-[#D97746]/50 backdrop-blur-xl px-2.5 py-1.5 rounded-full shadow-[0_10px_35px_rgba(28,25,23,0.35)] transition-all duration-300">
         {/* Master Power & Brand Capsule */}
         <button
           type="button"

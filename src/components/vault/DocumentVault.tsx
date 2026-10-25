@@ -166,7 +166,7 @@ export default function DocumentVault() {
 
                     <button
                       onClick={() => setSelectedDoc(doc)}
-                      className="px-3.5 py-1.5 bg-[#1C1917] hover:bg-[#D97746] text-white rounded-xl text-xs font-bold transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 shadow-2xs hover:shadow-xs flex items-center gap-1.5 cursor-pointer"
+                      className="px-3.5 py-1.5 bg-[#2D2723] hover:bg-[#D97746] text-white rounded-xl text-xs font-bold transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 shadow-2xs hover:shadow-xs flex items-center gap-1.5 cursor-pointer"
                     >
                       <Eye className="w-3.5 h-3.5" />
                       <span>View Pass / QR</span>
@@ -255,7 +255,7 @@ export default function DocumentVault() {
 
       {/* Document Quick View / QR Modal */}
       {selectedDoc && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl max-w-sm w-full p-6 text-center shadow-2xl relative border border-[#EBE7DF] animate-in zoom-in-95 duration-150">
             <button
               onClick={() => setSelectedDoc(null)}
@@ -286,7 +286,7 @@ export default function DocumentVault() {
             <div className="space-y-2">
               <button
                 onClick={() => setSelectedDoc(null)}
-                className="w-full py-2.5 bg-[#1C1917] hover:bg-[#D97746] text-white font-bold rounded-xl text-xs transition-all duration-200 hover:-translate-y-0.5 active:scale-95 shadow-xs"
+                className="w-full py-2.5 bg-[#2D2723] hover:bg-[#D97746] text-white font-bold rounded-xl text-xs transition-all duration-200 hover:-translate-y-0.5 active:scale-95 shadow-xs"
               >
                 Close Pass
               </button>

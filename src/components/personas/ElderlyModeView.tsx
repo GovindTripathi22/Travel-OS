@@ -43,9 +43,9 @@ export default function ElderlyModeView() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-4 sm:p-6 lg:p-8 elderly-theme max-w-4xl mx-auto">
+    <div className="min-h-screen bg-[#181E26] text-slate-100 p-4 sm:p-6 lg:p-8 elderly-theme max-w-4xl mx-auto">
       {/* Top Welcome Bar */}
-      <div className="bg-slate-900 border-2 border-amber-500/40 rounded-3xl p-6 mb-6 shadow-xl">
+      <div className="bg-[#232A36] border-2 border-amber-500/40 rounded-3xl p-6 mb-6 shadow-xl">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <img
@@ -92,7 +92,7 @@ export default function ElderlyModeView() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
         <a
           href={`tel:${planner.phone}`}
-          className="bg-emerald-950/80 border-2 border-emerald-500/50 hover:border-emerald-400 p-5 rounded-2xl flex items-center gap-4 transition active:scale-95"
+          className="bg-emerald-950/70 border-2 border-emerald-500/50 hover:border-emerald-400 p-5 rounded-2xl flex items-center gap-4 transition active:scale-95"
         >
           <div className="w-14 h-14 rounded-2xl bg-emerald-600 flex items-center justify-center text-white shrink-0 shadow-md">
             <PhoneCall className="w-7 h-7" />
@@ -106,7 +106,7 @@ export default function ElderlyModeView() {
           </div>
         </a>
 
-        <div className="bg-slate-900 border-2 border-slate-700 p-5 rounded-2xl flex items-center gap-4">
+        <div className="bg-[#232A36] border-2 border-slate-700/80 p-5 rounded-2xl flex items-center gap-4">
           <div className="w-14 h-14 rounded-2xl bg-amber-600/30 border border-amber-500/40 flex items-center justify-center text-amber-400 shrink-0">
             <MapPin className="w-7 h-7" />
           </div>
@@ -121,7 +121,7 @@ export default function ElderlyModeView() {
       </div>
 
       {/* Medication Alarms Card */}
-      <div className="bg-slate-900 border-2 border-slate-800 rounded-3xl p-6 mb-6">
+      <div className="bg-[#232A36] border-2 border-slate-700/80 rounded-3xl p-6 mb-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-purple-900/60 border border-purple-500/40 flex items-center justify-center text-purple-300">
@@ -138,7 +138,7 @@ export default function ElderlyModeView() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div className="bg-slate-950 border border-emerald-500/40 p-4 rounded-2xl flex items-center justify-between">
+          <div className="bg-[#1C222B] border border-emerald-500/40 p-4 rounded-2xl flex items-center justify-between">
             <div>
               <span className="text-xs text-emerald-400 font-semibold">08:00 AM &bull; With Breakfast</span>
               <p className="text-base font-bold text-white">Morning BP & Sugar Tablet</p>
@@ -148,7 +148,7 @@ export default function ElderlyModeView() {
             </span>
           </div>
 
-          <div className="bg-slate-950 border border-amber-500/40 p-4 rounded-2xl flex items-center justify-between">
+          <div className="bg-[#1C222B] border border-amber-500/40 p-4 rounded-2xl flex items-center justify-between">
             <div>
               <span className="text-xs text-amber-400 font-semibold">08:00 PM (20:00) &bull; Evening Tea/Dinner</span>
               <p className="text-base font-bold text-white">Evening BP Tablet</p>
@@ -161,7 +161,7 @@ export default function ElderlyModeView() {
       </div>
 
       {/* Today's Schedule - Large Glanceable Format */}
-      <div className="bg-slate-900 border-2 border-slate-800 rounded-3xl p-6 mb-6">
+      <div className="bg-[#232A36] border-2 border-slate-700/80 rounded-3xl p-6 mb-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <Clock className="w-6 h-6 text-amber-400" />
@@ -172,7 +172,7 @@ export default function ElderlyModeView() {
 
         <div className="space-y-4">
           {/* Item 1 */}
-          <div className="bg-slate-950 border-2 border-slate-800 p-5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="bg-[#1C222B] border-2 border-slate-700/60 p-5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <span className="text-amber-400 font-extrabold text-lg">01:00 PM</span>
@@ -191,7 +191,7 @@ export default function ElderlyModeView() {
           </div>
 
           {/* Rest Window */}
-          <div className="bg-amber-950/30 border-2 border-amber-600/40 p-5 rounded-2xl flex items-center gap-4">
+          <div className="bg-amber-950/25 border-2 border-amber-600/40 p-5 rounded-2xl flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-amber-600/30 flex items-center justify-center text-amber-300 shrink-0">
               <Clock className="w-6 h-6" />
             </div>
@@ -207,7 +207,7 @@ export default function ElderlyModeView() {
           </div>
 
           {/* Item 2 */}
-          <div className="bg-slate-950 border-2 border-slate-800 p-5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="bg-[#1C222B] border-2 border-slate-700/60 p-5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <span className="text-amber-400 font-extrabold text-lg">07:30 PM</span>

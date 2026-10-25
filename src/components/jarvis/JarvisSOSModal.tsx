@@ -38,8 +38,8 @@ Travelers:
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200">
-      <div className="w-full max-w-lg bg-[#181111] border border-red-900/60 rounded-3xl shadow-2xl text-white flex flex-col max-h-[90vh] overflow-hidden">
+    <div className="fixed inset-0 z-50 overflow-hidden bg-black/50 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200">
+      <div className="w-full max-w-lg bg-[#241A1A] border border-red-800/40 rounded-3xl shadow-2xl text-white flex flex-col max-h-[90vh] overflow-hidden">
         {/* Header */}
         <div className="p-4 sm:p-5 bg-red-950/70 border-b border-red-800/40 flex items-center justify-between">
           <div className="flex items-center gap-3">

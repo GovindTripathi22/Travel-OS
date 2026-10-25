@@ -6,20 +6,24 @@ const mockCtx: JarvisContext = {
     id: 'rohan',
     name: 'Rohan Sharma',
     role: 'planner',
-    personaType: 'planner',
+    personaType: 'standard',
     avatar: '',
+    age: 32,
+    phone: '+91 98765 43210',
     relationship: 'Self',
-    preferences: { mobility: { maxWalkingDistanceMeters: 5000, stairTolerance: 'high', wheelchairRequired: false }, dietary: [], sleepSchedule: 'standard', medical: [] }
+    preferences: { mobility: { maxWalkingMeters: 5000, stairTolerance: 'normal', needsRampOrElevator: false }, dietary: [], pacePreference: 'moderate', medical: [] }
   },
   users: [
     {
       id: 'rohan',
       name: 'Rohan Sharma',
       role: 'planner',
-      personaType: 'planner',
+      personaType: 'standard',
       avatar: '',
+      age: 32,
+      phone: '+91 98765 43210',
       relationship: 'Self',
-      preferences: { mobility: { maxWalkingDistanceMeters: 5000, stairTolerance: 'high', wheelchairRequired: false }, dietary: [], sleepSchedule: 'standard', medical: [] }
+      preferences: { mobility: { maxWalkingMeters: 5000, stairTolerance: 'normal', needsRampOrElevator: false }, dietary: [], pacePreference: 'moderate', medical: [] }
     },
     {
       id: 'dadaji',
@@ -27,8 +31,10 @@ const mockCtx: JarvisContext = {
       role: 'companion',
       personaType: 'elderly',
       avatar: '',
+      age: 72,
+      phone: '+91 98765 43211',
       relationship: 'Grandfather',
-      preferences: { mobility: { maxWalkingDistanceMeters: 350, stairTolerance: 'low', wheelchairRequired: true }, dietary: [], sleepSchedule: 'early_sleeper', medical: ['Hypertension'] }
+      preferences: { mobility: { maxWalkingMeters: 350, stairTolerance: 'none', needsRampOrElevator: true }, dietary: [], pacePreference: 'relaxed', medical: ['Hypertension'] }
     },
     {
       id: 'kabir',
@@ -36,8 +42,10 @@ const mockCtx: JarvisContext = {
       role: 'companion',
       personaType: 'kid',
       avatar: '',
+      age: 8,
+      phone: '+91 98765 43212',
       relationship: 'Son',
-      preferences: { mobility: { maxWalkingDistanceMeters: 2000, stairTolerance: 'medium', wheelchairRequired: false }, dietary: [], sleepSchedule: 'standard', medical: [] }
+      preferences: { mobility: { maxWalkingMeters: 2000, stairTolerance: 'few', needsRampOrElevator: false }, dietary: [], pacePreference: 'fast', medical: [] }
     }
   ],
   itinerary: [{

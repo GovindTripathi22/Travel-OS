@@ -128,7 +128,7 @@ export default function ExpenseLedger() {
           {settlements.length > 0 && settleAllDebts && (
             <button
               onClick={settleAllDebts}
-              className="px-3 py-1 bg-[#1C1917] hover:bg-[#D97746] text-white rounded-xl text-xs font-semibold shadow-2xs transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-95"
+              className="px-3 py-1 bg-[#2D2723] hover:bg-[#D97746] text-white rounded-xl text-xs font-semibold shadow-2xs transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-95"
             >
               1-Click Settle All
             </button>

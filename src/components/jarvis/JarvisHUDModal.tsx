@@ -178,16 +178,16 @@ export default function JarvisHUDModal() {
   ];
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-black/75 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200">
-      <div className="w-full max-w-2xl bg-[#141210] border border-[#2E2822] rounded-3xl shadow-2xl text-white flex flex-col max-h-[92vh] overflow-hidden">
+    <div className="fixed inset-0 z-50 overflow-hidden bg-black/45 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200">
+      <div className="w-full max-w-2xl bg-[#24201D] border border-[#3C352E] rounded-3xl shadow-2xl text-white flex flex-col max-h-[92vh] overflow-hidden">
         {/* Top Arc Reactor Header */}
-        <div className="p-4 sm:p-5 border-b border-[#2E2822] flex items-center justify-between bg-[#191613]">
+        <div className="p-4 sm:p-5 border-b border-[#3C352E] flex items-center justify-between bg-[#2B2622]">
           <div className="flex items-center gap-3">
             <div className="relative">
               <div className="w-10 h-10 rounded-2xl bg-[#D97746] flex items-center justify-center text-white shadow-lg shadow-[#D97746]/20">
                 <Sparkles className="w-5 h-5" />
               </div>
-              <span className="absolute -bottom-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full border-2 border-[#141210]" />
+              <span className="absolute -bottom-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full border-2 border-[#24201D]" />
             </div>
 
             <div>
@@ -299,7 +299,7 @@ export default function JarvisHUDModal() {
         <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
           {/* Active Result Card if triggered */}
           {lastJarvisResult && (
-            <div className="bg-[#1C1814] border border-[#3E352B] rounded-2xl p-4 sm:p-5 shadow-inner space-y-3 animate-in zoom-in-95 duration-200">
+            <div className="bg-[#2B2622] border border-[#443C34] rounded-2xl p-4 sm:p-5 shadow-inner space-y-3 animate-in zoom-in-95 duration-200">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
@@ -316,7 +316,7 @@ export default function JarvisHUDModal() {
                 {lastJarvisResult.summary}
               </div>
 
-              <p className="text-xs sm:text-sm text-[#C4BCB3] leading-relaxed bg-[#141210] p-3 rounded-xl border border-[#2E2822]">
+              <p className="text-xs sm:text-sm text-[#C4BCB3] leading-relaxed bg-[#201D1A] p-3 rounded-xl border border-[#3C352E]">
                 &ldquo;{lastJarvisResult.spokenResponse}&rdquo;
               </p>
 
@@ -472,7 +472,7 @@ export default function JarvisHUDModal() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Speak or type: 'Add ₹800 taxi', 'Dadaji meds', 'Add rest buffer'..."
-              className="flex-1 bg-[#141210] border border-[#2E2822] focus:border-[#D97746] text-xs sm:text-sm text-white px-4 py-3 rounded-2xl focus:outline-none placeholder-[#6E665E]"
+              className="flex-1 bg-[#201D1A] border border-[#3C352E] focus:border-[#D97746] text-xs sm:text-sm text-white px-4 py-3 rounded-2xl focus:outline-none placeholder-[#8C847A]"
             />
 
             <button

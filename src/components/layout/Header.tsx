@@ -179,7 +179,7 @@ export default function Header() {
                         }}
                         className={`py-1 text-center rounded-lg font-mono text-xs font-bold transition ${
                           currency === c
-                            ? 'bg-[#1C1917] text-white shadow-xs'
+                            ? 'bg-[#2D2723] text-white shadow-xs'
                             : 'bg-[#FAF8F5] text-stone-600 hover:text-[#1C1917] border border-[#EBE6DE]'
                         }`}
                       >
@@ -259,7 +259,7 @@ export default function Header() {
             ) : !isAuthenticated ? (
               <button
                 onClick={() => setIsAuthModalOpen(true)}
-                className="px-3.5 py-1.5 bg-[#1C1917] hover:bg-[#292524] text-white rounded-full text-xs font-bold transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 flex items-center gap-1.5 shadow-2xs hover:shadow-xs focus-visible:ring-2 focus-visible:ring-[#D97746] focus-visible:outline-none"
+                className="px-3.5 py-1.5 bg-[#2D2723] hover:bg-[#3D352F] text-white rounded-full text-xs font-bold transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 flex items-center gap-1.5 shadow-2xs hover:shadow-xs focus-visible:ring-2 focus-visible:ring-[#D97746] focus-visible:outline-none"
                 title="Sign In with Firebase or Switch Companion"
                 aria-label="Sign In to Sahyatri"
               >
@@ -441,7 +441,7 @@ export default function Header() {
 
       {/* Profile & Avatar Customizer Modal */}
       {isProfileOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -516,7 +516,7 @@ export default function Header() {
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 rounded-xl bg-[#1C1917] hover:bg-[#D97746] text-white text-xs font-bold flex items-center gap-1.5 transition"
+                className="px-4 py-2 rounded-xl bg-[#2D2723] hover:bg-[#D97746] text-white text-xs font-bold flex items-center gap-1.5 transition"
               >
                 <Check className="w-3.5 h-3.5" /> Save Profile
               </button>

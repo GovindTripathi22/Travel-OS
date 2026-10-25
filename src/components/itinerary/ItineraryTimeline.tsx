@@ -79,7 +79,7 @@ export default function ItineraryTimeline() {
 
           <button
             onClick={() => autoHealSchedule(selectedDay)}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#1C1917] hover:bg-[#D97746] text-white rounded-xl text-xs font-bold transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 shadow-2xs hover:shadow-xs focus-visible:ring-2 focus-visible:ring-[#D97746]"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#2D2723] hover:bg-[#D97746] text-white rounded-xl text-xs font-bold transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 shadow-2xs hover:shadow-xs focus-visible:ring-2 focus-visible:ring-[#D97746]"
           >
             <Wand2 className="w-3.5 h-3.5 text-[#D97746]" />
             <span>Auto-Heal</span>

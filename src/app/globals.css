@@ -95,9 +95,9 @@ body {
 
 .nav-pillar-item.is-active {
   color: #FFFFFF;
-  background: #1C1917;
+  background: #2D2723;
   font-weight: 700;
-  box-shadow: 0 4px 14px -4px rgba(28, 25, 23, 0.4);
+  box-shadow: 0 4px 14px -4px rgba(45, 39, 35, 0.3);
 }
 
 .nav-divider { width: 1px; height: 1.25rem; margin: 0 .25rem; flex-shrink: 0; background: var(--border-light); }

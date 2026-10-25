@@ -83,7 +83,7 @@ export default function MechanismPollCard() {
               onClick={() => setSelectedPollIndex(idx)}
               className={`px-3 py-1 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
                 idx === pollIndex
-                  ? 'bg-[#1C1917] text-white shadow-2xs'
+                  ? 'bg-[#2D2723] text-white shadow-2xs'
                   : 'bg-[#F4F1EA] text-[#78716C] hover:bg-[#EBE7DF]'
               }`}
               aria-label={`Switch to poll: ${p.title}`}

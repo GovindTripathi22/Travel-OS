@@ -37,7 +37,7 @@ function TripOSApp() {
 
   if (viewMode === 'phone_preview') {
     return (
-      <div className="min-h-screen bg-slate-900 py-8 px-4 flex flex-col items-center justify-center">
+      <div className="min-h-screen bg-[#1F2530] py-8 px-4 flex flex-col items-center justify-center">
         {/* Device Switcher Header */}
         <div className="mb-4 flex items-center justify-between w-full max-w-sm px-2 text-white">
           <div className="flex items-center gap-2 text-xs font-semibold">
@@ -53,7 +53,7 @@ function TripOSApp() {
         </div>
 
         {/* Realistic Smartphone Frame */}
-        <div className="w-full max-w-[410px] h-[860px] bg-slate-950 rounded-[48px] p-3 shadow-2xl border-4 border-slate-700 relative flex flex-col">
+        <div className="w-full max-w-[410px] h-[860px] bg-[#161B22] rounded-[48px] p-3 shadow-2xl border-4 border-slate-700/80 relative flex flex-col">
           {/* Dynamic Island / Speaker Pill */}
           <div className="absolute top-5 left-1/2 -translate-x-1/2 w-28 h-5 bg-black rounded-full z-50 flex items-center justify-center">
             <div className="w-2.5 h-2.5 rounded-full bg-slate-900 ml-auto mr-2" />
