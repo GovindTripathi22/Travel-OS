@@ -234,7 +234,14 @@ async function runAllVerifications() {
   });
 
   // --- SECTION 7: LIVE WEB SERVER VERIFICATION ---
-  const baseUrl = process.env.BASE_URL || 'http://127.0.0.1:3000';
+  let baseUrl = process.env.BASE_URL;
+  if (!baseUrl) {
+    try {
+      const probe3005 = await fetch('http://127.0.0.1:3005');
+      if (probe3005.ok) baseUrl = 'http://127.0.0.1:3005';
+    } catch {}
+    if (!baseUrl) baseUrl = 'http://127.0.0.1:3000';
+  }
   console.log(`\n7. Verifying Live Web Server (${baseUrl})...`);
 
   const res = await fetch(baseUrl);

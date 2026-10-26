@@ -541,9 +541,9 @@ export function TripProvider({ children }: { children: React.ReactNode }) {
     return recommendNextPayer(netBalances, users);
   }, [netBalances, users]);
 
-  // Speech synthesis using natural British J.A.R.V.I.S. neural voice cadence
+  // Natural bilingual Sahayak neural voice cadence with automatic Indian English & Hindi voice selection
   const speakText = useCallback((text: string) => {
-    speakWithJarvisVoice(text, 'en-GB', true);
+    speakWithJarvisVoice(text, 'en-IN', true);
   }, []);
 
   const stopSpeaking = useCallback(() => {

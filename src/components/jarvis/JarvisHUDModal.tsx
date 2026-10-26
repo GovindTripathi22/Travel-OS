@@ -22,7 +22,7 @@ import {
   UserCheck,
   Smartphone
 } from 'lucide-react';
-import { playJarvisChime } from '@/lib/audio/jarvisAudio';
+import { playJarvisChime, unlockAudio } from '@/lib/audio/jarvisAudio';
 
 export default function JarvisHUDModal() {
   const {
@@ -62,6 +62,7 @@ export default function JarvisHUDModal() {
   if (!isOpen) return null;
 
   const handleExecute = (textToRun?: string) => {
+    unlockAudio();
     const cmd = textToRun || input;
     if (!cmd.trim()) return;
     playJarvisChime('wake');
@@ -72,6 +73,7 @@ export default function JarvisHUDModal() {
   };
 
   const startVoiceInput = () => {
+    unlockAudio();
     stopSpeaking();
     if (typeof window !== 'undefined') {
       const SpeechRecognition =

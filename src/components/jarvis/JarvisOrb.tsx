@@ -13,7 +13,7 @@ import {
   Check,
 } from 'lucide-react';
 import { useTrip } from '@/lib/state/TripContext';
-import { jarvisAudio, playJarvisChime } from '@/lib/audio/jarvisAudio';
+import { jarvisAudio, playJarvisChime, unlockAudio } from '@/lib/audio/jarvisAudio';
 import { JarvisControlMode, JarvisVoiceState } from '@/types';
 
 export default function JarvisOrb() {

@@ -9,11 +9,16 @@ let globalSpeechListener: ((speaking: boolean) => void) | null = null;
 let cachedVoices: SpeechSynthesisVoice[] = [];
 
 if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-  const load = () => {
-    cachedVoices = window.speechSynthesis.getVoices() || [];
+  const loadVoices = () => {
+    try {
+      const v = window.speechSynthesis.getVoices();
+      if (v && v.length > 0) {
+        cachedVoices = v;
+      }
+    } catch {}
   };
-  load();
-  window.speechSynthesis.onvoiceschanged = load;
+  loadVoices();
+  window.speechSynthesis.onvoiceschanged = loadVoices;
 }
 
 export function onJarvisSpeechStateChange(cb: (speaking: boolean) => void) {
@@ -24,30 +29,65 @@ function setGlobalSpeaking(state: boolean) {
   if (globalSpeechListener) globalSpeechListener(state);
 }
 
-export function pickBestJarvisVoice(lang = 'en-GB'): SpeechSynthesisVoice | null {
+/**
+ * Primes AudioContext and Web Speech synthesis on user gesture.
+ * Required for iOS Safari and mobile Chrome to permit audio output.
+ */
+export function unlockAudio() {
+  if (typeof window === 'undefined') return;
+  try {
+    const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+    if (AudioCtx) {
+      const ctx = new AudioCtx();
+      if (ctx.state === 'suspended') {
+        ctx.resume().catch(() => {});
+      }
+    }
+    if ('speechSynthesis' in window) {
+      const voices = window.speechSynthesis.getVoices();
+      if (voices && voices.length > 0) cachedVoices = voices;
+    }
+  } catch {}
+}
+
+export function pickBestJarvisVoice(lang = 'en-IN', text = ''): SpeechSynthesisVoice | null {
   if (typeof window === 'undefined' || !('speechSynthesis' in window)) return null;
   const voices = cachedVoices.length ? cachedVoices : window.speechSynthesis.getVoices();
   if (!voices?.length) return null;
 
-  if (lang.startsWith('ja')) {
-    return (
-      voices.find(v => v.lang.startsWith('ja') && (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Kyoko'))) ||
-      voices.find(v => v.lang.startsWith('ja')) ||
-      null
-    );
+  // Detect whether text contains Devanagari or Hinglish/Hindi keywords
+  const isHindiOrIndian =
+    lang.startsWith('hi') ||
+    lang.startsWith('en-IN') ||
+    /[\u0900-\u097F]/.test(text) ||
+    /\b(?:namaste|pranam|sahayak|aapki|madad|seva|boliye|ruko|chup|sharma|dadaji|kabir|priya|rohan|jaipur|rambagh|thali|chokhi|dhani|nahargarh|amber|rupees|paise)\b/i.test(text);
+
+  if (isHindiOrIndian) {
+    // 1. Native Hindi neural voices
+    const hiVoice =
+      voices.find(v => v.lang.startsWith('hi') && (v.name.includes('Natural') || v.name.includes('Neural') || v.name.includes('Google') || v.name.includes('Swara') || v.name.includes('Madhur'))) ||
+      voices.find(v => v.lang.startsWith('hi'));
+    if (hiVoice) return hiVoice;
+
+    // 2. Indian English voices (Pronounces Indian places, names, and currencies naturally)
+    const inVoice =
+      voices.find(v => (v.lang === 'en-IN' || v.lang === 'en_IN') && (v.name.includes('Natural') || v.name.includes('Neural') || v.name.includes('Google') || v.name.includes('Neerja') || v.name.includes('Prabhat'))) ||
+      voices.find(v => v.lang === 'en-IN' || v.lang === 'en_IN');
+    if (inVoice) return inVoice;
   }
 
+  // 3. High quality natural English voices (British / American)
   const priorities = [
+    'Google UK English Male',
     'Microsoft Ryan Online (Natural)',
     'Microsoft Thomas Online (Natural)',
-    'Google UK English Male',
     'Daniel (Enhanced)',
     'Daniel',
     'Arthur',
     'Oliver',
-    'Microsoft George',
-    'Microsoft Guy Online (Natural)',
-    'Google US English'
+    'Samantha',
+    'Google US English',
+    'Microsoft Guy Online (Natural)'
   ];
 
   for (const name of priorities) {
@@ -56,9 +96,7 @@ export function pickBestJarvisVoice(lang = 'en-GB'): SpeechSynthesisVoice | null
   }
 
   return (
-    voices.find(v => v.lang === 'en-GB' && (v.name.includes('Natural') || v.name.includes('Male'))) ||
-    voices.find(v => v.lang === 'en-GB') ||
-    voices.find(v => v.lang.startsWith('en') && v.name.includes('Natural')) ||
+    voices.find(v => v.lang.startsWith('en') && (v.name.includes('Natural') || v.name.includes('Enhanced'))) ||
     voices.find(v => v.lang.startsWith('en')) ||
     voices[0] ||
     null
@@ -67,9 +105,16 @@ export function pickBestJarvisVoice(lang = 'en-GB'): SpeechSynthesisVoice | null
 
 export function cleanTextForJarvisSpeech(rawText: string): string {
   return (rawText || '')
+    // Convert currency symbols to natural spoken words for clean pronunciation
+    .replace(/₹\s*([0-9,]+(?:\.[0-9]+)?)/g, 'Rupees $1')
+    .replace(/\$\s*([0-9,]+(?:\.[0-9]+)?)/g, '$1 dollars')
+    .replace(/€\s*([0-9,]+(?:\.[0-9]+)?)/g, '$1 euros')
+    .replace(/¥\s*([0-9,]+(?:\.[0-9]+)?)/g, '$1 yen')
+    // Remove markdown formatting
     .replace(/[*_#`~>]/g, '')
     .replace(/\[(.*?)\]\(.*?\)/g, '$1')
-    .replace(/[✓⚠⚡🌧️🍜🗳️☀️🏛️🎯🏆🚑🚓🏥]/g, '')
+    // Remove emoji icons and special bullet characters that audio engines mispronounce
+    .replace(/[✓⚠⚡🌧️🍜🗳️☀️🏛️🎯🏆🚑🚓🏥✨⭐🦁•–—]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 }
@@ -84,12 +129,12 @@ export function stopJarvisSpeech(wasInterrupted = false) {
   jarvisAudio.stopSpeaking(wasInterrupted);
 }
 
-export function speakWithJarvisVoice(text: string, lang = 'en-GB', enabled = true, onDone?: () => void) {
+export function speakWithJarvisVoice(text: string, lang = 'en-IN', enabled = true, onDone?: () => void) {
   if (!enabled || typeof window === 'undefined' || !('speechSynthesis' in window)) {
     if (onDone) onDone();
     return;
   }
-  jarvisAudio.speak(text, onDone);
+  jarvisAudio.speak(text, onDone, lang);
 }
 
 export function playJarvisSound(kind: 'chime' | 'heal' | 'sos' | 'xp' = 'chime', enabled = true) {
@@ -98,6 +143,9 @@ export function playJarvisSound(kind: 'chime' | 'heal' | 'sos' | 'xp' = 'chime',
     const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
     if (!AudioCtx) return;
     const ctx = new AudioCtx();
+    if (ctx.state === 'suspended') {
+      ctx.resume().catch(() => {});
+    }
     const now = ctx.currentTime;
     const freqs =
       kind === 'sos'
@@ -129,6 +177,9 @@ export function playJarvisChime(type: JarvisChimeType) {
     const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
     if (!AudioCtx) return;
     const ctx = new AudioCtx();
+    if (ctx.state === 'suspended') {
+      ctx.resume().catch(() => {});
+    }
     const now = ctx.currentTime;
 
     if (type === 'wake') {
@@ -203,6 +254,10 @@ export class JarvisAudioController {
   private speechStartedAt: number = 0;
   private speechEndedAt: number = 0;
 
+  // Anti-GC and anti-freeze guards for production Web Speech API
+  private activeUtterance: SpeechSynthesisUtterance | null = null;
+  private ttsHeartbeatTimer: ReturnType<typeof setInterval> | null = null;
+
   private onTranscriptCb: TranscriptCallback | null = null;
   private onStateChangeCb: StateChangeCallback | null = null;
   private restartTimer: ReturnType<typeof setTimeout> | null = null;
@@ -215,7 +270,8 @@ export class JarvisAudioController {
         this.recognition = new SpeechRecognition();
         this.recognition.continuous = true;
         this.recognition.interimResults = true;
-        this.recognition.lang = 'en-US';
+        // Bilingual Indian English captures both English and Indian names/Hindi words with high precision
+        this.recognition.lang = 'en-IN';
         this.setupRecognitionHandlers();
       }
     }
@@ -391,6 +447,12 @@ export class JarvisAudioController {
       if (event.error === 'no-speech' || event.error === 'aborted') {
         return;
       }
+      if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+        console.warn('[JarvisAudio] Microphone permission denied/blocked:', event.error);
+        this.isSystemActive = false; // Stop restarting in onend!
+        this.setState('idle');
+        return;
+      }
       console.warn('[JarvisAudio] SpeechRecognition warning:', event.error);
     };
 
@@ -440,6 +502,7 @@ export class JarvisAudioController {
   }
 
   public startSystem(mode: JarvisControlMode = this.controlMode) {
+    unlockAudio();
     this.isSystemActive = true;
     this.controlMode = mode;
     if (mode === 'autonomous') {
@@ -460,6 +523,7 @@ export class JarvisAudioController {
   }
 
   public startListening() {
+    unlockAudio();
     this.isSystemActive = true;
     if (this.isSpeakingNow) {
       this.stopSpeaking(true);
@@ -484,6 +548,7 @@ export class JarvisAudioController {
   }
 
   public toggleManualMic() {
+    unlockAudio();
     if (this.isSpeakingNow) {
       this.stopSpeaking(true);
       this.startListening();
@@ -497,6 +562,12 @@ export class JarvisAudioController {
   }
 
   public stopSpeaking(wasInterrupted: boolean = false) {
+    if (this.ttsHeartbeatTimer) {
+      clearInterval(this.ttsHeartbeatTimer);
+      this.ttsHeartbeatTimer = null;
+    }
+    this.activeUtterance = null;
+
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       try {
         window.speechSynthesis.cancel();
@@ -525,7 +596,8 @@ export class JarvisAudioController {
     }
   }
 
-  public speak(text: string, onDone?: () => void) {
+  public speak(text: string, onDone?: () => void, lang = 'en-IN') {
+    unlockAudio();
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
       if (onDone) onDone();
       return;
@@ -547,16 +619,25 @@ export class JarvisAudioController {
     this.setState('speaking');
 
     const utterance = new SpeechSynthesisUtterance(cleanText);
-    utterance.rate = 1.02;
-    utterance.pitch = 0.95;
+    this.activeUtterance = utterance; // Prevent garbage collection mid-speech
 
-    const voice = pickBestJarvisVoice('en-GB');
+    utterance.rate = 1.0;
+    utterance.pitch = 0.98;
+
+    const voice = pickBestJarvisVoice(lang, cleanText);
     if (voice) {
       utterance.voice = voice;
       utterance.lang = voice.lang;
+    } else {
+      utterance.lang = lang;
     }
 
-    utterance.onend = () => {
+    const cleanup = () => {
+      if (this.ttsHeartbeatTimer) {
+        clearInterval(this.ttsHeartbeatTimer);
+        this.ttsHeartbeatTimer = null;
+      }
+      this.activeUtterance = null;
       this.isSpeakingNow = false;
       this.currentSpokenText = '';
       this.speechEndedAt = Date.now();
@@ -569,18 +650,19 @@ export class JarvisAudioController {
       if (onDone) onDone();
     };
 
-    utterance.onerror = () => {
-      this.isSpeakingNow = false;
-      this.currentSpokenText = '';
-      this.speechEndedAt = Date.now();
-      setGlobalSpeaking(false);
-      if (this.isSystemActive && this.controlMode === 'autonomous') {
-        this.setState('listening');
-      } else {
-        this.setState('idle');
+    utterance.onend = cleanup;
+    utterance.onerror = cleanup;
+
+    // Chrome 15-second speech cutoff freeze workaround
+    if (this.ttsHeartbeatTimer) clearInterval(this.ttsHeartbeatTimer);
+    this.ttsHeartbeatTimer = setInterval(() => {
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window && window.speechSynthesis.speaking) {
+        try {
+          window.speechSynthesis.pause();
+          window.speechSynthesis.resume();
+        } catch {}
       }
-      if (onDone) onDone();
-    };
+    }, 10000);
 
     window.speechSynthesis.speak(utterance);
   }
