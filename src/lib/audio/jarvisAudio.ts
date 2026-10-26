@@ -514,7 +514,10 @@ export class JarvisAudioController {
 
   public stopSystem() {
     this.isSystemActive = false;
-    if (this.restartTimer) clearTimeout(this.restartTimer);
+    if (this.restartTimer) {
+      clearTimeout(this.restartTimer);
+      this.restartTimer = null;
+    }
     this.stopSpeaking(false);
     try {
       this.recognition?.stop();
@@ -538,7 +541,11 @@ export class JarvisAudioController {
   }
 
   public stopListening() {
-    if (this.restartTimer) clearTimeout(this.restartTimer);
+    this.isSystemActive = false; // Turn off system to ensure onend never auto-restarts
+    if (this.restartTimer) {
+      clearTimeout(this.restartTimer);
+      this.restartTimer = null;
+    }
     try {
       this.recognition?.stop();
     } catch {}
@@ -551,12 +558,12 @@ export class JarvisAudioController {
     unlockAudio();
     if (this.isSpeakingNow) {
       this.stopSpeaking(true);
-      this.startListening();
       return;
     }
-    if (this.voiceState === 'listening') {
-      this.stopListening();
+    if (this.voiceState === 'listening' || this.isSystemActive) {
+      this.stopSystem();
     } else {
+      this.startSystem(this.controlMode);
       this.startListening();
     }
   }

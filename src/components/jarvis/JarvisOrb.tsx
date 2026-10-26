@@ -110,10 +110,11 @@ export default function JarvisOrb() {
 
   // Master Power Toggle
   const handleTogglePower = () => {
-    if (isSystemActive) {
+    if (isSystemActive || jarvisVoiceState === 'listening') {
       setIsSystemActive(false);
       hasGreetedRef.current = false;
       jarvisAudio.stopSystem();
+      setJarvisVoiceState('idle');
       playJarvisChime('sleep');
     } else {
       setIsSystemActive(true);
@@ -129,6 +130,21 @@ export default function JarvisOrb() {
             : `Namaste! Sahayak Manual Mode mein hai. Microphone dabayein ya Alt+J se bole.`;
         jarvisAudio.speak(greeting);
       }
+    }
+  };
+
+  // Dedicated Microphone Toggle (Guaranteed immediate stop & no auto-restart)
+  const handleToggleMic = () => {
+    if (jarvisVoiceState === 'listening' || isSystemActive) {
+      setIsSystemActive(false);
+      jarvisAudio.stopSystem();
+      setJarvisVoiceState('idle');
+      playJarvisChime('sleep');
+    } else {
+      setIsSystemActive(true);
+      jarvisAudio.startSystem(jarvisControlMode);
+      jarvisAudio.startListening();
+      playJarvisChime('wake');
     }
   };
 
@@ -235,16 +251,10 @@ export default function JarvisOrb() {
           </button>
         </div>
 
-        {/* Dedicated Push-to-Talk Mic Button */}
+        {/* Dedicated Push-to-Talk / Mute Mic Button */}
         <button
           type="button"
-          onClick={() => {
-            if (!isSystemActive) {
-              setIsSystemActive(true);
-              jarvisAudio.startSystem(jarvisControlMode);
-            }
-            jarvisAudio.toggleManualMic();
-          }}
+          onClick={handleToggleMic}
           className={`p-2 rounded-full transition-all duration-200 ${
             jarvisVoiceState === 'listening'
               ? 'bg-emerald-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.5)] scale-105'

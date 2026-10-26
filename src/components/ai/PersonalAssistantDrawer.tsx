@@ -78,7 +78,7 @@ export default function PersonalAssistantDrawer() {
     }
   }, [messages, isAssistantOpen]);
 
-  const handleSend = (textToSend?: string) => {
+  const handleSend = async (textToSend?: string) => {
     const query = textToSend || input;
     if (!query.trim()) return;
 
@@ -93,35 +93,74 @@ export default function PersonalAssistantDrawer() {
     setInput('');
     setLoading(true);
 
-    setTimeout(() => {
-      const agentContext = {
-        currentUser,
-        itinerary,
-        polls,
-        expenses,
-        travelStatus,
-        documents,
-        allUsers: users,
-      };
+    const agentContext = {
+      currentUser,
+      itinerary,
+      polls,
+      expenses,
+      travelStatus,
+      documents,
+      allUsers: users,
+    };
 
-      const res = generateCompanionResponse(query, agentContext);
+    try {
+      const apiRes = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: query,
+          persona: currentUser.personaType,
+          userId: currentUser.id,
+          allUsers: users,
+          itinerary,
+          polls,
+        }),
+      });
 
-      const botMsg: ChatMessage = {
-        id: `bot-${Date.now()}`,
-        sender: 'assistant',
-        content: res.text,
-        timestamp: 'Just now',
-        suggestedQuickReplies: res.quickReplies,
-      };
+      if (apiRes.ok) {
+        const data = await apiRes.json();
+        const replyText = data.reply || data.data?.text;
+        if (replyText) {
+          const botMsg: ChatMessage = {
+            id: `bot-${Date.now()}`,
+            sender: 'assistant',
+            content: replyText,
+            timestamp: 'Just now',
+            suggestedQuickReplies: data.data?.quickReplies || [
+              'What is the next stop on the plan?',
+              'How is the weather today?',
+              'Who pays next for group expenses?'
+            ],
+          };
 
-      setMessages((prev) => [...prev, botMsg]);
-      setLoading(false);
+          setMessages((prev) => [...prev, botMsg]);
+          setLoading(false);
 
-      // Auto-read aloud if elderly user
-      if (currentUser.personaType === 'elderly') {
-        speakText(res.text);
+          if (currentUser.personaType === 'elderly') {
+            speakText(replyText);
+          }
+          return;
+        }
       }
-    }, 450);
+    } catch {
+      // Fallback seamlessly to local intelligent agent
+    }
+
+    const res = generateCompanionResponse(query, agentContext);
+    const botMsg: ChatMessage = {
+      id: `bot-${Date.now()}`,
+      sender: 'assistant',
+      content: res.text,
+      timestamp: 'Just now',
+      suggestedQuickReplies: res.quickReplies,
+    };
+
+    setMessages((prev) => [...prev, botMsg]);
+    setLoading(false);
+
+    if (currentUser.personaType === 'elderly') {
+      speakText(res.text);
+    }
   };
 
   if (!isAssistantOpen) return null;
