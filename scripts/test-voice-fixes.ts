@@ -208,7 +208,58 @@ if (compGreeting.text.includes('Flight AI-481') || !compGreeting.text.includes('
 }
 console.log('✓ companionAgent general greeting points to upcoming activity (Welcome Royal Thali Lunch, never Flight AI-481)');
 
-// 10. Voice Audio Controller Mute & Unmute Guard
+// 10. General Travel Questions (Jaipur, Currency, Water Safety, Shopping, Language, Companions)
+const jaipurHistory = generateCompanionResponse('tell me about jaipur and why is it called the pink city', agentCtx);
+if (!jaipurHistory.text.includes('1727') || !jaipurHistory.text.includes('terracotta pink')) {
+  console.error('FAILED Jaipur history check:', jaipurHistory);
+  process.exit(1);
+}
+console.log('✓ companionAgent answers Jaipur Pink City history and architecture');
+
+const currencyQuery = generateCompanionResponse('what is the currency in india and can we pay with card', agentCtx);
+if (!currencyQuery.text.includes('INR') || !currencyQuery.text.includes('credit cards')) {
+  console.error('FAILED currency check:', currencyQuery);
+  process.exit(1);
+}
+console.log('✓ companionAgent answers currency, credit card, and UPI payment guidance');
+
+const waterQuery = generateCompanionResponse('is tap water safe to drink in jaipur', agentCtx);
+if (!waterQuery.text.includes('Tap water is not potable') || !waterQuery.text.includes('112')) {
+  console.error('FAILED water safety check:', waterQuery);
+  process.exit(1);
+}
+console.log('✓ companionAgent answers water potability and emergency contacts');
+
+const shoppingQuery = generateCompanionResponse('where to go shopping in jaipur for blue pottery and bangles', agentCtx);
+if (!shoppingQuery.text.includes('Johari Bazaar') || !shoppingQuery.text.includes('Blue Pottery')) {
+  console.error('FAILED shopping check:', shoppingQuery);
+  process.exit(1);
+}
+console.log('✓ companionAgent answers shopping bazaars and local handicrafts');
+
+const languageQuery = generateCompanionResponse('what language do they speak and how to say hello', agentCtx);
+if (!languageQuery.text.includes('Namaste') || !languageQuery.text.includes('Hindi')) {
+  console.error('FAILED language check:', languageQuery);
+  process.exit(1);
+}
+console.log('✓ companionAgent answers local language and essential Hindi phrases');
+
+const groupQuery = generateCompanionResponse('who is travelling with us in our group', agentCtx);
+if (!groupQuery.text.includes('Rohan') || !groupQuery.text.includes('Dadaji')) {
+  console.error('FAILED group companions check:', groupQuery);
+  process.exit(1);
+}
+console.log('✓ companionAgent answers group companions and family member profiles');
+
+// 11. Conversational voice query extracts full sentence instead of just title header
+const voiceJaipur = processJarvisVoiceCommand('tell me about jaipur history', mockCtx);
+if (voiceJaipur.intent !== 'ASSISTANT_QUERY' || voiceJaipur.spokenResponse.length < 20 || voiceJaipur.spokenResponse.trim().endsWith(':')) {
+  console.error('FAILED conversational voice header join check:', voiceJaipur);
+  process.exit(1);
+}
+console.log('✓ conversational voice query joins header with answer sentence for natural speech');
+
+// 12. Voice Audio Controller Mute & Unmute Guard
 import { jarvisAudio } from '../src/lib/audio/jarvisAudio';
 jarvisAudio.mute();
 if (!jarvisAudio.isMicMuted() || jarvisAudio.isActive()) {
@@ -218,6 +269,11 @@ if (!jarvisAudio.isMicMuted() || jarvisAudio.isActive()) {
 jarvisAudio.unmute();
 if (jarvisAudio.isMicMuted()) {
   console.error('FAILED jarvisAudio.unmute() check');
+  process.exit(1);
+}
+jarvisAudio.mute();
+if (!jarvisAudio.isMicMuted()) {
+  console.error('FAILED second jarvisAudio.mute() check');
   process.exit(1);
 }
 console.log('✓ jarvisAudio mute and unmute guards prevent auto-restart loop');

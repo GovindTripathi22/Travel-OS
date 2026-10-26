@@ -249,7 +249,7 @@ export class JarvisAudioController {
   private controlMode: JarvisControlMode = 'autonomous';
   private voiceState: JarvisVoiceState = 'idle';
   private isSystemActive: boolean = false;
-  private isMuted: boolean = false;
+  private isMuted: boolean = true;
   private isSpeakingNow: boolean = false;
   private currentSpokenText: string = '';
   private speechStartedAt: number = 0;
@@ -262,6 +262,7 @@ export class JarvisAudioController {
   private onTranscriptCb: TranscriptCallback | null = null;
   private onStateChangeCb: StateChangeCallback | null = null;
   private restartTimer: ReturnType<typeof setTimeout> | null = null;
+  private interruptedTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor() {
     if (typeof window !== 'undefined') {
@@ -429,9 +430,13 @@ export class JarvisAudioController {
         return;
       }
 
-      // 3. User said STOP while idle/listening:
+      // 3. User said STOP or MUTE while idle/listening:
       if (this.isInterruptPhrase(candidate)) {
-        this.stopSpeaking(false);
+        if (/^(?:mute|silence|band karo|mic off|turn off mic)\b/i.test(candidate.trim())) {
+          this.mute();
+        } else {
+          this.stopSpeaking(false);
+        }
         return;
       }
 
@@ -548,6 +553,10 @@ export class JarvisAudioController {
       clearTimeout(this.restartTimer);
       this.restartTimer = null;
     }
+    if (this.interruptedTimer) {
+      clearTimeout(this.interruptedTimer);
+      this.interruptedTimer = null;
+    }
     this.stopSpeaking(false);
     try {
       this.recognition?.abort();
@@ -585,6 +594,10 @@ export class JarvisAudioController {
     if (this.restartTimer) {
       clearTimeout(this.restartTimer);
       this.restartTimer = null;
+    }
+    if (this.interruptedTimer) {
+      clearTimeout(this.interruptedTimer);
+      this.interruptedTimer = null;
     }
     try {
       this.recognition?.abort();
@@ -628,7 +641,8 @@ export class JarvisAudioController {
 
     if (wasInterrupted) {
       this.setState('interrupted');
-      setTimeout(() => {
+      if (this.interruptedTimer) clearTimeout(this.interruptedTimer);
+      this.interruptedTimer = setTimeout(() => {
         if (!this.isMuted && this.isSystemActive && this.controlMode === 'autonomous') {
           this.setState('listening');
         } else {
@@ -636,6 +650,10 @@ export class JarvisAudioController {
         }
       }, 400);
     } else {
+      if (this.interruptedTimer) {
+        clearTimeout(this.interruptedTimer);
+        this.interruptedTimer = null;
+      }
       if (!this.isMuted && this.isSystemActive && this.controlMode === 'autonomous') {
         this.setState('listening');
       } else {

@@ -997,11 +997,16 @@ export function TripProvider({ children }: { children: React.ReactNode }) {
       playJarvisSound('xp', true);
     }
 
-    // Immediate STOP guard
+    // Immediate STOP / MUTE guard
     if (res.actionExecuted === 'STOP_SPEECH' || res.intent === 'STOP') {
       stopJarvisSpeech(true);
       jarvisAudio.stopSpeaking(true);
       setIsSpeaking(false);
+      const isMuteOrOff = /^(?:mute|mic\s*off|turn\s*off\s*mic|switch\s*off\s*mic|band\s*karo|chup)\b/i.test(command.trim());
+      if (isMuteOrOff) {
+        jarvisAudio.mute();
+        setJarvisVoiceState('idle');
+      }
       return res;
     }
 

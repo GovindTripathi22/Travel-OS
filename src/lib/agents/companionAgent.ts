@@ -43,6 +43,7 @@ export function normalizeTravelQuery(raw: string): string {
   return s
     .replace(/\bweathere\b/g, 'weather')
     .replace(/\bwether\b/g, 'weather')
+    .replace(/\bweathr\b/g, 'weather')
     .replace(/\bmausum\b/g, 'mausam')
     .replace(/\bfo\b/g, 'of')
     .replace(/\bwna\b/g, 'and')
@@ -50,7 +51,11 @@ export function normalizeTravelQuery(raw: string): string {
     .replace(/\bhows\b/g, 'how is')
     .replace(/\bpaln\b/g, 'plan')
     .replace(/\bplna\b/g, 'plan')
+    .replace(/\bnxt\b/g, 'next')
+    .replace(/\btmrw\b/g, 'tomorrow')
+    .replace(/\btommorow\b/g, 'tomorrow')
     .replace(/\bresturant\b/g, 'restaurant')
+    .replace(/\brestraunt\b/g, 'restaurant')
     .replace(/\bdadji\b/g, 'dadaji')
     .replace(/\bmedisin\b/g, 'medicine');
 }
@@ -346,15 +351,7 @@ export function generateCompanionResponse(
 
   // 12. TRANSPORT, CHARTERED VAN & DRIVER
   if (
-    q.includes('van') ||
-    q.includes('driver') ||
-    q.includes('taxi') ||
-    q.includes('car') ||
-    q.includes('traveler') ||
-    q.includes('tempo') ||
-    q.includes('transport') ||
-    q.includes('pickup') ||
-    q.includes('cab')
+    /\b(?:van|driver|taxi|car|cars|traveler|tempo|transport|pickup|cab|cabs)\b/i.test(q)
   ) {
     return {
       text: `Trip Transportation Details:
@@ -385,7 +382,178 @@ export function generateCompanionResponse(
     };
   }
 
-  // 14. GENERAL / COMPANION PERSONALIZED FALLBACK (Intelligent context, NEVER repeating flight info)
+  // 14. JAIPUR DESTINATION, CULTURE & PINK CITY HISTORY
+  const isCityHistoryQuery =
+    q.includes('about jaipur') ||
+    q.includes('pink city') ||
+    q.includes('why pink') ||
+    (q.includes('history') && (q.includes('jaipur') || q.includes('city') || q.includes('rajasthan'))) ||
+    (q.includes('culture') && (q.includes('jaipur') || q.includes('city') || q.includes('rajasthan'))) ||
+    q.includes('tell me about jaipur') ||
+    q === 'jaipur' ||
+    q === 'about jaipur';
+
+  if (isCityHistoryQuery) {
+    return {
+      text: `About Jaipur (The Pink City):
+• Foundation: Established in 1727 by Maharaja Sawai Jai Singh II as India's first planned grid city with magnificent Vaastu Shastra architecture.
+• The Pink Color: In 1876, Maharaja Ram Singh painted the entire walled city terracotta pink to welcome Albert Edward, Prince of Wales. The law requires old city buildings to maintain this iconic hue.
+• World Heritage: UNESCO World Heritage site celebrated for Amber Fort, City Palace, astronomical Jantar Mantar, and vibrant heritage bazaars.`,
+      actionSuggestion: `Pre-booked ticket QR passes are stored in the Document Vault.`,
+      quickReplies: ['What is the weather today?', 'What is our next stop?', 'Tell me about Amber Fort']
+    };
+  }
+
+  // 15. CURRENCY, PAYMENTS, FOREX & ATMS
+  if (
+    q.includes('currency') ||
+    q.includes('rupee') ||
+    q.includes('forex') ||
+    q.includes('atm') ||
+    q.includes('card') ||
+    q.includes('cash') ||
+    q.includes('payment') ||
+    q.includes('upi') ||
+    q.includes('exchange') ||
+    (q.includes('how') && q.includes('pay'))
+  ) {
+    return {
+      text: `Currency & Payment Guidance for Jaipur:
+• Official Currency: Indian Rupee (INR / ₹). Current rates: $1 USD ≈ ₹84 | €1 EUR ≈ ₹91 | ¥100 JPY ≈ ₹56.
+• Acceptance: All pre-booked venues (Surya Mahal, Rambagh Palace, Amber Fort tickets) accept international credit cards (Visa/Mastercard) and UPI.
+• Cash Recommendation: Keep ₹2,000–₹3,000 in cash for street bazaars, puppet souvenirs, and auto-rickshaws. ATMs are located 200m from Rambagh Palace.`,
+      actionSuggestion: `Use the Expense Ledger to record shared expenses and calculate debt minimization.`,
+      quickReplies: ['Who pays next?', 'Show Expense Ledger', 'What is the next stop?']
+    };
+  }
+
+  // 16. DRINKING WATER, HEALTH & LOCAL SAFETY
+  if (
+    q.includes('water') ||
+    q.includes('drinking') ||
+    q.includes('tap') ||
+    q.includes('safe') ||
+    q.includes('safety') ||
+    q.includes('emergency number') ||
+    q.includes('police') ||
+    q.includes('ambulance') ||
+    q.includes('helpline')
+  ) {
+    return {
+      text: `Health, Water & Safety Guidelines:
+• Drinking Water: Tap water is not potable. Complimentary sealed RO-purified and mineral water bottles are stocked in our Tempo Traveler van and hotel rooms.
+• Sun & Hydration: Drink plenty of water throughout the afternoon (temperature is 32°C).
+• Emergency Contacts: National Emergency Helpline: 112 | Ambulance: 108 | Police: 100. SMS Hospital is 4.2 km away (+91 141 256 0291). Offline medical cards are ready in the Emergency HUD.`,
+      actionSuggestion: `Emergency SOS modal can be opened instantly via the red shield button in the bottom dock.`,
+      quickReplies: ['Open Emergency SOS', "Check Dadaji's BP meds", 'Show hotel details']
+    };
+  }
+
+  // 17. SHOPPING, BAZAARS & LOCAL SOUVENIRS
+  if (
+    q.includes('shop') ||
+    q.includes('shopping') ||
+    q.includes('bazaar') ||
+    q.includes('bazar') ||
+    q.includes('souvenir') ||
+    q.includes('pottery') ||
+    q.includes('johari') ||
+    q.includes('bapu') ||
+    q.includes('market') ||
+    q.includes('buy') ||
+    q.includes('kharid')
+  ) {
+    return {
+      text: `Jaipur Shopping & Authentic Souvenir Guide:
+• Johari Bazaar: Renowned worldwide for precious gemstones, Kundan-Meenakari jewelry, and silver artisan work.
+• Bapu Bazaar & Tripolia: Famous for authentic Jaipuri razai (quilts), camel-leather mojris, block-print textiles, and traditional lac bangles.
+• Jaipur Blue Pottery: GI-tagged traditional ceramic craft with Egyptian cobalt glaze; authentic showrooms located along MI Road.
+• Best Time: 17:00–19:30 during pleasant dusk hours after the sun sets.`,
+      actionSuggestion: `Our chartered Tempo Traveler van is on standby for market transfers.`,
+      quickReplies: ['What is the weather today?', 'What is our dinner plan?', 'Who pays next?']
+    };
+  }
+
+  // 18. LOCAL LANGUAGE, HINDI PHRASES & ETIQUETTE
+  if (
+    q.includes('language') ||
+    q.includes('dialect') ||
+    q.includes('phrase') ||
+    q.includes('hindi') ||
+    q.includes('marwari') ||
+    q.includes('translate') ||
+    q.includes('how to say') ||
+    q.includes('how do you say') ||
+    q.includes('kya bolte')
+  ) {
+    return {
+      text: `Language & Helpful Phrases for Jaipur:
+• Languages: Hindi and Rajasthani (Marwari) are widely spoken; English is fluent across hotels, fine dining, and heritage tourist sites.
+• Essential Phrases:
+  - "Namaste" (नमस्ते) — Respectful greeting
+  - "Dhanyawaad" (धन्यवाद) — Thank you
+  - "Kitne ka hai?" (कितने का है?) — How much does this cost?
+  - "Kripya thoda kam teekha banayein" — Please prepare with mild spice (for Dadaji)
+  - "Shuddh Shakahari" (शुद्ध शाकाहारी) — Pure vegetarian / Jain`,
+      actionSuggestion: `A complete offline Hindi medical & travel phrasebook is cached in Document Vault.`,
+      quickReplies: ['Open Document Vault', 'Check lunch menu', 'How is the weather today?']
+    };
+  }
+
+  // 19. GROUP COMPANIONS & FAMILY PROFILES
+  if (
+    q.includes('group') ||
+    q.includes('companion') ||
+    q.includes('traveler') ||
+    q.includes('member') ||
+    q.includes('family') ||
+    q.includes('who is in') ||
+    q.includes('who is travelling') ||
+    q.includes('kaun kaun')
+  ) {
+    return {
+      text: `Our Jaipur Family Traveling Companions (6 Members):
+1. Rohan Sharma (32, Self) — Trip Planner & Financial Coordinator.
+2. Dadaji Devendra (72) — Senior Comfort Priority. Ground-floor Suite 104 with step-free access and Amber Fort golf cart reserved.
+3. Priya Sharma (29) — Strict Jain dietary guardian (no root vegetables, onion, or garlic).
+4. Kabir Sharma (8) — Level 3 Desert Scout Explorer (collecting quest XP and badges).
+5. Vikram Sharma (35) — Photography & adventure enthusiast.
+6. Ananya Sharma (27) — Heritage arts, architecture, and textile curator.`,
+      actionSuggestion: `Switch active perspective anytime from the companion selector in the top header.`,
+      quickReplies: ['Check Dadaji mobility', 'Check lunch details', 'Who pays next?']
+    };
+  }
+
+  // 20. ASSISTANT CAPABILITIES & FEATURES (HELP)
+  const isCapabilityHelpQuery =
+    q.includes('what can you do') ||
+    q.includes('feature') ||
+    q.includes('capability') ||
+    q.includes('capabilities') ||
+    q.includes('superpower') ||
+    q.includes('kya kar sakte') ||
+    q.includes('app guide') ||
+    q.includes('how to use') ||
+    q === 'help' ||
+    q === 'sahayak help' ||
+    q === 'commands';
+
+  if (isCapabilityHelpQuery) {
+    return {
+      text: `Sahayak AI Autonomous Co-Pilot Capabilities:
+• Live Weather Adaptation: Proactively monitors destination skies (32°C sunny) and offers 1-click indoor sheltered swaps if rain occurs.
+• Temporal Auto-Healing: Automatically detects schedule collisions and injects 15–30 min rest buffers.
+• Dadaji Senior Sentinel: Verifies zero stairs, grab bars, golf cart escorts, and reminds on daily BP medications.
+• Strict Jain Dietary Guardian: Audits restaurant kitchens to protect against onion, garlic, and root vegetables.
+• Debt Minimization AI: Consolidates complex shared expenses into minimal net bank transfers.
+• Quadratic Consensus Voting: Resolves group decision deadlocks fairly using mathematical mechanism design.
+• Captain Kabir Quests: Keeps young explorers engaged with gamified monument quests and badge XP.`,
+      actionSuggestion: `Ask questions via voice (Alt+J) or text in the Ask AI drawer.`,
+      quickReplies: ['What is the next stop on the plan?', 'How is the weather today?', 'Who pays next?']
+    };
+  }
+
+  // 21. GENERAL / COMPANION PERSONALIZED FALLBACK (Intelligent context, NEVER repeating flight info)
   const nextStop = getNextUpcomingStop(itinerary);
 
   return {

@@ -941,11 +941,24 @@ export function processJarvisVoiceCommand(
     });
 
     if (comp && comp.text && !comp.text.includes('Flight AI-481')) {
-      const firstSentence = comp.text.split('\n')[0].slice(0, 220);
+      const lines = comp.text
+        .split('\n')
+        .map((l) => l.replace(/^[•\-\d\.]+\s*/, '').trim())
+        .filter((l) => l.length > 0);
+
+      let spokenText = '';
+      if (lines[0] && lines[0].endsWith(':') && lines[1]) {
+        spokenText = `${lines[0]} ${lines[1]}`;
+        if (lines[2]) spokenText += ` ${lines[2]}`;
+      } else {
+        spokenText = lines.slice(0, 2).join('. ');
+      }
+      spokenText = spokenText.slice(0, 240);
+
       return {
         intent: 'ASSISTANT_QUERY',
         summary: clean.slice(0, 35),
-        spokenResponse: firstSentence,
+        spokenResponse: spokenText,
         actionExecuted: 'NO_OP',
         quickReplies: comp.quickReplies || ['Show Timeline', 'How is the weather?', 'Who Pays Next?'],
       };

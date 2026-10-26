@@ -13,7 +13,9 @@ import {
   VolumeX,
   User,
   ShieldCheck,
-  CheckCircle2
+  CheckCircle2,
+  Mic,
+  MicOff,
 } from 'lucide-react';
 
 export default function PersonalAssistantDrawer() {
@@ -35,7 +37,9 @@ export default function PersonalAssistantDrawer() {
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
+  const [isListeningVoice, setIsListeningVoice] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const drawerRecognitionRef = useRef<any>(null);
 
   // Initialize greeting whenever current user changes
   useEffect(() => {
@@ -166,6 +170,56 @@ export default function PersonalAssistantDrawer() {
     }
   };
 
+  const toggleVoiceInput = () => {
+    if (isListeningVoice) {
+      try {
+        drawerRecognitionRef.current?.abort();
+      } catch {}
+      setIsListeningVoice(false);
+      return;
+    }
+
+    if (typeof window !== 'undefined') {
+      const SpeechRecognition =
+        (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+      if (SpeechRecognition) {
+        try {
+          const rec = new SpeechRecognition();
+          drawerRecognitionRef.current = rec;
+          rec.continuous = false;
+          rec.interimResults = true;
+          rec.lang = 'en-IN';
+
+          rec.onstart = () => {
+            setIsListeningVoice(true);
+          };
+
+          rec.onresult = (event: any) => {
+            const transcript = event.results[0][0].transcript;
+            setInput(transcript);
+            if (event.results[0].isFinal) {
+              setIsListeningVoice(false);
+              handleSend(transcript);
+            }
+          };
+
+          rec.onerror = () => {
+            setIsListeningVoice(false);
+          };
+
+          rec.onend = () => {
+            setIsListeningVoice(false);
+          };
+
+          rec.start();
+        } catch {
+          setIsListeningVoice(false);
+        }
+      }
+    }
+  };
+
   if (!isAssistantOpen) return null;
 
   return (
@@ -293,9 +347,21 @@ export default function PersonalAssistantDrawer() {
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder={`Ask ${currentUser.name.split(' ')[0]}'s AI assistant...`}
+              placeholder={isListeningVoice ? 'Listening to voice query...' : `Ask ${currentUser.name.split(' ')[0]}'s AI assistant...`}
               className="flex-1 text-xs sm:text-sm p-3 border border-[#EBE6DE] rounded-xl focus:border-[#D97746] focus:outline-none"
             />
+            <button
+              type="button"
+              onClick={toggleVoiceInput}
+              title={isListeningVoice ? 'Listening... click to stop' : 'Speak to AI'}
+              className={`p-3 rounded-xl transition active:scale-95 shrink-0 ${
+                isListeningVoice
+                  ? 'bg-emerald-500 text-white animate-pulse shadow-md'
+                  : 'bg-stone-100 hover:bg-stone-200 text-[#5E5851]'
+              }`}
+            >
+              {isListeningVoice ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
+            </button>
             <button
               type="submit"
               disabled={!input.trim()}

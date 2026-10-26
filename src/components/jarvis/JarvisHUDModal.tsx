@@ -45,6 +45,7 @@ export default function JarvisHUDModal() {
   const [isListening, setIsListening] = useState(false);
   const [transcriptPreview, setTranscriptPreview] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
+  const recognitionRef = useRef<any>(null);
 
   const isOpen = isJarvisOpen || isHUDModalOpen;
 
@@ -75,6 +76,15 @@ export default function JarvisHUDModal() {
   const startVoiceInput = () => {
     unlockAudio();
     stopSpeaking();
+    if (isListening) {
+      try {
+        recognitionRef.current?.abort();
+      } catch {}
+      setIsListening(false);
+      setTranscriptPreview('');
+      return;
+    }
+
     if (typeof window !== 'undefined') {
       const SpeechRecognition =
         (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -82,6 +92,7 @@ export default function JarvisHUDModal() {
       if (SpeechRecognition) {
         try {
           const recognition = new SpeechRecognition();
+          recognitionRef.current = recognition;
           recognition.continuous = false;
           recognition.interimResults = true;
           recognition.lang = 'en-IN';
