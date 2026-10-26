@@ -22,7 +22,7 @@ import {
   UserCheck,
   Smartphone
 } from 'lucide-react';
-import { playJarvisChime, unlockAudio } from '@/lib/audio/jarvisAudio';
+import { playJarvisChime, unlockAudio, jarvisAudio } from '@/lib/audio/jarvisAudio';
 
 export default function JarvisHUDModal() {
   const {
@@ -213,6 +213,7 @@ export default function JarvisHUDModal() {
               onClick={() => {
                 const next = jarvisControlMode === 'autonomous' ? 'manual' : 'autonomous';
                 setJarvisControlMode(next);
+                jarvisAudio.setControlMode(next);
               }}
               className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 text-xs font-semibold text-cyan-300 flex items-center gap-1.5 transition"
               title="Toggle Autonomous / Manual Mode"

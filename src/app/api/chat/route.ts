@@ -91,8 +91,11 @@ export async function POST(req: NextRequest) {
                 role: 'system',
                 content: `You are Sahayak (सहायक), the intelligent and warm autonomous travel companion and co-pilot for Sahyatri.
 Persona: ${persona}.
-Current destination: Kyoto, Japan / Jaipur, India.
-Always be concise, proactive, authoritative, warm, and helpful. Max 2-3 sentences. Incorporate web search facts when provided.`,
+Current destination: Jaipur, Rajasthan, India.
+Live Weather: 32°C, pleasant clear skies, 0% rain probability.
+Timeline status: Family has landed and is en route to Surya Mahal Dining Room for Welcome Royal Thali Lunch (13:00–14:30).
+Constraints: Dadaji has zero-stair Suite 104 and Amber Fort golf cart reserved. Priya has certified Jain meals (no onion/garlic/potatoes).
+Always be concise, proactive, authoritative, warm, and helpful. Max 2-3 sentences. Incorporate web search facts when provided. Never output past airport landing info as the upcoming stop.`,
               },
               {
                 role: 'user',
@@ -130,8 +133,9 @@ Always be concise, proactive, authoritative, warm, and helpful. Max 2-3 sentence
     if (geminiKey && geminiKey.trim().length > 5 && !geminiKey.includes('your_actual')) {
       try {
         const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`;
-        const prompt = `You are Sahayak (सहायक), an intelligent travel co-pilot operating in ${persona} mode for a family expedition.
-Be concise, proactive, clear, and direct. Respond to the user's inquiry: "${message}"${webGroundingContext}`;
+        const prompt = `You are Sahayak (सहायक), an intelligent travel co-pilot operating in ${persona} mode for a family expedition in Jaipur, India.
+Jaipur weather is 32°C, pleasant clear skies, 0% rain chance. The family has landed and next upcoming stop is Welcome Royal Thali Lunch at Surya Mahal Dining Room (13:00). Dadaji has zero-stair room and Amber Fort golf cart pass. Priya has certified Jain meals.
+Be concise, proactive, clear, and direct. Never output flight landing info as the next stop. Respond to the user's inquiry: "${message}"${webGroundingContext}`;
 
         const geminiRes = await fetch(endpoint, {
           method: 'POST',
@@ -145,7 +149,7 @@ Be concise, proactive, clear, and direct. Respond to the user's inquiry: "${mess
           const geminiData = await geminiRes.json();
           const replyText =
             geminiData.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ||
-            `Command confirmed. Executed ${slmResult.intents.length} autonomous task(s) in ${slmResult.latencyMs}ms.`;
+            companionRes.text;
 
           return NextResponse.json({
             ok: true,
@@ -165,9 +169,10 @@ Be concise, proactive, clear, and direct. Respond to the user's inquiry: "${mess
 
     // 6. Sub-5ms Local Edge SLM + Companion Response
     const replyBase =
-      webSources.length > 0 && webSources[0].content
-        ? `According to live web records: ${webSources[0].content.slice(0, 180)}...`
-        : `Command confirmed. Executed ${slmResult.intents.length} autonomous task(s) in ${slmResult.latencyMs}ms.`;
+      companionRes?.text ||
+      (webSources.length > 0 && webSources[0].content
+        ? `According to live web records: ${webSources[0].content.slice(0, 240)}...`
+        : `Command confirmed. Executed ${slmResult.intents.length} autonomous task(s) in ${slmResult.latencyMs}ms.`);
 
     return NextResponse.json({
       ok: true,

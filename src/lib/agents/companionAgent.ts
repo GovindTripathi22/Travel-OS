@@ -10,6 +10,51 @@ export interface AgentContext {
   allUsers: User[];
 }
 
+export function getNextUpcomingStop(itinerary: ItineraryItem[]): ItineraryItem {
+  if (!itinerary || itinerary.length === 0) {
+    return {
+      id: 'event-3',
+      day: 1,
+      date: 'Oct 14, 2026',
+      time: '13:00',
+      endTime: '14:30',
+      title: 'Welcome Royal Thali Lunch',
+      description: 'Authentic Marwari royal thali banquet with pre-ordered Jain and low-sodium thalis.',
+      category: 'dining',
+      location: 'Surya Mahal Dining Room',
+      status: 'confirmed',
+    } as ItineraryItem;
+  }
+
+  // Filter out completed flight arrival/airport rendezvous events so "next stop" reflects the real expedition
+  const nonFlightUpcoming = itinerary.find(
+    (item) =>
+      item.category !== 'transit' &&
+      !item.title.toLowerCase().includes('flight') &&
+      !item.title.toLowerCase().includes('airport') &&
+      !item.title.toLowerCase().includes('rendezvous')
+  );
+
+  return nonFlightUpcoming || itinerary[0];
+}
+
+export function normalizeTravelQuery(raw: string): string {
+  let s = (raw || '').toLowerCase().trim();
+  return s
+    .replace(/\bweathere\b/g, 'weather')
+    .replace(/\bwether\b/g, 'weather')
+    .replace(/\bmausum\b/g, 'mausam')
+    .replace(/\bfo\b/g, 'of')
+    .replace(/\bwna\b/g, 'and')
+    .replace(/\bhow\s*sthe\b/g, 'how is the')
+    .replace(/\bhows\b/g, 'how is')
+    .replace(/\bpaln\b/g, 'plan')
+    .replace(/\bplna\b/g, 'plan')
+    .replace(/\bresturant\b/g, 'restaurant')
+    .replace(/\bdadji\b/g, 'dadaji')
+    .replace(/\bmedisin\b/g, 'medicine');
+}
+
 /**
  * Intelligent AI companion response generator with deep contextual awareness of:
  * - Real-time Jaipur destination weather (32°C, clear skies, 0% rain)
@@ -24,10 +69,10 @@ export function generateCompanionResponse(
   context: AgentContext
 ): { text: string; actionSuggestion?: string; quickReplies?: string[] } {
   const { currentUser, itinerary, polls, expenses, allUsers } = context;
-  const q = (query || '').toLowerCase().trim();
+  const rawQ = (query || '').toLowerCase().trim();
+  const q = normalizeTravelQuery(rawQ);
 
-  // 1. WEATHER & CLIMATE QUERIES
-  if (
+  const isWeatherQuery =
     q.includes('weather') ||
     q.includes('mausam') ||
     q.includes('rain') ||
@@ -37,17 +82,12 @@ export function generateCompanionResponse(
     q.includes('forecast') ||
     q.includes('garmi') ||
     q.includes('cold') ||
-    q.includes('umbrella')
-  ) {
-    return {
-      text: `Current weather in Jaipur, Rajasthan is 32°C (Feels like 30°C), with pleasant and clear skies, 18% humidity, and a gentle 7 km/h breeze. There is 0% probability of rain today, so all outdoor stops (City Palace, Jantar Mantar, and Chokhi Dhani) are fully cleared with zero weather conflict alerts. UV protection and hydration are recommended for the afternoon walk!`,
-      actionSuggestion: `Timeline weather guard: All outdoor stops have pre-verified air-conditioned indoor fallback halls.`,
-      quickReplies: ['What is the next stop on the plan?', 'Show today\'s timeline', 'Will there be shade for Dadaji?']
-    };
-  }
+    q.includes('umbrella') ||
+    q.includes('climate') ||
+    rawQ.includes('weathere') ||
+    rawQ.includes('wether');
 
-  // 2. NEXT PART OF THE PLAN & TIMELINE SCHEDULE QUERIES
-  if (
+  const isPlanQuery =
     q.includes('next') ||
     q.includes('plan') ||
     q.includes('schedule') ||
@@ -58,8 +98,36 @@ export function generateCompanionResponse(
     q.includes('agla') ||
     q.includes('kahan jana') ||
     q.includes('what are we doing') ||
-    q.includes('routine')
-  ) {
+    q.includes('what next') ||
+    q.includes('upcoming') ||
+    q.includes('routine') ||
+    rawQ.includes('paln');
+
+  // 0. COMPOUND QUERY: BOTH NEXT PLAN AND DESTINATION WEATHER
+  if (isWeatherQuery && isPlanQuery) {
+    return {
+      text: `Here is the upcoming plan and current weather report for Jaipur:
+• Current Weather: 32°C (Feels like 30°C), clear pleasant skies, 18% humidity, gentle 7 km/h breeze, and 0% rain probability. Outdoor walking stops are completely safe.
+• Next Immediate Stop (13:00 – 14:30): Welcome Royal Thali Lunch at Surya Mahal Dining Room. Ground-floor step-free access, pre-ordered Jain thali for Priya and low-sodium thali for Dadaji.
+• Afternoon (16:00 – 18:30): City Palace & Jantar Mantar Royal Astronomy Walk (paved shaded paths, resting benches every 50m).
+• Evening (19:30 – 22:00): Chokhi Dhani Heritage Village (folk dance, camel ride for Kabir, royal banquet).
+• Tomorrow Morning (09:00): Amber Fort Citadel Expedition (electric golf cart reserved for Dadaji to bypass 140 steps).`,
+      actionSuggestion: `Timeline note: All 6 companions have landed; the chartered van is en route to Surya Mahal Dining Room.`,
+      quickReplies: ['Check lunch menu details', 'Are there stairs for Dadaji?', 'Who pays next for lunch?']
+    };
+  }
+
+  // 1. WEATHER & CLIMATE QUERIES
+  if (isWeatherQuery) {
+    return {
+      text: `Current weather in Jaipur, Rajasthan is 32°C (Feels like 30°C), with pleasant and clear skies, 18% humidity, and a gentle 7 km/h breeze. There is 0% probability of rain today, so all outdoor stops (City Palace, Jantar Mantar, and Chokhi Dhani) are fully cleared with zero weather conflict alerts. UV protection and hydration are recommended for the afternoon walk!`,
+      actionSuggestion: `Timeline weather guard: All outdoor stops have pre-verified air-conditioned indoor fallback halls.`,
+      quickReplies: ['What is the next stop on the plan?', 'Show today\'s timeline', 'Will there be shade for Dadaji?']
+    };
+  }
+
+  // 2. NEXT PART OF THE PLAN & TIMELINE SCHEDULE QUERIES
+  if (isPlanQuery) {
     return {
       text: `Here is the upcoming schedule for our Jaipur expedition:
 • Next Immediate Stop (13:00 – 14:30): Welcome Royal Thali Lunch at Surya Mahal Dining Room. Ground-floor drop-off with zero stairs, pre-ordered Jain thali for Priya and low-sodium thali for Dadaji.
@@ -254,15 +322,75 @@ export function generateCompanionResponse(
     };
   }
 
-  // 11. GENERAL / COMPANION PERSONALIZED FALLBACK
-  const nextStop = itinerary[0] || {
-    title: 'Surya Mahal Royal Rajasthani Lunch',
-    time: '13:00',
-    location: 'City Palace Precinct'
-  };
+  // 11. MONUMENTS & HERITAGE SIGHTSEEING (Amber Fort, City Palace, Jantar Mantar, Chokhi Dhani)
+  if (
+    q.includes('amber') ||
+    q.includes('fort') ||
+    q.includes('city palace') ||
+    q.includes('jantar mantar') ||
+    q.includes('chokhi dhani') ||
+    q.includes('hawa mahal') ||
+    q.includes('monument') ||
+    q.includes('sightseeing') ||
+    q.includes('attraction')
+  ) {
+    return {
+      text: `Key Jaipur Monument Highlights:
+• City Palace & Jantar Mantar (Today 16:00): Paved corridors, shaded rest stations every 50m, and Brihat Samrat Yantra sundial quest.
+• Chokhi Dhani (Tonight 19:30): Folk dance, puppet theater, camel ride for Kabir, and authentic Rajasthani dining.
+• Amber Fort (Tomorrow 09:00): Majestic hilltop citadel overlooking Maota Lake. An electric golf cart and wheelchair escort (Ref: RJ-TOUR-WHEEL-09) are pre-reserved for Dadaji to bypass all 140 stone steps.`,
+      actionSuggestion: `Pre-booked ticket QR passes are stored offline in Document Vault.`,
+      quickReplies: ['What is the weather today?', 'Show Dadaji rest window', 'Check lunch details']
+    };
+  }
+
+  // 12. TRANSPORT, CHARTERED VAN & DRIVER
+  if (
+    q.includes('van') ||
+    q.includes('driver') ||
+    q.includes('taxi') ||
+    q.includes('car') ||
+    q.includes('traveler') ||
+    q.includes('tempo') ||
+    q.includes('transport') ||
+    q.includes('pickup') ||
+    q.includes('cab')
+  ) {
+    return {
+      text: `Trip Transportation Details:
+• Vehicle: Chartered 12-seater AC Force Tempo Traveler (Reg: RJ-14-PA-8821) dedicated exclusively to our family.
+• Driver: Rajesh Sharma (+91 98290 11223). Highly experienced with senior mobility boarding.
+• Boarding: Low-step entrance with pull-out step stool for Dadaji. AC pre-cooled to 23°C.`,
+      actionSuggestion: `Van is stationed outside the rendezvous gate ready for transfer to Surya Mahal.`,
+      quickReplies: ['Call Driver Rajesh', 'What is the next stop?', 'Show hotel details']
+    };
+  }
+
+  // 13. PACKING & ESSENTIALS
+  if (
+    q.includes('pack') ||
+    q.includes('packing') ||
+    q.includes('clothes') ||
+    q.includes('bag') ||
+    q.includes('wear') ||
+    q.includes('saman')
+  ) {
+    return {
+      text: `Smart Packing & Daily Essentials for Jaipur:
+• Climate Gear: Light breathable cottons, sunglasses, SPF 50 sunscreen, and sun hat (Jaipur is 32°C and sunny).
+• Evening: Light shawl or cardigan for Chokhi Dhani open-air village after 20:00.
+• Senior Essentials: Dadaji's BP tablet organizer, comfortable walking shoes, and hydration flask.`,
+      actionSuggestion: `All emergency medical cards are cached offline in Document Vault.`,
+      quickReplies: ['Show Document Vault', 'How is the weather today?', 'What is the schedule?']
+    };
+  }
+
+  // 14. GENERAL / COMPANION PERSONALIZED FALLBACK (Intelligent context, NEVER repeating flight info)
+  const nextStop = getNextUpcomingStop(itinerary);
 
   return {
-    text: `Hi ${currentUser.name}! The next scheduled activity is "${nextStop.title}" at ${nextStop.time} at ${nextStop.location}. All transportation, dietary preferences (${currentUser.preferences.dietary[0] || 'Vegetarian'}), and accessibility requirements are pre-verified. How can I assist you right now?`,
+    text: `Hi ${currentUser.name}! The family has arrived in Jaipur and all logistics are running smoothly. The upcoming activity on our itinerary is "${nextStop.title}" at ${nextStop.time} at ${nextStop.location}. All transportation, dietary preferences (${currentUser.preferences.dietary[0] || 'Vegetarian'}), and Dadaji's mobility safeguards are pre-verified. How can I assist you right now?`,
+    actionSuggestion: `Current checkpoint: En route to Surya Mahal Dining Room for royal banquet lunch.`,
     quickReplies: [
       'How is the weather today?',
       'What is the next stop on the plan?',

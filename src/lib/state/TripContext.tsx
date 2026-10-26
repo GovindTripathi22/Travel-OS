@@ -514,6 +514,11 @@ export function TripProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  // Sync Jarvis Audio controller with active control mode
+  useEffect(() => {
+    jarvisAudio.setControlMode(jarvisControlMode);
+  }, [jarvisControlMode]);
+
   // Compute Conflicts (User constraints + Weather / Temporal overlaps)
   const rawConflicts = useMemo(() => {
     const userAlerts = detectTripConflicts(itinerary, users);

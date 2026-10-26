@@ -93,11 +93,7 @@ export default function JarvisOrb() {
 
       if ((e.altKey && (e.key === 'j' || e.key === 'J')) || (e.ctrlKey && e.code === 'Space')) {
         e.preventDefault();
-        if (!isSystemActive) {
-          setIsSystemActive(true);
-          jarvisAudio.startSystem(jarvisControlMode);
-        }
-        jarvisAudio.toggleManualMic();
+        handleToggleMic();
       } else if (e.key === 'Escape' && (isSpeaking || jarvisVoiceState === 'speaking')) {
         e.preventDefault();
         jarvisAudio.stopSpeaking(true);
@@ -110,14 +106,15 @@ export default function JarvisOrb() {
 
   // Master Power Toggle
   const handleTogglePower = () => {
-    if (isSystemActive || jarvisVoiceState === 'listening') {
+    if (isSystemActive || jarvisVoiceState === 'listening' || !jarvisAudio.isMicMuted()) {
       setIsSystemActive(false);
       hasGreetedRef.current = false;
-      jarvisAudio.stopSystem();
+      jarvisAudio.mute();
       setJarvisVoiceState('idle');
       playJarvisChime('sleep');
     } else {
       setIsSystemActive(true);
+      jarvisAudio.unmute();
       jarvisAudio.startSystem(jarvisControlMode);
       playJarvisChime('wake');
 
@@ -135,13 +132,20 @@ export default function JarvisOrb() {
 
   // Dedicated Microphone Toggle (Guaranteed immediate stop & no auto-restart)
   const handleToggleMic = () => {
-    if (jarvisVoiceState === 'listening' || isSystemActive) {
+    if (
+      jarvisVoiceState === 'listening' ||
+      jarvisVoiceState === 'speaking' ||
+      isSpeaking ||
+      isSystemActive ||
+      !jarvisAudio.isMicMuted()
+    ) {
       setIsSystemActive(false);
-      jarvisAudio.stopSystem();
+      jarvisAudio.mute();
       setJarvisVoiceState('idle');
       playJarvisChime('sleep');
     } else {
       setIsSystemActive(true);
+      jarvisAudio.unmute();
       jarvisAudio.startSystem(jarvisControlMode);
       jarvisAudio.startListening();
       playJarvisChime('wake');
@@ -256,7 +260,7 @@ export default function JarvisOrb() {
           type="button"
           onClick={handleToggleMic}
           className={`p-2 rounded-full transition-all duration-200 ${
-            jarvisVoiceState === 'listening'
+            jarvisVoiceState === 'listening' && !jarvisAudio.isMicMuted()
               ? 'bg-emerald-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.5)] scale-105'
               : jarvisVoiceState === 'speaking' || isSpeaking
               ? 'bg-amber-500 text-white animate-pulse'
@@ -265,7 +269,7 @@ export default function JarvisOrb() {
           title="Toggle Mic / Speak (Alt + J)"
           aria-label="Microphone"
         >
-          {jarvisVoiceState === 'listening' ? (
+          {jarvisVoiceState === 'listening' && !jarvisAudio.isMicMuted() ? (
             <Mic className="w-4 h-4" />
           ) : (
             <MicOff className="w-4 h-4" />

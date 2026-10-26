@@ -249,6 +249,7 @@ export class JarvisAudioController {
   private controlMode: JarvisControlMode = 'autonomous';
   private voiceState: JarvisVoiceState = 'idle';
   private isSystemActive: boolean = false;
+  private isMuted: boolean = false;
   private isSpeakingNow: boolean = false;
   private currentSpokenText: string = '';
   private speechStartedAt: number = 0;
@@ -385,6 +386,11 @@ export class JarvisAudioController {
     if (!this.recognition) return;
 
     this.recognition.onresult = (event: any) => {
+      // If user muted or system is inactive, drop all incoming audio immediately
+      if (this.isMuted || !this.isSystemActive) {
+        return;
+      }
+
       // Cooldown guard: discard microphone audio for 450ms after speech ends to prevent speaker reverb
       if (Date.now() - this.speechEndedAt < 450) {
         return;
@@ -445,10 +451,14 @@ export class JarvisAudioController {
 
     this.recognition.onerror = (event: any) => {
       if (event.error === 'no-speech' || event.error === 'aborted') {
+        if (this.isMuted && !this.isSpeakingNow) {
+          this.setState('idle');
+        }
         return;
       }
       if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
         console.warn('[JarvisAudio] Microphone permission denied/blocked:', event.error);
+        this.isMuted = true;
         this.isSystemActive = false; // Stop restarting in onend!
         this.setState('idle');
         return;
@@ -457,24 +467,28 @@ export class JarvisAudioController {
     };
 
     this.recognition.onend = () => {
-      // ONLY auto-restart in Autonomous mode when system is active
-      if (this.isSystemActive && this.controlMode === 'autonomous') {
-        if (this.restartTimer) clearTimeout(this.restartTimer);
-        this.restartTimer = setTimeout(() => {
-          if (this.isSystemActive && this.controlMode === 'autonomous') {
-            try {
-              this.recognition.start();
-              if (!this.isSpeakingNow) {
-                this.setState('listening');
-              }
-            } catch {
-              // Already started
-            }
-          }
-        }, 300);
-      } else if (!this.isSpeakingNow) {
-        this.setState('idle');
+      // If user muted the mic or system is stopped or in manual mode, NEVER restart!
+      if (this.isMuted || !this.isSystemActive || this.controlMode === 'manual') {
+        if (!this.isSpeakingNow) {
+          this.setState('idle');
+        }
+        return;
       }
+
+      // ONLY auto-restart in Autonomous mode when system is active and NOT muted
+      if (this.restartTimer) clearTimeout(this.restartTimer);
+      this.restartTimer = setTimeout(() => {
+        if (!this.isMuted && this.isSystemActive && this.controlMode === 'autonomous') {
+          try {
+            this.recognition.start();
+            if (!this.isSpeakingNow) {
+              this.setState('listening');
+            }
+          } catch {
+            // Already started
+          }
+        }
+      }, 300);
     };
   }
 
@@ -491,18 +505,19 @@ export class JarvisAudioController {
     if (mode === 'manual') {
       if (this.restartTimer) clearTimeout(this.restartTimer);
       try {
-        this.recognition?.stop();
+        this.recognition?.abort();
       } catch {}
       if (!this.isSpeakingNow) {
         this.setState('idle');
       }
-    } else if (mode === 'autonomous' && this.isSystemActive) {
+    } else if (mode === 'autonomous' && this.isSystemActive && !this.isMuted) {
       this.startListening();
     }
   }
 
   public startSystem(mode: JarvisControlMode = this.controlMode) {
     unlockAudio();
+    this.isMuted = false;
     this.isSystemActive = true;
     this.controlMode = mode;
     if (mode === 'autonomous') {
@@ -513,6 +528,7 @@ export class JarvisAudioController {
   }
 
   public stopSystem() {
+    this.isMuted = true;
     this.isSystemActive = false;
     if (this.restartTimer) {
       clearTimeout(this.restartTimer);
@@ -520,13 +536,36 @@ export class JarvisAudioController {
     }
     this.stopSpeaking(false);
     try {
-      this.recognition?.stop();
+      this.recognition?.abort();
     } catch {}
     this.setState('idle');
   }
 
+  public mute() {
+    this.isMuted = true;
+    this.isSystemActive = false;
+    if (this.restartTimer) {
+      clearTimeout(this.restartTimer);
+      this.restartTimer = null;
+    }
+    this.stopSpeaking(false);
+    try {
+      this.recognition?.abort();
+    } catch {}
+    this.setState('idle');
+  }
+
+  public unmute() {
+    this.isMuted = false;
+  }
+
+  public isMicMuted(): boolean {
+    return this.isMuted;
+  }
+
   public startListening() {
     unlockAudio();
+    this.isMuted = false;
     this.isSystemActive = true;
     if (this.isSpeakingNow) {
       this.stopSpeaking(true);
@@ -541,13 +580,14 @@ export class JarvisAudioController {
   }
 
   public stopListening() {
+    this.isMuted = true;
     this.isSystemActive = false; // Turn off system to ensure onend never auto-restarts
     if (this.restartTimer) {
       clearTimeout(this.restartTimer);
       this.restartTimer = null;
     }
     try {
-      this.recognition?.stop();
+      this.recognition?.abort();
     } catch {}
     if (!this.isSpeakingNow) {
       this.setState('idle');
@@ -560,9 +600,10 @@ export class JarvisAudioController {
       this.stopSpeaking(true);
       return;
     }
-    if (this.voiceState === 'listening' || this.isSystemActive) {
-      this.stopSystem();
+    if (this.voiceState === 'listening' || this.isSystemActive || !this.isMuted) {
+      this.mute();
     } else {
+      this.unmute();
       this.startSystem(this.controlMode);
       this.startListening();
     }
@@ -588,14 +629,14 @@ export class JarvisAudioController {
     if (wasInterrupted) {
       this.setState('interrupted');
       setTimeout(() => {
-        if (this.isSystemActive && this.controlMode === 'autonomous') {
+        if (!this.isMuted && this.isSystemActive && this.controlMode === 'autonomous') {
           this.setState('listening');
         } else {
           this.setState('idle');
         }
       }, 400);
     } else {
-      if (this.isSystemActive && this.controlMode === 'autonomous') {
+      if (!this.isMuted && this.isSystemActive && this.controlMode === 'autonomous') {
         this.setState('listening');
       } else {
         this.setState('idle');
@@ -649,7 +690,7 @@ export class JarvisAudioController {
       this.currentSpokenText = '';
       this.speechEndedAt = Date.now();
       setGlobalSpeaking(false);
-      if (this.isSystemActive && this.controlMode === 'autonomous') {
+      if (!this.isMuted && this.isSystemActive && this.controlMode === 'autonomous') {
         this.setState('listening');
       } else {
         this.setState('idle');

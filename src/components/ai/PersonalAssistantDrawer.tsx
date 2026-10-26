@@ -119,7 +119,10 @@ export default function PersonalAssistantDrawer() {
 
       if (apiRes.ok) {
         const data = await apiRes.json();
-        const replyText = data.reply || data.data?.text;
+        let replyText = data.reply || data.data?.text;
+        if (!replyText || replyText.startsWith('Command confirmed.')) {
+          replyText = data.data?.text || generateCompanionResponse(query, agentContext).text;
+        }
         if (replyText) {
           const botMsg: ChatMessage = {
             id: `bot-${Date.now()}`,

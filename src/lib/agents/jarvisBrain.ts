@@ -9,6 +9,11 @@ import {
   JarvisActionResult,
   JarvisIntent,
 } from '@/types';
+import {
+  getNextUpcomingStop,
+  normalizeTravelQuery,
+  generateCompanionResponse,
+} from './companionAgent';
 
 export interface JarvisContext {
   currentUser: User;
@@ -39,7 +44,9 @@ export function processJarvisVoiceCommand(
     clean = clean.slice(wakeWordMatch[0].length).trim();
   }
 
-  const lower = (clean || rawInput.trim()).toLowerCase();
+  const rawClean = clean || rawInput.trim();
+  const lower = rawClean.toLowerCase();
+  const norm = normalizeTravelQuery(lower);
 
   // 0. STOP / INTERRUPT PROTOCOL (HIGHEST PRIORITY)
   const isExplicitStop =
@@ -450,19 +457,36 @@ export function processJarvisVoiceCommand(
   }
 
   // 9. PERSPECTIVE / USER SWITCHING
-  if (
+  const hasSwitchVerb =
     lower.includes('switch') ||
     lower.includes('change') ||
     lower.includes('login') ||
-    lower.includes('dadaji') ||
-    lower.includes('kabir') ||
-    lower.includes('priya') ||
-    lower.includes('rohan') ||
-    lower.includes('elderly') ||
-    lower.includes('senior') ||
-    lower.includes('grandfather') ||
-    lower.includes('kid')
-  ) {
+    lower.includes('mode') ||
+    lower.startsWith('as ') ||
+    lower === 'dadaji' ||
+    lower === 'kabir' ||
+    lower === 'priya' ||
+    lower === 'rohan' ||
+    lower === 'elderly' ||
+    lower === 'kid';
+
+  const isQueryAboutSubject =
+    lower.includes('stair') ||
+    lower.includes('walk') ||
+    lower.includes('climb') ||
+    lower.includes('wheelchair') ||
+    lower.includes('golf cart') ||
+    lower.includes('knee') ||
+    lower.includes('medicine') ||
+    lower.includes('food') ||
+    lower.includes('lunch') ||
+    lower.includes('what') ||
+    lower.includes('how') ||
+    lower.includes('when') ||
+    lower.includes('where') ||
+    lower.includes('are there');
+
+  if (hasSwitchVerb && !isQueryAboutSubject) {
     let targetUser = ctx.currentUser;
     if (
       lower.includes('dadaji') ||
@@ -614,7 +638,79 @@ export function processJarvisVoiceCommand(
     };
   }
 
-  // 14. WEATHER & RAIN ADAPTATION
+  // 14. WEATHER & SCHEDULE QUERY PROTOCOLS
+  const isWeatherQuery =
+    norm.includes('weather') ||
+    norm.includes('mausam') ||
+    norm.includes('temp') ||
+    norm.includes('sunny') ||
+    norm.includes('forecast') ||
+    norm.includes('garmi') ||
+    norm.includes('cold') ||
+    norm.includes('umbrella') ||
+    norm.includes('climate') ||
+    lower.includes('weathere') ||
+    lower.includes('wether');
+
+  const isPlanQuery =
+    norm.includes('next') ||
+    norm.includes('plan') ||
+    norm.includes('schedule') ||
+    norm.includes('itinerary') ||
+    norm.includes('stop') ||
+    norm.includes('timing') ||
+    norm.includes('kya plan hai') ||
+    norm.includes('agla') ||
+    norm.includes('kahan jana') ||
+    norm.includes('what are we doing') ||
+    norm.includes('what next') ||
+    norm.includes('upcoming');
+
+  // 14A. COMPOUND QUERY: BOTH NEXT PART OF PLAN AND DESTINATION WEATHER
+  if (isWeatherQuery && isPlanQuery) {
+    const nextItem = getNextUpcomingStop(ctx.itinerary);
+    return {
+      intent: 'QUERY_SCHEDULE',
+      summary: `Upcoming Plan & Weather: ${nextItem.title} (32°C Clear)`,
+      spokenResponse: `Next stop is "${nextItem.title}" at ${nextItem.time} at ${nextItem.location}. Current weather in Jaipur is 32°C with pleasant, clear skies and zero percent rain. All outdoor sightseeing is completely safe.`,
+      navigation: { tab: 'timeline' },
+      cardType: 'schedule',
+      cardData: {
+        title: nextItem.title,
+        time: nextItem.time,
+        location: nextItem.location,
+        weather: '32°C Clear (0% rain)',
+      },
+      quickReplies: ['Check lunch menu', 'Are there stairs for Dadaji?', 'Show Timeline'],
+    };
+  }
+
+  // 14B. INFORMATIONAL WEATHER QUERY (e.g. "how is the weather in jaipur", "what is the temperature")
+  if (
+    isWeatherQuery &&
+    !norm.includes('swap') &&
+    !norm.includes('indoor') &&
+    !norm.includes('badlo')
+  ) {
+    return {
+      intent: 'QUERY_WEATHER',
+      summary: 'Jaipur Weather: 32°C, Pleasant & Clear Skies',
+      spokenResponse:
+        'Current weather in Jaipur is 32°C with pleasant, clear skies, 18% humidity, and zero percent probability of rain. All outdoor stops including City Palace and Chokhi Dhani are fully cleared.',
+      navigation: { tab: 'timeline' },
+      cardType: 'schedule',
+      cardData: {
+        city: 'Jaipur, Rajasthan',
+        tempC: 32,
+        feelsLike: 30,
+        condition: 'Clear Skies',
+        rainChance: '0%',
+      },
+      quickReplies: ['What is the next stop on the plan?', 'Are there stairs for Dadaji?', 'Show Itinerary'],
+    };
+  }
+
+  // 14C. WEATHER & RAIN ADAPTATION (Rainy weather fallback swap)
   if (
     lower.includes('rain') ||
     lower.includes('raining') ||
@@ -636,13 +732,14 @@ export function processJarvisVoiceCommand(
   }
 
   // 15. CONFLICT RESOLUTION (Mobility / Ramp / Dietary Conflicts)
-  if (
+  const isConflictResolutionAction =
     lower.includes('conflict') ||
-    lower.includes('fix') ||
-    lower.includes('ramp') ||
-    lower.includes('golf cart') ||
-    lower.includes('stair')
-  ) {
+    lower.includes('resolve') ||
+    (lower.includes('fix') && !lower.includes('schedule') && !lower.includes('overlap')) ||
+    lower.includes('apply ramp') ||
+    lower.includes('apply fix');
+
+  if (isConflictResolutionAction) {
     const unres = ctx.conflicts.find((c) => !c.resolved);
     return {
       intent: 'SOLVE_CONFLICT',
@@ -737,22 +834,78 @@ export function processJarvisVoiceCommand(
     };
   }
 
-  // 20. EXPLICIT SCHEDULE & NEXT ACTIVITY QUERY (Triggered ONLY when user explicitly asks for schedule/next stop)
+  // 20. INFORMATIONAL FOOD, LUNCH & DIETARY QUERY (when not logging expense)
   if (
-    lower.includes('next') ||
-    lower.includes('upcoming') ||
-    lower.includes('what next') ||
-    lower.includes('agla') ||
-    lower.includes('kya karna hai') ||
-    lower.includes('schedule') ||
-    lower.includes('itinerary') ||
-    lower.includes('plan')
+    !moneyMatch &&
+    (norm.includes('lunch') ||
+      norm.includes('dinner') ||
+      norm.includes('food') ||
+      norm.includes('khana') ||
+      norm.includes('jain') ||
+      norm.includes('restaurant') ||
+      norm.includes('menu') ||
+      norm.includes('thali') ||
+      norm.includes('dietary'))
   ) {
-    const nextItem = ctx.itinerary[0] || {
-      title: 'Surya Mahal Royal Rajasthani Lunch',
-      time: '13:00',
-      location: 'City Palace Precinct',
+    return {
+      intent: 'QUERY_DINING',
+      summary: 'Dining: Surya Mahal Royal Thali (Jain & Low-Sodium Certified)',
+      spokenResponse:
+        "Today's lunch is at Surya Mahal Dining Room at 13:00 with a certified Jain kitchen for Priya, and mild low-sodium thali for Dadaji. Tonight's dinner is at Chokhi Dhani at 19:30.",
+      navigation: { tab: 'timeline' },
+      cardType: 'schedule',
+      cardData: {
+        venue: 'Surya Mahal Dining Room',
+        time: '13:00 - 14:30',
+        dietary: 'Certified Jain & Low-Sodium Vegetarian',
+      },
+      quickReplies: ['What is the next stop?', 'Check Dadaji mobility', 'Who pays next?'],
     };
+  }
+
+  // 21. INFORMATIONAL MOBILITY & DADAJI COMFORT QUERY
+  if (
+    norm.includes('mobility') ||
+    norm.includes('wheelchair') ||
+    norm.includes('golf cart') ||
+    norm.includes('stair') ||
+    norm.includes('climb') ||
+    norm.includes('knee') ||
+    (norm.includes('dadaji') && (norm.includes('walk') || norm.includes('reach') || norm.includes('room') || norm.includes('hotel')))
+  ) {
+    return {
+      intent: 'QUERY_MOBILITY',
+      summary: "Dadaji Mobility: Suite 104 Zero Stairs & Amber Fort Golf Cart Pre-Booked",
+      spokenResponse:
+        "Dadaji's comfort accommodations are fully verified. Suite 104 at Rambagh Palace has zero stairs. For Amber Fort tomorrow, an electric golf cart and wheelchair escort are pre-booked straight to the palace hall, bypassing 140 stone steps.",
+      navigation: { tab: 'timeline' },
+      cardType: 'health',
+      quickReplies: ["Check Dadaji's Meds", 'Show Timeline', 'Who Pays Next?'],
+    };
+  }
+
+  // 22. INFORMATIONAL HOTEL & STAY QUERY
+  if (
+    norm.includes('hotel') ||
+    norm.includes('rambagh') ||
+    norm.includes('stay') ||
+    norm.includes('suite') ||
+    norm.includes('checkin') ||
+    norm.includes('check-in')
+  ) {
+    return {
+      intent: 'QUERY_HOTEL',
+      summary: 'Rambagh Palace Heritage Suites (Check-in 11:30)',
+      spokenResponse:
+        'We are staying at Rambagh Palace Heritage Suites on Bhawani Singh Road. Ground-floor Suite 104 is reserved for Dadaji with step-free entrance and walk-in shower.',
+      navigation: { tab: 'vault', subTab: 'passes' },
+      quickReplies: ['What is next stop?', 'Show hotel voucher', 'Check weather'],
+    };
+  }
+
+  // 23. EXPLICIT SCHEDULE & NEXT ACTIVITY QUERY (Always picks next upcoming activity, NEVER landed flight)
+  if (isPlanQuery) {
+    const nextItem = getNextUpcomingStop(ctx.itinerary);
 
     return {
       intent: 'QUERY_SCHEDULE',
@@ -775,7 +928,30 @@ export function processJarvisVoiceCommand(
     };
   }
 
-  // 21. UNRECOGNIZED INPUT FALLBACK (No loop, no repeating schedule)
+  // 24. CONVERSATIONAL ASSISTANT & UNRECOGNIZED INPUT FALLBACK (No loop, no repeating schedule)
+  if (clean.length > 3) {
+    const comp = generateCompanionResponse(rawInput, {
+      currentUser: ctx.currentUser,
+      itinerary: ctx.itinerary,
+      polls: ctx.polls,
+      expenses: ctx.expenses,
+      travelStatus: ctx.travelStatus,
+      documents: ctx.documents,
+      allUsers: ctx.users,
+    });
+
+    if (comp && comp.text && !comp.text.includes('Flight AI-481')) {
+      const firstSentence = comp.text.split('\n')[0].slice(0, 220);
+      return {
+        intent: 'ASSISTANT_QUERY',
+        summary: clean.slice(0, 35),
+        spokenResponse: firstSentence,
+        actionExecuted: 'NO_OP',
+        quickReplies: comp.quickReplies || ['Show Timeline', 'How is the weather?', 'Who Pays Next?'],
+      };
+    }
+  }
+
   return {
     intent: 'UNKNOWN',
     summary: clean ? `Command: "${clean.slice(0, 30)}"` : 'Listening...',
